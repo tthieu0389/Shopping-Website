@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng ký — VNPT Shop</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.auth-page { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
+.auth-visual { background: linear-gradient(135deg,#7b0000 0%,#c20510 50%,#E30613 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; position: relative; overflow: hidden; }
+.auth-visual::before { content:''; position:absolute; inset:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E"); }
+.auth-visual-content { position: relative; text-align: center; color: white; }
+.auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; justify-content: center; }
+.auth-logo-icon { width: 48px; height: 48px; background: rgba(255,255,255,.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.auth-logo-icon img { width: 30px; filter: brightness(0) invert(1); }
+.auth-logo-name { font-size: 24px; font-weight: 800; color: white; }
+.auth-tagline { font-size: 28px; font-weight: 700; margin-bottom: 16px; font-family: var(--font-display); line-height: 1.2; }
+.voucher-card { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 24px; margin-top: 32px; text-align: left; }
+.voucher-card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: .7; margin-bottom: 10px; }
+.voucher-card-amount { font-size: 40px; font-weight: 700; font-family: var(--font-display); }
+.voucher-card-desc { font-size: 13px; opacity: .75; margin-top: 6px; }
+.voucher-card-code { background: rgba(255,255,255,.15); border-radius: 8px; padding: 8px 14px; margin-top: 12px; font-size: 14px; font-weight: 700; letter-spacing: 2px; }
+.auth-form-side { display: flex; align-items: center; justify-content: center; padding: 60px; background: white; }
+.auth-form-box { width: 100%; max-width: 440px; }
+.auth-form-title { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.auth-form-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--text); display: block; margin-bottom: 7px; }
+.form-input { width: 100%; padding: 12px 16px; border: 1.5px solid var(--shade); border-radius: var(--radius-md); font-size: 14px; font-family: var(--font-body); outline: none; transition: border-color .2s; color: var(--text); }
+.form-input:focus { border-color: var(--vnpt); }
+.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.strength-bar { display: flex; gap: 4px; margin-top: 6px; }
+.strength-seg { flex: 1; height: 3px; background: var(--shade); border-radius: 2px; transition: background .3s; }
+.strength-seg.weak { background: var(--red); }
+.strength-seg.medium { background: var(--warning); }
+.strength-seg.strong { background: var(--success); }
+.terms-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.terms-row input { accent-color: var(--vnpt); margin-top: 2px; flex-shrink: 0; }
+.terms-row a { color: var(--vnpt); font-weight: 600; }
+.btn-register { width: 100%; padding: 14px; background: var(--red); color: white; border: none; border-radius: var(--radius-pill); font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 16px; transition: all .2s; font-family: var(--font-body); }
+.btn-register:hover { background: var(--red-dark); }
+.divider { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.divider-line { flex: 1; height: 1px; background: var(--shade); }
+.divider-text { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.social-login { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.btn-social { padding: 11px; border: 1.5px solid var(--shade); border-radius: var(--radius-md); background: white; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-body); color: var(--text); }
+.auth-switch { text-align: center; font-size: 14px; color: var(--muted); }
+.auth-switch a { color: var(--vnpt); font-weight: 700; }
+</style>
+</head>
+<body style="margin:0;padding:0;">
+<div class="auth-page">
+  <div class="auth-visual">
+    <div class="auth-visual-content">
+      <div class="auth-logo">
+        <div class="auth-logo-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png" alt="VNPT"></div>
+        <div class="auth-logo-name">VNPT Shop</div>
+      </div>
+      <div class="auth-tagline">Tham gia cộng đồng VNPT Shop ngay hôm nay!</div>
+      <div class="auth-sub" style="font-size:15px;color:rgba(255,255,255,.8);max-width:320px;margin:0 auto;">Đăng ký miễn phí và nhận ngay voucher chào mừng 200.000₫!</div>
+      <div class="voucher-card">
+        <div class="voucher-card-title">🎁 Quà chào mừng thành viên mới</div>
+        <div class="voucher-card-amount">200.000₫</div>
+        <div class="voucher-card-desc">Áp dụng cho đơn hàng đầu tiên từ 500.000₫</div>
+        <div class="voucher-card-code">VNPTNEW200</div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-form-side">
+    <div class="auth-form-box">
+      <div class="auth-form-title">Tạo tài khoản</div>
+      <div class="auth-form-sub">Đã có tài khoản? <a href="login.html">Đăng nhập ngay →</a></div>
+      <div class="form-grid2">
+        <div class="form-group"><label class="form-label">Họ</label><input class="form-input" type="text" placeholder="Nguyễn"></div>
+        <div class="form-group"><label class="form-label">Tên</label><input class="form-input" type="text" placeholder="Văn A"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Số điện thoại <span style="color:var(--red);">*</span></label><input class="form-input" type="tel" placeholder="0901 234 567"></div>
+      <div class="form-group"><label class="form-label">Email <span style="color:var(--red);">*</span></label><input class="form-input" type="email" placeholder="example@email.com"></div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu <span style="color:var(--red);">*</span></label>
+        <input class="form-input" type="password" id="pwd" placeholder="Tối thiểu 8 ký tự" oninput="checkStrength(this.value)">
+        <div class="strength-bar">
+          <div class="strength-seg" id="s1"></div>
+          <div class="strength-seg" id="s2"></div>
+          <div class="strength-seg" id="s3"></div>
+          <div class="strength-seg" id="s4"></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Xác nhận mật khẩu <span style="color:var(--red);">*</span></label><input class="form-input" type="password" placeholder="Nhập lại mật khẩu"></div>
+      <div class="terms-row">
+        <input type="checkbox" checked>
+        <span>Tôi đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của VNPT Shop. Tôi muốn nhận thông báo ưu đãi qua email.</span>
+      </div>
+      <button class="btn-register" onclick="location.href='account.html'">🎁 Đăng ký & nhận voucher</button>
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">hoặc đăng ký với</div><div class="divider-line"></div></div>
+      <div class="social-login">
+        <button class="btn-social">🔵 Google</button>
+        <button class="btn-social">📘 Facebook</button>
+      </div>
+      <div class="auth-switch">Đã có tài khoản? <a href="login.html">Đăng nhập</a></div>
+    </div>
+  </div>
+</div>
+<script>
+function checkStrength(v) {
+  const segs = ['s1','s2','s3','s4'];
+  segs.forEach(s => { document.getElementById(s).className = 'strength-seg'; });
+  if (v.length === 0) return;
+  let score = 0;
+  if (v.length >= 8) score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  const cls = score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong';
+  for (let i = 0; i < score; i++) document.getElementById(segs[i]).classList.add(cls);
+}
+</script>
+</body>
+</html>

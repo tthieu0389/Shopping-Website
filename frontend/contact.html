@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liên hệ — VNPT Shop</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.contact-hero { background: linear-gradient(135deg,var(--vnpt-dark),var(--vnpt)); padding: 56px 40px; text-align: center; }
+.contact-hero h1 { font-family: var(--font-display); font-size: 40px; font-weight: 700; color: white; margin-bottom: 10px; }
+.contact-hero p { font-size: 16px; color: rgba(255,255,255,.75); }
+.contact-cards { max-width: 1200px; margin: -32px auto 0; padding: 0 40px; display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; position: relative; z-index: 10; }
+.contact-card { background: white; border-radius: var(--radius-lg); padding: 24px; text-align: center; box-shadow: var(--shadow-lg); border: 1.5px solid var(--shade); transition: all .25s; cursor: pointer; }
+.contact-card:hover { transform: translateY(-3px); border-color: var(--vnpt); }
+.contact-card-icon { font-size: 36px; margin-bottom: 12px; }
+.contact-card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.contact-card-sub { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.contact-card-action { font-size: 14px; font-weight: 700; color: var(--vnpt); }
+.contact-layout { max-width: 1200px; margin: 48px auto; padding: 0 40px; display: grid; grid-template-columns: 1fr 420px; gap: 32px; align-items: start; }
+/* FORM */
+.contact-form-box { background: white; border: 1.5px solid var(--shade); border-radius: 20px; padding: 36px; }
+.contact-form-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.contact-form-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1/-1; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.form-input { padding: 12px 16px; border: 1.5px solid var(--shade); border-radius: var(--radius-md); font-size: 14px; font-family: var(--font-body); outline: none; transition: border-color .2s; color: var(--text); }
+.form-input:focus { border-color: var(--vnpt); }
+.form-textarea { padding: 12px 16px; border: 1.5px solid var(--shade); border-radius: var(--radius-md); font-size: 14px; font-family: var(--font-body); outline: none; transition: border-color .2s; resize: vertical; min-height: 130px; color: var(--text); width: 100%; }
+.form-textarea:focus { border-color: var(--vnpt); }
+.form-select { padding: 12px 16px; border: 1.5px solid var(--shade); border-radius: var(--radius-md); font-size: 14px; font-family: var(--font-body); outline: none; background: white; color: var(--text); width: 100%; }
+.form-select:focus { border-color: var(--vnpt); }
+.btn-submit { width: 100%; padding: 14px; background: var(--vnpt); color: white; border: none; border-radius: var(--radius-pill); font-size: 16px; font-weight: 700; cursor: pointer; transition: all .2s; font-family: var(--font-body); margin-top: 6px; }
+.btn-submit:hover { background: var(--vnpt-dark); }
+/* SIDEBAR INFO */
+.contact-info-box { background: white; border: 1.5px solid var(--shade); border-radius: 20px; overflow: hidden; }
+.contact-map { width: 100%; height: 240px; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--muted); border-bottom: 1px solid var(--shade); overflow: hidden; }
+.contact-map iframe { width: 100%; height: 100%; border: none; }
+.contact-info-content { padding: 28px; }
+.contact-info-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+.info-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+.info-icon { width: 40px; height: 40px; background: var(--vnpt-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.info-text-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.info-text-val { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.info-text-val a { color: var(--vnpt); font-weight: 600; }
+.hours-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.hours-item { font-size: 12px; color: var(--muted); }
+.hours-item strong { display: block; color: var(--text); font-size: 12px; }
+/* FAQ */
+.faq-section { background: var(--cream); padding: 56px 40px; }
+.faq-inner { max-width: 800px; margin: 0 auto; }
+.faq-item { background: white; border: 1.5px solid var(--shade); border-radius: var(--radius-lg); margin-bottom: 10px; overflow: hidden; }
+.faq-q { padding: 18px 20px; font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+.faq-q:hover { background: var(--cream); }
+.faq-q .chevron { font-size: 18px; transition: transform .3s; color: var(--muted); }
+.faq-q.open .chevron { transform: rotate(180deg); }
+.faq-a { padding: 0 20px; font-size: 14px; color: var(--muted); line-height: 1.8; max-height: 0; overflow: hidden; transition: all .3s; }
+.faq-a.open { padding: 0 20px 18px; max-height: 200px; }
+</style>
+</head>
+<body>
+<div class="announcement-bar">📞 Hotline <strong>1800 1234</strong> miễn phí · Hỗ trợ 24/7 · Chat trực tuyến luôn sẵn sàng</div>
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="logo"><div class="logo-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png" alt="VNPT"></div>VNPT Shop</a>
+    <div class="nav-links">
+      <a href="index.html">Trang chủ</a><a href="products.html">Điện thoại</a><a href="products.html?category=sim-so">Sim số</a><a href="flash-sale.html">🔥 Flash Sale</a><a href="blog.html">Tin tức</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn-nav-outline" onclick="location.href='login.html'">Đăng nhập</button>
+      <button class="btn-nav-primary">Đăng ký</button>
+      <button class="cart-btn" onclick="location.href='cart.html'">🛒<span class="cart-badge">0</span></button>
+    </div>
+  </div>
+</nav>
+
+<div class="contact-hero">
+  <h1>📞 Liên hệ với chúng tôi</h1>
+  <p>Đội ngũ hỗ trợ VNPT Shop luôn sẵn sàng giúp bạn 24/7</p>
+</div>
+
+<div class="contact-cards">
+  <div class="contact-card">
+    <div class="contact-card-icon">📞</div>
+    <div class="contact-card-title">Hotline miễn phí</div>
+    <div class="contact-card-sub">Hỗ trợ 24/7, không mất phí cuộc gọi</div>
+    <div class="contact-card-action">1800 1234</div>
+  </div>
+  <div class="contact-card">
+    <div class="contact-card-icon">💬</div>
+    <div class="contact-card-title">Chat trực tuyến</div>
+    <div class="contact-card-sub">Phản hồi trong vòng 2 phút</div>
+    <div class="contact-card-action">Chat ngay →</div>
+  </div>
+  <div class="contact-card">
+    <div class="contact-card-icon">📧</div>
+    <div class="contact-card-title">Gửi Email</div>
+    <div class="contact-card-sub">Phản hồi trong 2–4 giờ làm việc</div>
+    <div class="contact-card-action">hotro@vnptshop.vn</div>
+  </div>
+  <div class="contact-card">
+    <div class="contact-card-icon">🏪</div>
+    <div class="contact-card-title">Cửa hàng</div>
+    <div class="contact-card-sub">200+ cửa hàng toàn quốc</div>
+    <div class="contact-card-action">Tìm cửa hàng →</div>
+  </div>
+</div>
+
+<div class="contact-layout">
+  <!-- FORM -->
+  <div class="contact-form-box">
+    <div class="contact-form-title">Gửi yêu cầu hỗ trợ</div>
+    <div class="contact-form-sub">Điền form bên dưới, chúng tôi sẽ phản hồi trong vòng 2–4 giờ</div>
+    <div class="form-grid2">
+      <div class="form-group"><label class="form-label">Họ và tên *</label><input class="form-input" type="text" placeholder="Nguyễn Văn A"></div>
+      <div class="form-group"><label class="form-label">Số điện thoại *</label><input class="form-input" type="tel" placeholder="0901 234 567"></div>
+      <div class="form-group full"><label class="form-label">Email *</label><input class="form-input" type="email" placeholder="example@email.com"></div>
+      <div class="form-group full">
+        <label class="form-label">Loại yêu cầu</label>
+        <select class="form-select">
+          <option>Tư vấn mua hàng</option>
+          <option>Kiểm tra đơn hàng</option>
+          <option>Đổi trả / Hoàn tiền</option>
+          <option>Bảo hành sản phẩm</option>
+          <option>Hỗ trợ kỹ thuật</option>
+          <option>Khiếu nại</option>
+          <option>Khác</option>
+        </select>
+      </div>
+      <div class="form-group full"><label class="form-label">Mã đơn hàng (nếu có)</label><input class="form-input" type="text" placeholder="#VNPT-2024-XXXXXX"></div>
+      <div class="form-group full"><label class="form-label">Nội dung *</label><textarea class="form-textarea" placeholder="Mô tả chi tiết yêu cầu của bạn..."></textarea></div>
+    </div>
+    <button class="btn-submit" onclick="this.textContent='✅ Đã gửi thành công! Chúng tôi sẽ liên hệ sớm.';this.style.background='var(--success)';">📤 Gửi yêu cầu</button>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;text-align:center;">Thông tin của bạn được bảo mật tuyệt đối theo chính sách VNPT</p>
+  </div>
+
+  <!-- INFO SIDEBAR -->
+  <div class="contact-info-box">
+    <div class="contact-map">
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.2672!2d106.6944!3d10.7789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zVk5QVA!5e0!3m2!1svi!2svn!4v1620000000" loading="lazy"></iframe>
+    </div>
+    <div class="contact-info-content">
+      <div class="contact-info-title">Thông tin liên hệ</div>
+      <div class="info-row">
+        <div class="info-icon">📍</div>
+        <div><div class="info-text-title">Trụ sở chính</div><div class="info-text-val">57 Huỳnh Thúc Kháng, Phường Láng Hạ, Quận Đống Đa, Hà Nội</div></div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📞</div>
+        <div><div class="info-text-title">Hotline</div><div class="info-text-val"><a href="tel:18001234">1800 1234</a> (miễn phí · 24/7)<br><a href="tel:02438578567">024 3857 8567</a> (Doanh nghiệp)</div></div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📧</div>
+        <div><div class="info-text-title">Email</div><div class="info-text-val"><a href="mailto:hotro@vnptshop.vn">hotro@vnptshop.vn</a><br><a href="mailto:kinhdoanh@vnptshop.vn">kinhdoanh@vnptshop.vn</a></div></div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">🕐</div>
+        <div>
+          <div class="info-text-title">Giờ làm việc</div>
+          <div class="hours-grid" style="margin-top:6px;">
+            <div class="hours-item"><strong>Thứ 2 – Thứ 6</strong>7:30 – 21:00</div>
+            <div class="hours-item"><strong>Thứ 7 – Chủ nhật</strong>8:00 – 20:00</div>
+            <div class="hours-item"><strong>Hotline</strong>24/7 liên tục</div>
+            <div class="hours-item"><strong>Chat online</strong>24/7 phản hồi nhanh</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <a href="#" style="flex:1;padding:9px;background:var(--vnpt);color:white;border-radius:var(--radius-md);font-size:13px;font-weight:700;text-align:center;text-decoration:none;">f Facebook</a>
+        <a href="#" style="flex:1;padding:9px;background:#25D366;color:white;border-radius:var(--radius-md);font-size:13px;font-weight:700;text-align:center;text-decoration:none;">💬 Zalo</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+  <div class="faq-inner">
+    <div class="section-head">
+      <div class="section-label">Hỏi đáp</div>
+      <div class="section-title">Câu hỏi thường gặp</div>
+    </div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Tôi có thể đổi trả sản phẩm trong bao lâu? <span class="chevron">▼</span></div><div class="faq-a">VNPT Shop hỗ trợ đổi trả trong vòng 7 ngày kể từ ngày nhận hàng, không cần lý do. Sản phẩm phải còn nguyên hộp, đầy đủ phụ kiện và chưa bị hư hỏng do người dùng. Liên hệ hotline 1800 1234 để được hướng dẫn quy trình đổi trả nhanh nhất.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">VNPT Shop có giao hàng toàn quốc không? <span class="chevron">▼</span></div><div class="faq-a">Có! Chúng tôi giao hàng toàn quốc 63 tỉnh thành. Tại nội thành TP.HCM và Hà Nội, chúng tôi có dịch vụ giao hàng nhanh 2 giờ miễn phí cho đơn hàng từ 500.000₫. Tỉnh xa giao trong 1–3 ngày làm việc.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Sản phẩm tại VNPT Shop có phải hàng chính hãng không? <span class="chevron">▼</span></div><div class="faq-a">100% sản phẩm tại VNPT Shop là hàng chính hãng có nguồn gốc rõ ràng, đầy đủ tem chính hãng, hóa đơn VAT và bảo hành theo tiêu chuẩn nhà sản xuất. Chúng tôi là đối tác chính thức của Apple, Samsung, Xiaomi và nhiều thương hiệu lớn khác.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Có thể mua trả góp 0% lãi suất không? <span class="chevron">▼</span></div><div class="faq-a">Có! VNPT Shop hỗ trợ trả góp 0% lãi suất đến 24 tháng qua thẻ tín dụng Visa, Mastercard, JCB của hơn 15 ngân hàng lớn. Chỉ cần mang theo CMND/CCCD và thẻ tín dụng, thủ tục đơn giản chỉ 5 phút.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Làm thế nào để theo dõi đơn hàng? <span class="chevron">▼</span></div><div class="faq-a">Sau khi đặt hàng, bạn sẽ nhận SMS và email xác nhận kèm mã đơn hàng. Bạn có thể theo dõi realtime tại mục "Đơn hàng của tôi" trong tài khoản, hoặc nhập mã đơn vào trang tra cứu. Chúng tôi cũng cập nhật trạng thái qua SMS từng bước.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">VNPT Shop có cửa hàng offline không? <span class="chevron">▼</span></div><div class="faq-a">Có! VNPT Shop có hơn 200 cửa hàng trên toàn quốc, tại tất cả 63 tỉnh thành. Bạn có thể đặt hàng online và nhận tại cửa hàng gần nhất trong 30 phút, hoàn toàn miễn phí.</div></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div><div class="footer-brand-name">VNPT Shop</div><div class="footer-brand-desc">Hệ thống mua sắm hàng đầu Việt Nam.</div><div class="footer-socials"><a href="#" class="social-btn">f</a><a href="#" class="social-btn">▶</a><a href="#" class="social-btn">T</a></div></div>
+      <div class="footer-col"><h4>Sản phẩm</h4><ul><li><a href="products.html">Điện thoại</a></li><li><a href="#">Sim số đẹp</a></li><li><a href="#">Gói cước</a></li></ul></div>
+      <div class="footer-col"><h4>Dịch vụ</h4><ul><li><a href="#">Internet</a></li><li><a href="#">MyTV</a></li><li><a href="#">VNPT Cloud</a></li></ul></div>
+      <div class="footer-col"><h4>Hỗ trợ</h4><ul><li><a href="contact.html" class="active">Liên hệ</a></li><li><a href="#">Hotline: 1800 1234</a></li><li><a href="#">Đổi trả</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><div class="footer-copy">© 2024 VNPT Shop. Bảo lưu mọi quyền.</div><div class="footer-payments"><span class="pay-badge">MOMO</span><span class="pay-badge">VNPAY</span><span class="pay-badge">VISA</span><span class="pay-badge">COD</span></div></div>
+  </div>
+</footer>
+<script src="js/main.js"></script>
+<script>
+function toggleFaq(el) {
+  const ans = el.nextElementSibling;
+  el.classList.toggle('open');
+  ans.classList.toggle('open');
+}
+</script>
+</body>
+</html>

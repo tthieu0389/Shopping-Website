@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tài khoản — VNPT Shop</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.account-layout { max-width: 1200px; margin: 0 auto; padding: 32px 40px; display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: start; }
+.account-sidebar { position: sticky; top: 84px; }
+.account-profile-card { background: white; border: 1.5px solid var(--shade); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 16px; text-align: center; }
+.account-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--vnpt); color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; margin: 0 auto 12px; }
+.account-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.account-email { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.account-level { display: inline-flex; align-items: center; gap: 6px; background: #fef9c3; color: #92400e; padding: 4px 12px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; }
+.account-nav { background: white; border: 1.5px solid var(--shade); border-radius: var(--radius-lg); overflow: hidden; }
+.account-nav a { display: flex; align-items: center; gap: 12px; padding: 13px 18px; font-size: 14px; font-weight: 500; color: var(--text); border-bottom: 1px solid var(--shade); transition: all .2s; text-decoration: none; }
+.account-nav a:last-child { border-bottom: none; }
+.account-nav a:hover, .account-nav a.active { background: var(--vnpt-light); color: var(--vnpt); }
+.account-nav a .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+.account-nav a .nav-badge { margin-left: auto; background: var(--red); color: white; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--radius-pill); }
+/* MAIN CONTENT */
+.account-main {}
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border: 1.5px solid var(--shade); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
+.stat-icon { font-size: 28px; margin-bottom: 8px; }
+.stat-val { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--vnpt); }
+.stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+/* ORDERS TABLE */
+.section-box { background: white; border: 1.5px solid var(--shade); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+.section-box-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+.order-table { width: 100%; border-collapse: collapse; }
+.order-table th { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--shade); }
+.order-table td { padding: 14px 14px; font-size: 14px; border-bottom: 1px solid var(--shade); vertical-align: middle; }
+.order-table tr:last-child td { border-bottom: none; }
+.order-table tr:hover td { background: var(--cream); }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; }
+.status-badge.delivered { background: #f0fdf4; color: var(--success); }
+.status-badge.shipping { background: #eff6ff; color: #2563eb; }
+.status-badge.processing { background: #fff7ed; color: #c2410c; }
+.status-badge.cancelled { background: #fef2f2; color: var(--red); }
+.order-id-link { color: var(--vnpt); font-weight: 600; cursor: pointer; }
+.order-id-link:hover { text-decoration: underline; }
+/* WISHLIST */
+.wishlist-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+</style>
+</head>
+<body>
+<div class="announcement-bar">👋 Chào mừng trở lại, <strong>Nguyễn Minh Hùng</strong>! Bạn có <strong>200.000₫</strong> voucher chưa dùng.</div>
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="logo"><div class="logo-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png" alt="VNPT"></div>VNPT Shop</a>
+    <div class="nav-links">
+      <a href="index.html">Trang chủ</a><a href="products.html">Điện thoại</a><a href="products.html?category=sim-so">Sim số</a><a href="flash-sale.html">🔥 Flash Sale</a><a href="blog.html">Tin tức</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn-nav-outline" onclick="location.href='login.html'">Đăng xuất</button>
+      <button class="cart-btn" onclick="location.href='cart.html'">🛒<span class="cart-badge">0</span></button>
+    </div>
+  </div>
+</nav>
+<div class="breadcrumb"><div class="breadcrumb-inner"><a href="index.html">Trang chủ</a> <span>›</span> <span>Tài khoản</span></div></div>
+
+<div class="account-layout">
+  <!-- SIDEBAR -->
+  <aside class="account-sidebar">
+    <div class="account-profile-card">
+      <div class="account-avatar">NH</div>
+      <div class="account-name">Nguyễn Minh Hùng</div>
+      <div class="account-email">minhhung@gmail.com</div>
+      <div class="account-level">🥇 Thành viên Vàng</div>
+    </div>
+    <nav class="account-nav">
+      <a href="#" class="active"><span class="nav-icon">📊</span>Tổng quan</a>
+      <a href="#"><span class="nav-icon">📦</span>Đơn hàng của tôi<span class="nav-badge">5</span></a>
+      <a href="#"><span class="nav-icon">❤️</span>Sản phẩm yêu thích</a>
+      <a href="#"><span class="nav-icon">📍</span>Địa chỉ giao hàng</a>
+      <a href="#"><span class="nav-icon">💳</span>Phương thức thanh toán</a>
+      <a href="#"><span class="nav-icon">🎁</span>Voucher & Ưu đãi</a>
+      <a href="#"><span class="nav-icon">⭐</span>Điểm thưởng · 1.240đ</a>
+      <a href="#"><span class="nav-icon">⚙️</span>Cài đặt tài khoản</a>
+      <a href="login.html" style="color:var(--red);"><span class="nav-icon">🚪</span>Đăng xuất</a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="account-main">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val">12</div><div class="stat-lbl">Tổng đơn hàng</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val">10</div><div class="stat-lbl">Đã giao thành công</div></div>
+      <div class="stat-card"><div class="stat-icon">❤️</div><div class="stat-val">28</div><div class="stat-lbl">Sản phẩm yêu thích</div></div>
+      <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-val">1.240</div><div class="stat-lbl">Điểm tích lũy</div></div>
+    </div>
+
+    <!-- RECENT ORDERS -->
+    <div class="section-box">
+      <div class="section-box-title">
+        Đơn hàng gần đây
+        <a href="#" style="font-size:13px;color:var(--vnpt);font-weight:600;">Xem tất cả →</a>
+      </div>
+      <table class="order-table">
+        <thead>
+          <tr><th>Mã đơn</th><th>Sản phẩm</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="order-id-link">#VNPT-2024-089234</span></td>
+            <td style="color:var(--muted);">iPhone 16 Pro Max + 2 SP khác</td>
+            <td style="color:var(--muted);">12/06/2024</td>
+            <td style="font-weight:700;color:var(--text);">43.470.000₫</td>
+            <td><span class="status-badge shipping">🚚 Đang giao</span></td>
+            <td><a href="checkout-success.html" style="font-size:12px;color:var(--vnpt);font-weight:600;">Theo dõi</a></td>
+          </tr>
+          <tr>
+            <td><span class="order-id-link">#VNPT-2024-078112</span></td>
+            <td style="color:var(--muted);">Samsung Galaxy S25 Ultra</td>
+            <td style="color:var(--muted);">05/06/2024</td>
+            <td style="font-weight:700;color:var(--text);">32.990.000₫</td>
+            <td><span class="status-badge delivered">✅ Đã giao</span></td>
+            <td><a href="#" style="font-size:12px;color:var(--vnpt);font-weight:600;">Đánh giá</a></td>
+          </tr>
+          <tr>
+            <td><span class="order-id-link">#VNPT-2024-061045</span></td>
+            <td style="color:var(--muted);">AirPods Pro 2nd Gen</td>
+            <td style="color:var(--muted);">28/05/2024</td>
+            <td style="font-weight:700;color:var(--text);">5.990.000₫</td>
+            <td><span class="status-badge delivered">✅ Đã giao</span></td>
+            <td><a href="#" style="font-size:12px;color:var(--vnpt);font-weight:600;">Mua lại</a></td>
+          </tr>
+          <tr>
+            <td><span class="order-id-link">#VNPT-2024-043789</span></td>
+            <td style="color:var(--muted);">Sim số đẹp 0901 234 567</td>
+            <td style="color:var(--muted);">15/05/2024</td>
+            <td style="font-weight:700;color:var(--text);">500.000₫</td>
+            <td><span class="status-badge delivered">✅ Đã giao</span></td>
+            <td><a href="#" style="font-size:12px;color:var(--vnpt);font-weight:600;">Đánh giá</a></td>
+          </tr>
+          <tr>
+            <td><span class="order-id-link">#VNPT-2024-022567</span></td>
+            <td style="color:var(--muted);">Gói cước 5G 99.000₫</td>
+            <td style="color:var(--muted);">01/05/2024</td>
+            <td style="font-weight:700;color:var(--text);">99.000₫</td>
+            <td><span class="status-badge cancelled">✗ Đã hủy</span></td>
+            <td><a href="#" style="font-size:12px;color:var(--muted);font-weight:600;">Chi tiết</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- WISHLIST PREVIEW -->
+    <div class="section-box">
+      <div class="section-box-title">
+        Yêu thích (28 sản phẩm)
+        <a href="#" style="font-size:13px;color:var(--vnpt);font-weight:600;">Xem tất cả →</a>
+      </div>
+      <div class="wishlist-grid" id="wishlist-grid"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div><div class="footer-brand-name">VNPT Shop</div><div class="footer-brand-desc">Hệ thống mua sắm hàng đầu Việt Nam.</div></div>
+      <div class="footer-col"><h4>Sản phẩm</h4><ul><li><a href="products.html">Điện thoại</a></li><li><a href="#">Sim số đẹp</a></li></ul></div>
+      <div class="footer-col"><h4>Dịch vụ</h4><ul><li><a href="#">Internet</a></li><li><a href="#">MyTV</a></li></ul></div>
+      <div class="footer-col"><h4>Hỗ trợ</h4><ul><li><a href="contact.html">Liên hệ</a></li><li><a href="#">1800 1234</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><div class="footer-copy">© 2024 VNPT Shop.</div><div class="footer-payments"><span class="pay-badge">MOMO</span><span class="pay-badge">VNPAY</span><span class="pay-badge">VISA</span><span class="pay-badge">COD</span></div></div>
+  </div>
+</footer>
+<script src="js/main.js"></script>
+<script>
+const wg = document.getElementById('wishlist-grid');
+PRODUCTS.slice(0,3).forEach(p => {
+  wg.innerHTML += `<div class="prod-card"><div class="prod-img"><span class="sale-tag">-${p.discount}%</span><button class="wish-btn active">❤️</button><img src="${p.img}" alt="${p.name}" loading="lazy"></div><div class="prod-info"><div class="prod-brand">${p.brand}</div><div class="prod-name">${p.name}</div><div class="prod-price-row"><div class="prod-price">${p.price.toLocaleString('vi-VN')}₫</div><div class="prod-old">${p.oldPrice.toLocaleString('vi-VN')}₫</div></div><button class="btn-add">Thêm vào giỏ</button></div></div>`;
+});
+</script>
+</body>
+</html>
