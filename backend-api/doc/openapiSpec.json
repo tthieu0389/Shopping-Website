@@ -1,0 +1,1282 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Restaurant Management API",
+    "version": "1.0.0",
+    "description": "API for managing restaurant operations (users, dishes, orders, etc.)",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register new user",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "JWT token" },
+          "401": { "description": "Unauthorized" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Get all users",
+        "tags": ["User"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": { "description": "List of users" }
+        }
+      },
+      "post": {
+        "summary": "Create user",
+        "tags": ["User"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/User" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/users/{id}": {
+      "put": {
+        "summary": "Update user",
+        "tags": ["User"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/User" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User updated" },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "User not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete user",
+        "tags": ["User"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "User deleted" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/dishes": {
+      "get": {
+        "summary": "Get all dishes",
+        "tags": ["Dish"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": { "description": "List of dishes" }
+        }
+      },
+      "post": {
+        "summary": "Create new dish",
+        "tags": ["Dish"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "price": { "type": "number" },
+                  "category_id": { "type": "integer" },
+                  "description": { "type": "string" },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Dish image file"
+                  }
+                },
+                "required": ["name", "price", "category_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Dish created" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/dishes/{id}": {
+      "put": {
+        "summary": "Update dish",
+        "tags": ["Dish"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "price": { "type": "number" },
+                  "category_id": { "type": "integer" },
+                  "description": { "type": "string" },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Dish image file"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Dish updated" },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "Dish not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete dish",
+        "tags": ["Dish"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Dish deleted" },
+          "404": { "description": "Dish not found" }
+        }
+      }
+    },
+    "/dishes/{id}/detail": {
+      "get": {
+        "summary": "Get dish details with ingredients",
+        "tags": ["Dish"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID of the dish"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dish details with ingredients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "category_id": { "type": "integer" },
+                    "is_available": { "type": "boolean" },
+                    "image_url": { "type": "string", "nullable": true },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" },
+                    "ingredients": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "dish_id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "amount": { "type": "string" },
+                          "unit": { "type": "string", "nullable": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dish not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "summary": "Get all orders",
+        "tags": ["Order"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Order" }
+                    },
+                    "page": { "type": "integer" },
+                    "limit": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new order",
+        "tags": ["Order"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "summary": "Get order by ID",
+        "tags": ["Order"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update order",
+        "tags": ["Order"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "Order not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete order",
+        "tags": ["Order"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "summary": "Get all categories",
+        "tags": ["Category"],
+        "responses": {
+          "200": { "description": "List of categories" }
+        }
+      },
+      "post": {
+        "summary": "Create new category",
+        "tags": ["Category"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Category" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Category created" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "put": {
+        "summary": "Update category",
+        "tags": ["Category"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Category" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Category updated" },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "Category not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete category",
+        "tags": ["Category"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Category deleted" },
+          "404": { "description": "Category not found" }
+        }
+      }
+    },
+    "/inventory": {
+      "get": {
+        "summary": "Get all inventory items",
+        "tags": ["Inventory"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": { "description": "List of inventory items" }
+        }
+      },
+      "post": {
+        "summary": "Create new inventory item",
+        "tags": ["Inventory"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Inventory" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Inventory item created" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/inventory/{id}": {
+      "put": {
+        "summary": "Update inventory item",
+        "tags": ["Inventory"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Inventory" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Inventory item updated" },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "Inventory item not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete inventory item",
+        "tags": ["Inventory"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Inventory item deleted" },
+          "404": { "description": "Inventory item not found" }
+        }
+      }
+    },
+    "/reservations": {
+      "get": {
+        "summary": "Get all reservations",
+        "tags": ["Reservation"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reservations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Reservation" }
+                    },
+                    "page": { "type": "integer" },
+                    "limit": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create reservation",
+        "tags": ["Reservation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Reservation" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reservation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Reservation" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/reservations/{id}": {
+      "put": {
+        "summary": "Update reservation",
+        "tags": ["Reservation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Reservation" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Reservation" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "Reservation not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete reservation",
+        "tags": ["Reservation"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inventory-logs": {
+      "get": {
+        "summary": "Get all inventory logs",
+        "tags": ["InventoryLog"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": { "description": "List of inventory logs" }
+        }
+      },
+      "post": {
+        "summary": "Create inventory log",
+        "tags": ["InventoryLog"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InventoryLog" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Inventory log created" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/dish-ingredients/dish/{dishId}": {
+      "get": {
+        "summary": "Get ingredients of a dish by dish ID",
+        "tags": ["DishIngredient"],
+        "parameters": [
+          {
+            "name": "dishId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID of the dish"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of ingredients for the dish",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "dish_id": { "type": "integer" },
+                      "name": { "type": "string" },
+                      "amount": { "type": "string" },
+                      "unit": { "type": "string", "nullable": true }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/dish-ingredients": {
+      "post": {
+        "summary": "Create a new dish ingredient",
+        "tags": ["DishIngredient"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["dish_id", "name", "amount"],
+                "properties": {
+                  "dish_id": { "type": "integer" },
+                  "name": { "type": "string" },
+                  "amount": { "type": "string" },
+                  "unit": { "type": "string", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dish ingredient added"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Dish not found"
+          },
+          "429": {
+            "description": "Too many requests - rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/dish-ingredients/{id}": {
+      "put": {
+        "summary": "Update a dish ingredient",
+        "tags": ["DishIngredient"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID of the dish ingredient"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "amount": { "type": "string" },
+                  "unit": { "type": "string", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dish ingredient updated"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Dish ingredient not found"
+          },
+          "429": {
+            "description": "Too many requests - rate limit exceeded"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a dish ingredient",
+        "tags": ["DishIngredient"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID of the dish ingredient"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dish ingredient deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Dish ingredient not found"
+          }
+        }
+      }
+    },
+    "/order-items/order/{orderId}": {
+      "get": {
+        "summary": "Get order items by order ID",
+        "tags": ["OrderItem"],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID of the order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of order items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/OrderItem" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/order-items": {
+      "post": {
+        "summary": "Create new order item",
+        "tags": ["OrderItem"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderItem" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Order item created" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      }
+    },
+    "/order-items/{id}": {
+      "put": {
+        "summary": "Update order item",
+        "tags": ["OrderItem"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderItem" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Order item updated" },
+          "400": { "description": "Invalid input" },
+          "404": { "description": "Order item not found" },
+          "429": { "description": "Too many requests - rate limit exceeded" }
+        }
+      },
+      "delete": {
+        "summary": "Delete order item",
+        "tags": ["OrderItem"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Order item deleted" },
+          "404": { "description": "Order item not found" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "RegisterUser": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "password": { "type": "string" }
+        }
+      },
+      "LoginUser": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string" },
+          "password": { "type": "string" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["name", "email", "password", "role"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "password": { "type": "string" },
+          "role": { "type": "string", "enum": ["admin", "user"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Dish": {
+        "type": "object",
+        "required": ["name", "price", "category_id"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "category_id": { "type": "integer" },
+          "description": { "type": "string" },
+          "image_url": { "type": "string" },
+          "is_available": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["table_number", "items"],
+        "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
+          "table_number": { "type": "integer" },
+          "status": { "type": "string" },
+          "total_amount": { "type": "number" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["dish_id", "quantity"],
+              "properties": {
+                "dish_id": { "type": "integer" },
+                "quantity": { "type": "integer" }
+              }
+            }
+          },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "Inventory": {
+        "type": "object",
+        "required": ["name", "quantity", "unit"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unit": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Reservation": {
+        "type": "object",
+        "required": [
+          "customer_name",
+          "phone_number",
+          "number_of_guests",
+          "reservation_time"
+        ],
+        "properties": {
+          "id": { "type": "integer" },
+          "customer_name": {
+            "type": "string",
+            "description": "Tên khách đặt bàn"
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "Số điện thoại khách"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "description": "Số lượng khách"
+          },
+          "reservation_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Thời gian đặt bàn"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["booked", "canceled", "done"],
+            "description": "Trạng thái đặt bàn"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Thời gian tạo"
+          }
+        }
+      },
+      "InventoryLog": {
+        "type": "object",
+        "required": ["inventory_id", "quantity_added"],
+        "properties": {
+          "id": { "type": "integer" },
+          "inventory_id": { "type": "integer" },
+          "quantity_added": {
+            "type": "integer",
+            "description": "Số lượng nhập/xuất"
+          },
+          "note": { "type": "string", "description": "Ghi chú" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DishIngredient": {
+        "type": "object",
+        "required": ["dish_id", "inventory_id", "quantity_required"],
+        "properties": {
+          "id": { "type": "integer" },
+          "dish_id": { "type": "integer" },
+          "inventory_id": { "type": "integer" },
+          "quantity_required": {
+            "type": "integer",
+            "description": "Số lượng nguyên liệu cần cho món"
+          }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "order_id": { "type": "integer" },
+          "dish_id": { "type": "integer" },
+          "name": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "price": { "type": "number" }
+        }
+      }
+    },
+    "responses": {
+      "400BadRequest": {
+        "description": "Bad request"
+      },
+      "401Unauthorized": {
+        "description": "Unauthorized"
+      },
+      "403Forbidden": {
+        "description": "Forbidden"
+      },
+      "404NotFound": {
+        "description": "Resource not found"
+      },
+      "429TooManyRequests": {
+        "description": "Too many requests - rate limit exceeded"
+      },
+      "500Internal": {
+        "description": "Internal server error"
+      }
+    }
+  }
+}

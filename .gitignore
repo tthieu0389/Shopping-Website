@@ -1,0 +1,30 @@
+# dependencies
+**/node_modules/
+
+# logs
+**/logs/
+*.log
+
+# runtime
+*.pid
+
+# database
+*.sqlite
+*.sqlite3
+*.db
+
+# build
+**/dist/
+**/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# cache
+.cache/
+.tmp/
