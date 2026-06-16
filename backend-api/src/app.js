@@ -1,42 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const errorHandler = require("./middlewares/errorHandler");
-
-const app = express();
 require("dotenv").config();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// swagger
-const swaggerRoutes = require("./routes/swagger");
-app.use("/api-docs", swaggerRoutes);
-
-// routes
-const authRoutes = require("./routes/auth.routes");
-const blogRoutes = require("./routes/blog.routes");
-const cartRoutes = require("./routes/cart.routes");
-const categoryRoutes = require("./routes/category.routes");
-const contactRoutes = require("./routes/contact.routes");
-const favoriteRoutes = require("./routes/favorite.routes");
-const inventoryRoutes = require("./routes/inventory.routes");
-const inventoryLogRoutes = require("./routes/inventoryLog.routes");
-const orderRoutes = require("./routes/order.routes");
-const orderItemRoutes = require("./routes/orderitem.routes");
-const promotionRoutes = require("./routes/promotion.routes");
-const productPromotionRoutes = require("./routes/productPromotion.routes");
-const productRoutes = require("./routes/product.routes");
-const productDetailRoutes = require("./routes/productDetail.routes");
-const productImageRoutes = require("./routes/productImage.routes");
-const reviewRoutes = require("./routes/review.routes");
-const storeRoutes = require("./routes/store.routes");
-const userRoutes = require("./routes/user.routes");
-const userAddressRoutes = require("./routes/useraddress.routes");
-const userPaymentRoutes = require("./routes/userpayment.routes");
-const userProfileRoutes = require("./routes/userprofile.routes");
-
-// Rate limiters
+const errorHandler = require("./middlewares/errorHandler");
 const {
   loginLimiter,
   orderLimiter,
@@ -52,48 +18,89 @@ const {
   productLimiter,
 } = require("./middlewares/RateLimit");
 
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// swagger
+app.use("/api-docs", require("./routes/swagger"));
+
 // auth
-app.use("/api/auth", limit(loginLimiter), authRoutes);
+app.use("/api/auth", loginLimiter, require("./routes/auth.routes"));
+
 // blog
-app.use("/api/blogs", limit(blogLimiter), blogRoutes);
+app.use("/api/blogs", blogLimiter, require("./routes/blog.routes"));
+
 // cart
-app.use("/api/cart", limit(cartLimiter), cartRoutes);
+app.use("/api/cart", cartLimiter, require("./routes/cart.routes"));
+
 // category
-app.use("/api/categories", categoryRoutes);
+app.use("/api/categories", require("./routes/category.routes"));
+
 // contact
-app.use("/api/contacts", limit(contactLimiter), contactRoutes);
+app.use("/api/contacts", contactLimiter, require("./routes/contact.routes"));
+
 // favorite
-app.use("/api/favorites", limit(favoriteLimiter), favoriteRoutes);
+app.use("/api/favorites", favoriteLimiter, require("./routes/favorite.routes"));
+
 // inventory
-app.use("/api/inventory", limit(inventoryLimiter), inventoryRoutes);
-app.use("/api/inventory-logs", inventoryLogRoutes);
+app.use(
+  "/api/inventory",
+  inventoryLimiter,
+  require("./routes/inventory.routes"),
+);
+app.use("/api/inventory-logs", require("./routes/inventoryLog.routes"));
+
 // order
-app.use("/api/orders", limit(orderLimiter), orderRoutes);
-app.use("/api/order-items", limit(orderItemLimiter), orderItemRoutes);
+app.use("/api/orders", orderLimiter, require("./routes/order.routes"));
+app.use(
+  "/api/order-items",
+  orderItemLimiter,
+  require("./routes/orderitem.routes"),
+);
+
 // promotion
-app.use("/api/promotions", limit(promotionLimiter), promotionRoutes);
+app.use(
+  "/api/promotions",
+  promotionLimiter,
+  require("./routes/promotion.routes"),
+);
 app.use(
   "/api/product-promotions",
-  limit(promotionLimiter),
-  productPromotionRoutes,
+  promotionLimiter,
+  require("./routes/productPromotion.routes"),
 );
+
 // product
-app.use("/api/products", limit(productLimiter), productRoutes);
-app.use("/api/product-details", limit(productLimiter), productDetailRoutes);
-app.use("/api/product-images", limit(productLimiter), productImageRoutes);
+app.use("/api/products", productLimiter, require("./routes/product.routes"));
+app.use(
+  "/api/product-details",
+  productLimiter,
+  require("./routes/productDetail.routes"),
+);
+app.use(
+  "/api/product-images",
+  productLimiter,
+  require("./routes/productImage.routes"),
+);
+
 // review
-app.use("/api/reviews", limit(reviewLimiter), reviewRoutes);
+app.use("/api/reviews", reviewLimiter, require("./routes/review.routes"));
+
 // store
-app.use("/api/stores", storeRoutes);
+app.use("/api/stores", require("./routes/store.routes"));
+
 // user
-app.use("/api/users", limit(userLimiter), userRoutes);
-app.use("/api/user-addresses", userAddressRoutes);
-app.use("/api/user-payments", userPaymentRoutes);
-app.use("/api/user-profiles", userProfileRoutes);
+app.use("/api/users", userLimiter, require("./routes/user.routes"));
+app.use("/api/user-addresses", require("./routes/useraddress.routes"));
+app.use("/api/user-payments", require("./routes/userpayment.routes"));
+app.use("/api/user-profiles", require("./routes/userprofile.routes"));
 
 // 404
 app.use((req, res) => {
-  res.status(404).json({ message: "Không tìm thấy route API." });
+  res.status(404).json({ message: "Not found" });
 });
 
 // error handler

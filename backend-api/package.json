@@ -17,8 +17,7 @@
     "eslint-config-prettier": "^10.1.5",
     "globals": "^16.2.0",
     "jest": "^30.4.2",
-    "prettier": "^3.6.0",
-    "supertest": "^7.2.2"
+    "prettier": "^3.6.0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

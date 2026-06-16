@@ -7,11 +7,11 @@ const generateSlug = (name) =>
     .replace(/\s+/g, "-")
     .replace(/[^\w-]/g, "") +
   "-" +
-  Date.now(); // thêm timestamp để tránh unique conflict khi test chạy nhiều lần
+  Date.now();
 
 exports.createProduct = async (data) => {
   if (!data.slug && data.name) {
-    data.slug = generateSlug(data.name); // ← FIX: tự sinh slug
+    data.slug = generateSlug(data.name);
   }
   const [product] = await knex("products").insert(data).returning("*");
   return product;
@@ -61,7 +61,7 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
 };
 
 exports.getProductById = async (id) => {
-  if (!id || isNaN(id)) return null; // ← FIX: guard against undefined id
+  if (!id || isNaN(id)) return null;
   return await knex("products").where({ id, is_deleted: false }).first();
 };
 
