@@ -23,7 +23,7 @@ exports.register = async (data) => {
         name,
         email,
         password: hashedPassword,
-        role: "user",
+        role: "admin",
       })
       .returning(["id", "name", "email", "role"]);
 

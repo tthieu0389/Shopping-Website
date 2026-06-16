@@ -2,24 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const errorHandler = require("./middlewares/errorHandler");
 
-const {
-  loginLimiter,
-  orderLimiter,
-  orderItemLimiter,
-  inventoryLimiter,
-  userLimiter,
-  cartLimiter,
-  blogLimiter,
-  reviewLimiter,
-  favoriteLimiter,
-  contactLimiter,
-  promotionLimiter,
-  productLimiter,
-} = require("./middlewares/RateLimit");
-
 const app = express();
 require("dotenv").config();
-
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -47,56 +31,81 @@ const productImageRoutes = require("./routes/productImage.routes");
 const reviewRoutes = require("./routes/review.routes");
 const storeRoutes = require("./routes/store.routes");
 const userRoutes = require("./routes/user.routes");
+const userAddressRoutes = require("./routes/useraddress.routes");
+const userPaymentRoutes = require("./routes/userpayment.routes");
+const userProfileRoutes = require("./routes/userprofile.routes");
+
+// Only apply rate limiters outside of test environment
+const isTest = process.env.NODE_ENV === "test";
+
+const {
+  loginLimiter,
+  orderLimiter,
+  orderItemLimiter,
+  inventoryLimiter,
+  userLimiter,
+  cartLimiter,
+  blogLimiter,
+  reviewLimiter,
+  favoriteLimiter,
+  contactLimiter,
+  promotionLimiter,
+  productLimiter,
+} = require("./middlewares/RateLimit");
+
+const noOp = (_req, _res, next) => next(); // pass-through for test env
 
 // auth
-app.use("/api/auth", loginLimiter, authRoutes);
-
+app.use("/api/auth", isTest ? noOp : loginLimiter, authRoutes);
 // blog
-app.use("/api/blogs", blogLimiter, blogRoutes);
-
+app.use("/api/blogs", isTest ? noOp : blogLimiter, blogRoutes);
 // cart
-app.use("/api/cart", cartLimiter, cartRoutes);
-
+app.use("/api/cart", isTest ? noOp : cartLimiter, cartRoutes);
 // category
 app.use("/api/categories", categoryRoutes);
-
 // contact
-app.use("/api/contacts", contactLimiter, contactRoutes);
-
+app.use("/api/contacts", isTest ? noOp : contactLimiter, contactRoutes);
 // favorite
-app.use("/api/favorites", favoriteLimiter, favoriteRoutes);
-
+app.use("/api/favorites", isTest ? noOp : favoriteLimiter, favoriteRoutes);
 // inventory
-app.use("/api/inventory", inventoryLimiter, inventoryRoutes);
+app.use("/api/inventory", isTest ? noOp : inventoryLimiter, inventoryRoutes);
 app.use("/api/inventory-logs", inventoryLogRoutes);
-
 // order
-app.use("/api/orders", orderLimiter, orderRoutes);
-app.use("/api/order-items", orderItemLimiter, orderItemRoutes);
-
+app.use("/api/orders", isTest ? noOp : orderLimiter, orderRoutes);
+app.use("/api/order-items", isTest ? noOp : orderItemLimiter, orderItemRoutes);
 // promotion
-app.use("/api/promotions", promotionLimiter, promotionRoutes);
-app.use("/api/product-promotions", promotionLimiter, productPromotionRoutes);
-
+app.use("/api/promotions", isTest ? noOp : promotionLimiter, promotionRoutes);
+app.use(
+  "/api/product-promotions",
+  isTest ? noOp : promotionLimiter,
+  productPromotionRoutes,
+);
 // product
-app.use("/api/products", productLimiter, productRoutes);
-app.use("/api/product-details", productLimiter, productDetailRoutes);
-app.use("/api/product-images", productLimiter, productImageRoutes);
-
+app.use("/api/products", isTest ? noOp : productLimiter, productRoutes);
+app.use(
+  "/api/product-details",
+  isTest ? noOp : productLimiter,
+  productDetailRoutes,
+);
+app.use(
+  "/api/product-images",
+  isTest ? noOp : productLimiter,
+  productImageRoutes,
+);
 // review
-app.use("/api/reviews", reviewLimiter, reviewRoutes);
-
+app.use("/api/reviews", isTest ? noOp : reviewLimiter, reviewRoutes);
 // store
 app.use("/api/stores", storeRoutes);
-
 // user
-app.use("/api/users", userLimiter, userRoutes);
+app.use("/api/users", isTest ? noOp : userLimiter, userRoutes);
+app.use("/api/user-addresses", userAddressRoutes);
+app.use("/api/user-payments", userPaymentRoutes);
+app.use("/api/user-profiles", userProfileRoutes);
 
 // 404
 app.use((req, res) => {
   res.status(404).json({ message: "Không tìm thấy route API." });
 });
-
 // error handler
 app.use(errorHandler);
 
