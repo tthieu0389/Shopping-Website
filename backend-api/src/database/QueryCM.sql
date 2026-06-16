@@ -1,0 +1,238 @@
+-- =========================
+-- USERS & PROFILE
+-- =========================
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    password TEXT,
+    role VARCHAR(20) DEFAULT 'user',
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_profiles (
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    full_name VARCHAR(100),
+    date_of_birth DATE,
+    gender VARCHAR(20),
+    phone VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_addresses (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    receiver_name VARCHAR(100),
+    phone VARCHAR(20),
+    province VARCHAR(100),
+    district VARCHAR(100),
+    ward VARCHAR(100),
+    address_line TEXT,
+    latitude NUMERIC(10,7),
+    longitude NUMERIC(10,7),
+    is_default BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE user_payment_methods (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    bank_name VARCHAR(100),
+    card_holder_name VARCHAR(100),
+    card_last4 VARCHAR(4),
+    expiry_month INT,
+    expiry_year INT,
+    payment_type VARCHAR(50),
+    provider VARCHAR(50),
+    is_default BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE
+);
+
+-- =========================
+-- CATEGORY & PRODUCT
+-- =========================
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    slug VARCHAR(100),
+    description TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200),
+    slug VARCHAR(200),
+    description TEXT,
+    price NUMERIC(12,2),
+    stock INT DEFAULT 0,
+    product_type VARCHAR(20),
+    category_id INT REFERENCES categories(id),
+    is_available BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE product_images (
+    id SERIAL PRIMARY KEY,
+    product_id INT REFERENCES products(id) ON DELETE CASCADE,
+    image_url TEXT
+);
+
+CREATE TABLE product_details (
+    id SERIAL PRIMARY KEY,
+    product_id INT REFERENCES products(id) ON DELETE CASCADE,
+    detail_name VARCHAR(100),
+    detail_value TEXT
+);
+
+-- =========================
+-- CART
+-- =========================
+CREATE TABLE carts (
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cart_items (
+    id SERIAL PRIMARY KEY,
+    cart_id INT REFERENCES carts(id),
+    product_id INT REFERENCES products(id),
+    quantity INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(cart_id, product_id)
+);
+
+-- =========================
+-- ORDER
+-- =========================
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    order_code VARCHAR(50) UNIQUE,
+    user_id INT REFERENCES users(id),
+    address_id INT REFERENCES user_addresses(id),
+    pickup_store_id INT,
+    total_amount NUMERIC(12,2),
+    payment_method VARCHAR(30),
+    status VARCHAR(30) DEFAULT 'pending',
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id),
+    product_id INT REFERENCES products(id),
+    product_name VARCHAR(200),
+    product_price NUMERIC(12,2),
+    quantity INT,
+    price NUMERIC(12,2),
+    discount_amount NUMERIC(12,2) DEFAULT 0
+);
+
+-- =========================
+-- STORE
+-- =========================
+CREATE TABLE stores (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    province VARCHAR(100),
+    address TEXT,
+    phone VARCHAR(20),
+    is_deleted BOOLEAN DEFAULT FALSE
+);
+
+ALTER TABLE orders
+ADD CONSTRAINT fk_orders_store
+FOREIGN KEY (pickup_store_id) REFERENCES stores(id);
+
+-- =========================
+-- INVENTORY
+-- =========================
+CREATE TABLE inventory (
+    id SERIAL PRIMARY KEY,
+    product_id INT UNIQUE REFERENCES products(id),
+    quantity INT DEFAULT 0,
+    min_quantity INT DEFAULT 5,
+    status VARCHAR(20) DEFAULT 'active',
+    deleted_at TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE inventory_logs (
+    id SERIAL PRIMARY KEY,
+    inventory_id INT REFERENCES inventory(id) ON DELETE CASCADE,
+    product_id INT REFERENCES products(id),
+    action VARCHAR(20) NOT NULL,
+    quantity_before INT,
+    quantity_change INT,
+    quantity_after INT,
+    reference_id INT,
+    note TEXT,
+    created_by INT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- BLOG / CONTACT
+-- =========================
+CREATE TABLE blogs (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200),
+    slug VARCHAR(200),
+    content TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE contacts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100),
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- PROMOTION
+-- =========================
+CREATE TABLE promotions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200),
+    discount_type VARCHAR(20),
+    discount_value NUMERIC(10,2),
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE product_promotions (
+    id SERIAL PRIMARY KEY,
+    product_id INT REFERENCES products(id),
+    promotion_id INT REFERENCES promotions(id)
+);
+
+-- =========================
+-- REVIEW & FAVORITE
+-- =========================
+CREATE TABLE reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    product_id INT REFERENCES products(id),
+    rating INT,
+    comment TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE favorites (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    product_id INT REFERENCES products(id),
+    is_deleted BOOLEAN DEFAULT FALSE
+);
