@@ -52,12 +52,6 @@ const {
   productLimiter,
 } = require("./middlewares/RateLimit");
 
-// Reads env at REQUEST TIME — not at module load time
-const limit = (limiter) => (req, res, next) => {
-  if (process.env.NODE_ENV === "test") return next();
-  return limiter(req, res, next);
-};
-
 // auth
 app.use("/api/auth", limit(loginLimiter), authRoutes);
 // blog

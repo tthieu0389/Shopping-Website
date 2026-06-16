@@ -5,7 +5,7 @@ const userProfileController = require("../controller/userprofile.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const validate = require("../middlewares/validate");
 
-const { upsertProfileSchema } = require("../schema/userprofile.schema");
+const { userProfileSchema } = require("../schema/userprofile.schema");
 
 const profileFieldLabels = {
   user_id: "User ID",
@@ -17,18 +17,17 @@ const profileFieldLabels = {
   bio: "Giới thiệu",
 };
 
-// Upsert profile
 router.post(
   "/:userId",
   verifyToken,
-  validate(upsertProfileSchema, { fieldLabels: profileFieldLabels }),
+  validate(userProfileSchema, {
+    fieldLabels: profileFieldLabels,
+  }),
   userProfileController.createOrUpdateProfile,
 );
 
-// Get profile
 router.get("/:userId", verifyToken, userProfileController.getProfileByUserId);
 
-// Delete profile
 router.delete("/:userId", verifyToken, userProfileController.deleteProfile);
 
 module.exports = router;

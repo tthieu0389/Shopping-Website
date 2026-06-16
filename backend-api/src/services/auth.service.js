@@ -25,16 +25,14 @@ exports.register = async (data) => {
         name,
         email,
         password: hashedPassword,
-        role: data.role || "user",
+        role: "user", // cố định role, không nhận từ client
       })
       .returning(["id", "name", "email", "role"]);
 
-    // Tạo profile mặc định
     await trx("user_profiles").insert({
       user_id: user.id,
     });
 
-    // Tạo cart mặc định
     await trx("carts").insert({
       user_id: user.id,
     });
@@ -79,9 +77,7 @@ exports.login = async (data) => {
       role: user.role,
     },
     process.env.JWT_SECRET,
-    {
-      expiresIn: "1d",
-    },
+    { expiresIn: "1d" },
   );
 
   return {
