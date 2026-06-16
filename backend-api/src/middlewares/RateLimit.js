@@ -1,10 +1,6 @@
 const rateLimit = require("express-rate-limit");
 
-const createLimiter = (options) =>
-  rateLimit({
-    ...options,
-    skip: () => process.env.NODE_ENV === "test", // <<< QUAN TRỌNG: tắt rate limit khi test
-  });
+const createLimiter = (options) => rateLimit(options);
 
 // login / register
 const loginLimiter = createLimiter({

@@ -1,14 +1,6 @@
-/**
- * API Integration Tests
- * Yêu cầu: jest, supertest
- * Cài đặt: npm install --save-dev jest supertest
- * Chạy: npx jest api.test.js --runInBand
- *
- * Đặt file này vào thư mục gốc của project (cạnh package.json)
- */
-
 const request = require("supertest");
 const app = require("./src/app");
+const knex = require("./src/database/knex");
 
 // ─── Biến dùng chung giữa các test ───────────────────────────────────────────
 let adminToken = "";
@@ -26,6 +18,10 @@ let storeId;
 let blogId;
 let contactId;
 let addressId, paymentId;
+
+// ✅ Khai báo email ở module scope để tất cả describe đều dùng được
+const adminEmail = `admin_${Date.now()}@test.com`;
+const userEmail = `user_${Date.now()}@test.com`;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const api = (token) => {
@@ -52,8 +48,7 @@ const api = (token) => {
 // 1. AUTH
 // ─────────────────────────────────────────────────────────────────────────────
 describe("1. Auth", () => {
-  const adminEmail = `admin_${Date.now()}@test.com`;
-  const userEmail = `user_${Date.now()}@test.com`;
+  // ❌ Bỏ const adminEmail / userEmail ở đây vì đã khai báo ở trên
 
   test("POST /api/auth/register - đăng ký admin", async () => {
     const res = await request(app).post("/api/auth/register").send({
@@ -108,6 +103,30 @@ describe("1. Auth", () => {
       password: "wrongpassword",
     });
     expect(res.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1.5. SETUP — chạy SAU Auth, TRƯỚC tất cả test còn lại
+// ─────────────────────────────────────────────────────────────────────────────
+describe("1.5. Setup", () => {
+  test("Promote admin lên role=admin và re-login lấy token mới", async () => {
+    // Cập nhật role trong DB
+    const updated = await knex("users")
+      .where({ email: adminEmail })
+      .update({ role: "admin" });
+
+    expect(updated).toBe(1); // đảm bảo update đúng 1 row
+
+    // Re-login để lấy token có role=admin
+    const res = await request(app).post("/api/auth/login").send({
+      email: adminEmail,
+      password: "password123",
+    });
+
+    expect(res.status).toBe(200);
+    adminToken = res.body.token;
+    adminId = res.body.user?.id;
   });
 });
 
@@ -172,16 +191,13 @@ describe("2. Users", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe("3. User Profile", () => {
   test("POST /api/user-profiles/:userId - tạo/cập nhật profile", async () => {
-    const res = await api(adminToken).post(
-      `/api/user-profiles/${adminId}`,
-      {
-        full_name: "Admin Full Name",
-        phone: "0901234567",
-        gender: "male",
-        birthday: "1999-01-01",
-        bio: "Test bio",
-      }
-    );
+    const res = await api(adminToken).post(`/api/user-profiles/${adminId}`, {
+      full_name: "Admin Full Name",
+      phone: "0901234567",
+      gender: "male",
+      birthday: "1999-01-01",
+      bio: "Test bio",
+    });
     expect([200, 201]).toContain(res.status);
   });
 
@@ -217,7 +233,7 @@ describe("4. User Address", () => {
 
   test("GET /api/user-addresses/user/:userId - lấy địa chỉ", async () => {
     const res = await api(adminToken).get(
-      `/api/user-addresses/user/${adminId}`
+      `/api/user-addresses/user/${adminId}`,
     );
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
@@ -259,9 +275,7 @@ describe("5. User Payment", () => {
   });
 
   test("GET /api/user-payments/user/:userId - lấy payment", async () => {
-    const res = await api(adminToken).get(
-      `/api/user-payments/user/${adminId}`
-    );
+    const res = await api(adminToken).get(`/api/user-payments/user/${adminId}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
@@ -398,23 +412,21 @@ describe("8. Product Detail", () => {
   });
 
   test("GET /api/product-details/product/:productId - lấy chi tiết", async () => {
-    const res = await api("").get(
-      `/api/product-details/product/${productId}`
-    );
+    const res = await api("").get(`/api/product-details/product/${productId}`);
     expect(res.status).toBe(200);
   });
 
   test("PUT /api/product-details/:id - cập nhật chi tiết", async () => {
     const res = await api(adminToken).put(
       `/api/product-details/${productDetailId}`,
-      { weight: "600g", brand: "New Brand" }
+      { weight: "600g", brand: "New Brand" },
     );
     expect(res.status).toBe(200);
   });
 
   test("DELETE /api/product-details/:id - xoá chi tiết", async () => {
     const res = await api(adminToken).del(
-      `/api/product-details/${productDetailId}`
+      `/api/product-details/${productDetailId}`,
     );
     expect(res.status).toBe(200);
   });
@@ -425,9 +437,7 @@ describe("8. Product Detail", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe("9. Product Image", () => {
   test("GET /api/product-images/product/:productId - lấy ảnh", async () => {
-    const res = await api("").get(
-      `/api/product-images/product/${productId}`
-    );
+    const res = await api("").get(`/api/product-images/product/${productId}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
@@ -472,7 +482,7 @@ describe("10. Inventory", () => {
 
   test("GET /api/inventory/product/:product_id - lấy theo sản phẩm", async () => {
     const res = await api(adminToken).get(
-      `/api/inventory/product/${productId}`
+      `/api/inventory/product/${productId}`,
     );
     expect(res.status).toBe(200);
   });
@@ -503,14 +513,14 @@ describe("11. Inventory Log", () => {
 
   test("GET /api/inventory-logs/inventory/:inventory_id - log theo kho", async () => {
     const res = await api(adminToken).get(
-      `/api/inventory-logs/inventory/${inventoryId}`
+      `/api/inventory-logs/inventory/${inventoryId}`,
     );
     expect(res.status).toBe(200);
   });
 
   test("GET /api/inventory-logs/product/:product_id - log theo sản phẩm", async () => {
     const res = await api(adminToken).get(
-      `/api/inventory-logs/product/${productId}`
+      `/api/inventory-logs/product/${productId}`,
     );
     expect(res.status).toBe(200);
   });
@@ -612,7 +622,7 @@ describe("14. Product Promotion", () => {
 
   test("DELETE /api/product-promotions/:id - huỷ gán", async () => {
     const res = await api("").del(
-      `/api/product-promotions/${productPromotionId}`
+      `/api/product-promotions/${productPromotionId}`,
     );
     expect(res.status).toBe(200);
   });
@@ -748,17 +758,13 @@ describe("16. Orders", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe("17. Order Items", () => {
   test("GET /api/order-items/order/:orderId - lấy items của đơn hàng", async () => {
-    const res = await api(userToken).get(
-      `/api/order-items/order/${orderId}`
-    );
+    const res = await api(userToken).get(`/api/order-items/order/${orderId}`);
     // Có thể 200 (owner) hoặc 403 (nếu userToken đã bị xoá)
     expect([200, 403, 404]).toContain(res.status);
   });
 
   test("GET /api/order-items/order/:orderId - admin luôn được xem", async () => {
-    const res = await api(adminToken).get(
-      `/api/order-items/order/${orderId}`
-    );
+    const res = await api(adminToken).get(`/api/order-items/order/${orderId}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
   });

@@ -4,6 +4,7 @@ const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 require("dotenv").config();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -35,9 +36,7 @@ const userAddressRoutes = require("./routes/useraddress.routes");
 const userPaymentRoutes = require("./routes/userpayment.routes");
 const userProfileRoutes = require("./routes/userprofile.routes");
 
-// Only apply rate limiters outside of test environment
-const isTest = process.env.NODE_ENV === "test";
-
+// Rate limiters
 const {
   loginLimiter,
   orderLimiter,
@@ -53,51 +52,47 @@ const {
   productLimiter,
 } = require("./middlewares/RateLimit");
 
-const noOp = (_req, _res, next) => next(); // pass-through for test env
+// Reads env at REQUEST TIME — not at module load time
+const limit = (limiter) => (req, res, next) => {
+  if (process.env.NODE_ENV === "test") return next();
+  return limiter(req, res, next);
+};
 
 // auth
-app.use("/api/auth", isTest ? noOp : loginLimiter, authRoutes);
+app.use("/api/auth", limit(loginLimiter), authRoutes);
 // blog
-app.use("/api/blogs", isTest ? noOp : blogLimiter, blogRoutes);
+app.use("/api/blogs", limit(blogLimiter), blogRoutes);
 // cart
-app.use("/api/cart", isTest ? noOp : cartLimiter, cartRoutes);
+app.use("/api/cart", limit(cartLimiter), cartRoutes);
 // category
 app.use("/api/categories", categoryRoutes);
 // contact
-app.use("/api/contacts", isTest ? noOp : contactLimiter, contactRoutes);
+app.use("/api/contacts", limit(contactLimiter), contactRoutes);
 // favorite
-app.use("/api/favorites", isTest ? noOp : favoriteLimiter, favoriteRoutes);
+app.use("/api/favorites", limit(favoriteLimiter), favoriteRoutes);
 // inventory
-app.use("/api/inventory", isTest ? noOp : inventoryLimiter, inventoryRoutes);
+app.use("/api/inventory", limit(inventoryLimiter), inventoryRoutes);
 app.use("/api/inventory-logs", inventoryLogRoutes);
 // order
-app.use("/api/orders", isTest ? noOp : orderLimiter, orderRoutes);
-app.use("/api/order-items", isTest ? noOp : orderItemLimiter, orderItemRoutes);
+app.use("/api/orders", limit(orderLimiter), orderRoutes);
+app.use("/api/order-items", limit(orderItemLimiter), orderItemRoutes);
 // promotion
-app.use("/api/promotions", isTest ? noOp : promotionLimiter, promotionRoutes);
+app.use("/api/promotions", limit(promotionLimiter), promotionRoutes);
 app.use(
   "/api/product-promotions",
-  isTest ? noOp : promotionLimiter,
+  limit(promotionLimiter),
   productPromotionRoutes,
 );
 // product
-app.use("/api/products", isTest ? noOp : productLimiter, productRoutes);
-app.use(
-  "/api/product-details",
-  isTest ? noOp : productLimiter,
-  productDetailRoutes,
-);
-app.use(
-  "/api/product-images",
-  isTest ? noOp : productLimiter,
-  productImageRoutes,
-);
+app.use("/api/products", limit(productLimiter), productRoutes);
+app.use("/api/product-details", limit(productLimiter), productDetailRoutes);
+app.use("/api/product-images", limit(productLimiter), productImageRoutes);
 // review
-app.use("/api/reviews", isTest ? noOp : reviewLimiter, reviewRoutes);
+app.use("/api/reviews", limit(reviewLimiter), reviewRoutes);
 // store
 app.use("/api/stores", storeRoutes);
 // user
-app.use("/api/users", isTest ? noOp : userLimiter, userRoutes);
+app.use("/api/users", limit(userLimiter), userRoutes);
 app.use("/api/user-addresses", userAddressRoutes);
 app.use("/api/user-payments", userPaymentRoutes);
 app.use("/api/user-profiles", userProfileRoutes);
@@ -106,6 +101,7 @@ app.use("/api/user-profiles", userProfileRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: "Không tìm thấy route API." });
 });
+
 // error handler
 app.use(errorHandler);
 

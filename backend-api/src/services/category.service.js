@@ -1,25 +1,39 @@
 const knex = require("../database/knex");
 
+const generateSlug = (name) =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]/g, "");
+
 exports.getAllCategories = async () => {
-  return await knex("categories")
-    .where({ is_deleted: false }) // chỉ lấy những danh mục chưa bị xoá
-    .select();
+  return await knex("categories").where({ is_deleted: false }).select();
 };
 
 exports.createCategory = async (data) => {
+  const slug = data.slug || generateSlug(data.name);
   const [category] = await knex("categories")
-    .insert({ ...data, is_deleted: false }) // đảm bảo mới tạo sẽ có is_deleted = false
+    .insert({ ...data, slug, is_deleted: false })
     .returning("*");
   return category;
 };
 
 exports.updateCategory = async (id, data) => {
+  if (data.name && !data.slug) {
+    data.slug = generateSlug(data.name);
+  }
+
   const [updated] = await knex("categories")
-    .where({ id, is_deleted: false }) // chỉ update nếu chưa bị xoá mềm
+    .where({ id, is_deleted: false })
     .update(data)
     .returning("*");
 
-  if (!updated) throw new Error("Category not found or already deleted");
+  if (!updated) {
+    const err = new Error("Category not found or already deleted");
+    err.statusCode = 404;
+    throw err;
+  }
 
   return updated;
 };
@@ -29,7 +43,12 @@ exports.deleteCategory = async (id) => {
     .where({ id, is_deleted: false })
     .first();
 
-  if (!category) throw new Error("Category not found or already deleted");
+  if (!category) {
+    const err = new Error("Category not found or already deleted");
+    err.statusCode = 404;
+    throw err;
+  }
+
   await knex("categories").where({ id }).update({ is_deleted: true });
 
   return category;

@@ -1,17 +1,42 @@
-const { z } = require("zod");
+const express = require("express");
+const router = express.Router();
 
-//QUERY PARAMS FOR LIST LOGS
-exports.getInventoryLogsSchema = z.object({
-  page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-});
+const controller = require("../controller/inventoryLog.controller");
+const verifyToken = require("../middlewares/verifyToken");
+const checkRole = require("../middlewares/checkRole");
+const pagination = require("../middlewares/pagination");
+const validate = require("../middlewares/validate");
 
-//FILTER BY INVENTORY ID
-exports.inventoryIdParamSchema = z.object({
-  inventory_id: z.coerce.number().int().positive(),
-});
+const {
+  inventoryIdParamSchema,
+  productIdParamSchema,
+} = require("../schema/inventorylog.schema");
 
-//FILTER BY PRODUCT ID
-exports.productIdParamSchema = z.object({
-  product_id: z.coerce.number().int().positive(),
-});
+// GET ALL LOGS
+router.get(
+  "/",
+  verifyToken,
+  checkRole("admin"),
+  pagination(),
+  controller.getAllInventoryLogs,
+);
+
+// GET BY INVENTORY ID
+router.get(
+  "/inventory/:inventory_id",
+  verifyToken,
+  checkRole("admin"),
+  validate(inventoryIdParamSchema, "params"),
+  controller.getLogsByInventoryId,
+);
+
+// GET BY PRODUCT ID
+router.get(
+  "/product/:product_id",
+  verifyToken,
+  checkRole("admin"),
+  validate(productIdParamSchema, "params"),
+  controller.getLogsByProductId,
+);
+
+module.exports = router;

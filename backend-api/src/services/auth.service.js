@@ -13,7 +13,9 @@ exports.register = async (data) => {
     const exists = await trx("users").where("email", email).first();
 
     if (exists) {
-      throw new Error("Email already registered");
+      const err = new Error("Email already registered");
+      err.statusCode = 409;
+      throw err;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -23,7 +25,7 @@ exports.register = async (data) => {
         name,
         email,
         password: hashedPassword,
-        role: "admin",
+        role: data.role || "user",
       })
       .returning(["id", "name", "email", "role"]);
 
@@ -57,13 +59,17 @@ exports.login = async (data) => {
     .first();
 
   if (!user) {
-    throw new Error("Invalid credentials");
+    const err = new Error("Invalid credentials");
+    err.statusCode = 401;
+    throw err;
   }
 
   const validPassword = await bcrypt.compare(password, user.password);
 
   if (!validPassword) {
-    throw new Error("Invalid credentials");
+    const err = new Error("Invalid credentials");
+    err.statusCode = 401;
+    throw err;
   }
 
   const token = jwt.sign(

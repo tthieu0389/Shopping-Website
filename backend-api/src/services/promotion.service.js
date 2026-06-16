@@ -1,8 +1,25 @@
 const knex = require("../database/knex");
 
+const pickPromotionFields = (data) => {
+  const allowed = [
+    "name",
+    "discount_type",
+    "discount_value",
+    "start_date",
+    "end_date",
+    "is_active",
+  ];
+  const result = {};
+  for (const key of allowed) {
+    if (data[key] !== undefined) result[key] = data[key];
+  }
+  return result;
+};
+
 // CREATE
 exports.createPromotion = async (data) => {
-  const [promo] = await knex("promotions").insert(data).returning("*");
+  const clean = pickPromotionFields(data);
+  const [promo] = await knex("promotions").insert(clean).returning("*");
   return promo;
 };
 
@@ -13,16 +30,20 @@ exports.getAllPromotions = async () => {
 
 // GET BY ID
 exports.getPromotionById = async (id) => {
+  if (!id || isNaN(id)) return null;
   return knex("promotions").where({ id }).first();
 };
 
 // UPDATE
 exports.updatePromotion = async (id, data) => {
+  if (!id || isNaN(id)) return null;
+  const clean = pickPromotionFields(data);
+  if (Object.keys(clean).length === 0)
+    return knex("promotions").where({ id }).first();
   const [updated] = await knex("promotions")
     .where({ id })
-    .update(data)
+    .update(clean)
     .returning("*");
-
   return updated;
 };
 
@@ -34,7 +55,6 @@ exports.deletePromotion = async (id) => {
 // ACTIVE PROMOTIONS
 exports.getActivePromotionsByProductId = async (productId, trx = knex) => {
   const now = new Date();
-
   return trx("product_promotions as pp")
     .join("promotions as p", "pp.promotion_id", "p.id")
     .where("pp.product_id", productId)
@@ -44,49 +64,31 @@ exports.getActivePromotionsByProductId = async (productId, trx = knex) => {
     .select("p.*");
 };
 
-// BEST PROMOTION (FIXED - ALWAYS RETURN ARRAY OR NULL)
 exports.getBestPromotions = async (productId, trx = knex) => {
   const promotions = await exports.getActivePromotionsByProductId(
     productId,
     trx,
   );
-
   if (!promotions || promotions.length === 0) return [];
-
-  // sort by priority
   promotions.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-
-  // nếu có non-stackable → chỉ lấy 1 cái mạnh nhất
   const nonStackable = promotions.find((p) => !p.stackable);
   if (nonStackable) return [nonStackable];
-
   return promotions;
 };
 
-// DISCOUNT CALC
 exports.calculateDiscount = (price, promotion) => {
   if (!promotion) return 0;
-
-  if (promotion.discount_type === "percent") {
+  if (promotion.discount_type === "percent")
     return price * (promotion.discount_value / 100);
-  }
-
-  if (promotion.discount_type === "fixed") {
-    return promotion.discount_value;
-  }
-
+  if (promotion.discount_type === "fixed") return promotion.discount_value;
   return 0;
 };
 
-// TOTAL DISCOUNT (STACKING SAFE)
 exports.calculateTotalDiscount = (price, promotions = []) => {
   let total = 0;
-
   for (const promo of promotions) {
     total += exports.calculateDiscount(price, promo);
-
     if (!promo.stackable) break;
   }
-
   return total;
 };
