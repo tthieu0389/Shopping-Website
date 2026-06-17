@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-vnpt:       #003087;
+  --color-vnpt-dark:  #00205f;
+  --color-vnpt-mid:   #1a4fa8;
+  --color-vnpt-light: #e8eef8;
+  --color-accent:     #E30613;
+  --color-accent-dark:#c20510;
+  --color-canvas:     #ffffff;
+  --color-cream:      #f8f9fa;
+  --color-surface:    #f1f3f5;
+  --color-shade:      #e2e8f0;
+  --color-muted:      #64748b;
+  --color-body:       #1a1a2e;
+  --color-success:    #10b981;
+  --color-warning:    #f59e0b;
+  --color-error:      #ef4444;
+  --font-display: "Roboto", "Helvetica", "Arial", sans-serif;
+  --font-body:    "Be Vietnam Pro", "Roboto", sans-serif;
+  --radius-pill:  9999px;
+  --shadow-sm:    0 2px 8px rgba(0,48,135,.08);
+  --shadow-md:    0 4px 16px rgba(0,48,135,.12);
+  --shadow-lg:    0 8px 32px rgba(0,48,135,.16);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  color: var(--color-body);
+  background: var(--color-canvas);
+  line-height: 1.6;
+  overflow-x: hidden;
+  margin: 0;
+}
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; display: block; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: var(--color-shade); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-vnpt-light); }
