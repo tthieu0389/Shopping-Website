@@ -24,7 +24,7 @@ const addressFieldLabels = {
 // Tạo address
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   validate(createAddressSchema, { fieldLabels: addressFieldLabels }),
   userAddressController.createAddress,
 );
@@ -32,19 +32,19 @@ router.post(
 // Lấy address theo user
 router.get(
   "/user/:userId",
-  verifyToken,
+  verifyToken(),
   userAddressController.getAddressesByUserId,
 );
 
 // Update address
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   validate(updateAddressSchema, { fieldLabels: addressFieldLabels }),
   userAddressController.updateAddress,
 );
 
 // Delete address
-router.delete("/:id", verifyToken, userAddressController.deleteAddress);
+router.delete("/:id", verifyToken(), userAddressController.deleteAddress);
 
 module.exports = router;

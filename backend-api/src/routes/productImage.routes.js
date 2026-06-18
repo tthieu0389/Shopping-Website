@@ -13,7 +13,7 @@ const { uploadProductImagesSchema } = require("../schema/productsimage.schema");
 // Upload nhiều ảnh
 router.post(
   "/upload",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   upload.array("images", 10), // tối đa 10 ảnh
   validate(uploadProductImagesSchema),
@@ -26,7 +26,7 @@ router.get("/product/:productId", productImageController.getByProductId);
 // Xóa 1 ảnh
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   productImageController.deleteImage,
 );

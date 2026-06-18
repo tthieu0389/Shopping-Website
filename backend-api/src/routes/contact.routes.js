@@ -12,12 +12,12 @@ const { createContactSchema } = require("../schema/contact.schema");
 router.post("/", validate(createContactSchema), contactController.create);
 
 // ADMIN GET ALL CONTACTS
-router.get("/", verifyToken, checkRole("admin"), contactController.getAll);
+router.get("/", verifyToken(), checkRole("admin"), contactController.getAll);
 
 // ADMIN DELETE CONTACT
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   contactController.remove,
 );

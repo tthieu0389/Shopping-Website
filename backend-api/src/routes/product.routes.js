@@ -33,7 +33,7 @@ router.get("/:id", productController.getProductById);
 // Tạo sản phẩm mới
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createProductSchema, {
     fieldLabels: productFieldLabels,
@@ -44,7 +44,7 @@ router.post(
 // Cập nhật sản phẩm
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateProductSchema, {
     fieldLabels: productFieldLabels,
@@ -55,7 +55,7 @@ router.put(
 // Xóa sản phẩm (soft delete)
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   productController.deleteProduct,
 );

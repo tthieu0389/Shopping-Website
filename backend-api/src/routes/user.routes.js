@@ -18,7 +18,7 @@ const userFieldLabels = {
 // Lấy danh sách người dùng
 router.get(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   pagination(),
   userController.getAllUsers
@@ -27,7 +27,7 @@ router.get(
 // Tạo người dùng mới
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createUserSchema, { fieldLabels: userFieldLabels }),
   userController.createUser
@@ -36,7 +36,7 @@ router.post(
 // Cập nhật thông tin người dùng
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateUserSchema, { fieldLabels: userFieldLabels }),
   userController.updateUser
@@ -45,7 +45,7 @@ router.put(
 // Xóa người dùng
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   userController.deleteUser
 );

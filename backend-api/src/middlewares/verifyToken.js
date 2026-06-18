@@ -1,16 +1,41 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
+/**
+ * verifyToken(options?)
+ * options:
+ *  - optional: boolean (cho phép route không cần token)
+ */
+module.exports = (options = {}) => {
+  return (req, res, next) => {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader?.split(" ")[1];
 
-  if (!token) return res.status(401).json({ error: "No token provided" });
+    // nếu route optional auth
+    if (!token) {
+      if (options.optional) return next();
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, role }
-    next();
-  } catch (err) {
-    res.status(403).json({ error: "Invalid token" });
-  }
+      return res.status(401).json({
+        success: false,
+        error: "No token provided",
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // chuẩn hóa user object
+      req.user = {
+        id: decoded.id,
+        role: decoded.role,
+        ...decoded,
+      };
+
+      next();
+    } catch (err) {
+      return res.status(403).json({
+        success: false,
+        error: "Invalid or expired token",
+      });
+    }
+  };
 };

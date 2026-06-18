@@ -1,5 +1,9 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const path = require("path");
+const compression = require("compression");
+const morgan = require("morgan");
 require("dotenv").config();
 
 const errorHandler = require("./middlewares/errorHandler");
@@ -20,48 +24,55 @@ const {
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// MIDDLEWARE BAO MAT
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Cho phep frontend tai anh tu public folder
+  }),
+);
 
-// swagger
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL, // Chỉ cho phép domain của frontend kết nối
+    credentials: true, // Cho phép truyền cookie / token qua các domain khác nhau
+  }),
+);
+
+app.set("trust proxy", 1); 
+
+// MIDDLEWARE TOI UU HIEU NANG
+app.use(compression()); // Nén dữ liệu JSON trả về để tiết kiệm băng thông và tăng tốc API
+app.use(express.json({ limit: "1mb" })); // Giới hạn dung lượng request body chống DOS
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// GHI LOG MOI TRUONG PHAT TRIEN
+if (process.env.NODE_ENV !== "production") {
+  app.use(morgan("dev")); // In các request API ra terminal để debug
+}
+
+// CAU HINH THU MUC TINH (ANH SAN PHAM)
+app.use("/public", express.static(path.join(process.cwd(), "public")));
+
+// ROUTE
 app.use("/api-docs", require("./routes/swagger"));
-
-// auth
 app.use("/api/auth", loginLimiter, require("./routes/auth.routes"));
-
-// blog
 app.use("/api/blogs", blogLimiter, require("./routes/blog.routes"));
-
-// cart
 app.use("/api/cart", cartLimiter, require("./routes/cart.routes"));
-
-// category
 app.use("/api/categories", require("./routes/category.routes"));
-
-// contact
 app.use("/api/contacts", contactLimiter, require("./routes/contact.routes"));
-
-// favorite
 app.use("/api/favorites", favoriteLimiter, require("./routes/favorite.routes"));
-
-// inventory
 app.use(
   "/api/inventory",
   inventoryLimiter,
   require("./routes/inventory.routes"),
 );
 app.use("/api/inventory-logs", require("./routes/inventoryLog.routes"));
-
-// order
 app.use("/api/orders", orderLimiter, require("./routes/order.routes"));
 app.use(
   "/api/order-items",
   orderItemLimiter,
   require("./routes/orderitem.routes"),
 );
-
-// promotion
 app.use(
   "/api/promotions",
   promotionLimiter,
@@ -72,8 +83,6 @@ app.use(
   promotionLimiter,
   require("./routes/productPromotion.routes"),
 );
-
-// product
 app.use("/api/products", productLimiter, require("./routes/product.routes"));
 app.use(
   "/api/product-details",
@@ -85,25 +94,31 @@ app.use(
   productLimiter,
   require("./routes/productImage.routes"),
 );
-
-// review
 app.use("/api/reviews", reviewLimiter, require("./routes/review.routes"));
-
-// store
 app.use("/api/stores", require("./routes/store.routes"));
-
-// user
 app.use("/api/users", userLimiter, require("./routes/user.routes"));
 app.use("/api/user-addresses", require("./routes/useraddress.routes"));
 app.use("/api/user-payments", require("./routes/userpayment.routes"));
 app.use("/api/user-profiles", require("./routes/userprofile.routes"));
 
-// 404
-app.use((req, res) => {
-  res.status(404).json({ message: "Not found" });
+// KIEM TRA TRANG THAI SERVER
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// error handler
+// XU LY ROUTE KHONG TON TAI (404)
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "API Route not found", // Đồng bộ cấu trúc lỗi toàn hệ thống
+  });
+});
+
+// GLOBAL ERROR HANDLER
 app.use(errorHandler);
 
 module.exports = app;

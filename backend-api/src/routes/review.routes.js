@@ -14,7 +14,7 @@ const {
 // CREATE REVIEW
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   validate(createReviewSchema),
   reviewController.create,
 );
@@ -23,6 +23,6 @@ router.post(
 router.get("/product/:productId", reviewController.getByProduct);
 
 // DELETE REVIEW (soft delete)
-router.delete("/:id", verifyToken, reviewController.remove);
+router.delete("/:id", verifyToken(), reviewController.remove);
 
 module.exports = router;

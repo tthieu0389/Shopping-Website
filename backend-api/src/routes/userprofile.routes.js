@@ -19,15 +19,15 @@ const profileFieldLabels = {
 
 router.post(
   "/:userId",
-  verifyToken,
+  verifyToken(),
   validate(userProfileSchema, {
     fieldLabels: profileFieldLabels,
   }),
   userProfileController.createOrUpdateProfile,
 );
 
-router.get("/:userId", verifyToken, userProfileController.getProfileByUserId);
+router.get("/:userId", verifyToken(), userProfileController.getProfileByUserId);
 
-router.delete("/:userId", verifyToken, userProfileController.deleteProfile);
+router.delete("/:userId", verifyToken(), userProfileController.deleteProfile);
 
 module.exports = router;

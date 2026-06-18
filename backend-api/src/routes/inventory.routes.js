@@ -18,7 +18,7 @@ router.get("/", pagination(), inventoryController.getAllInventory);
 //GET LOW STOCK ITEMS
 router.get(
   "/low-stock",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   inventoryController.getLowStockItems,
 );
@@ -26,7 +26,7 @@ router.get(
 //GET INVENTORY BY PRODUCT ID
 router.get(
   "/product/:product_id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   inventoryController.getInventoryByProductId,
 );
@@ -34,7 +34,7 @@ router.get(
 //CREATE INVENTORY
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createInventorySchema),
   inventoryController.createInventory,
@@ -43,7 +43,7 @@ router.post(
 //UPDATE INVENTORY
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateInventorySchema),
   inventoryController.updateInventory,
@@ -52,7 +52,7 @@ router.put(
 //SOFT DELETE INVENTORY (ARCHIVE)
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   inventoryController.deleteInventory,
 );

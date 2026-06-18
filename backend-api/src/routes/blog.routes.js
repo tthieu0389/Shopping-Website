@@ -11,7 +11,7 @@ const { createBlogSchema, updateBlogSchema } = require("../schema/blog.schema");
 // CREATE BLOG (admin)
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createBlogSchema),
   blogController.create,
@@ -26,13 +26,13 @@ router.get("/slug/:slug", blogController.getBySlug);
 // UPDATE BLOG (admin)
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateBlogSchema),
   blogController.update,
 );
 
 // DELETE BLOG (admin soft delete)
-router.delete("/:id", verifyToken, checkRole("admin"), blogController.delete);
+router.delete("/:id", verifyToken(), checkRole("admin"), blogController.delete);
 
 module.exports = router;

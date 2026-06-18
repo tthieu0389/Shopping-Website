@@ -12,9 +12,11 @@ const {
 
 const paymentFieldLabels = {
   user_id: "User ID",
+  payment_type: "Loại thanh toán",
   provider: "Nhà cung cấp",
-  card_number: "Số thẻ",
-  card_holder: "Tên chủ thẻ",
+  bank_name: "Tên ngân hàng",
+  card_last4: "4 số cuối của thẻ",
+  card_holder_name: "Tên chủ thẻ",
   expiry_month: "Tháng hết hạn",
   expiry_year: "Năm hết hạn",
   is_default: "Mặc định",
@@ -23,7 +25,7 @@ const paymentFieldLabels = {
 // Create payment method
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   validate(createPaymentSchema, { fieldLabels: paymentFieldLabels }),
   userPaymentController.createPaymentMethod,
 );
@@ -31,19 +33,19 @@ router.post(
 // Get payments by user
 router.get(
   "/user/:userId",
-  verifyToken,
+  verifyToken(),
   userPaymentController.getPaymentsByUserId,
 );
 
 // Update payment
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   validate(updatePaymentSchema, { fieldLabels: paymentFieldLabels }),
   userPaymentController.updatePaymentMethod,
 );
 
 // Delete payment
-router.delete("/:id", verifyToken, userPaymentController.deletePaymentMethod);
+router.delete("/:id", verifyToken(), userPaymentController.deletePaymentMethod);
 
 module.exports = router;

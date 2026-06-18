@@ -16,7 +16,7 @@ const {
 // GET ALL LOGS
 router.get(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   pagination(),
   validate(getInventoryLogsSchema, "query"),
@@ -26,7 +26,7 @@ router.get(
 // GET BY INVENTORY ID
 router.get(
   "/inventory/:inventory_id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(inventoryIdParamSchema, "params"),
   controller.getLogsByInventoryId,
@@ -35,7 +35,7 @@ router.get(
 // GET BY PRODUCT ID
 router.get(
   "/product/:product_id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(productIdParamSchema, "params"),
   controller.getLogsByProductId,

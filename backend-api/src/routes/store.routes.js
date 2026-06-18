@@ -15,7 +15,7 @@ router.get("/", controller.getAllStores);
 
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createStoreSchema),
   controller.createStore,
@@ -23,12 +23,12 @@ router.post(
 
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateStoreSchema),
   controller.updateStore,
 );
 
-router.delete("/:id", verifyToken, checkRole("admin"), controller.deleteStore);
+router.delete("/:id", verifyToken(), checkRole("admin"), controller.deleteStore);
 
 module.exports = router;

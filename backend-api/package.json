@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -22,12 +23,15 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.0.1",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
+    "morgan": "^1.11.0",
     "multer": "^2.0.1",
     "pg": "^8.16.2",
     "swagger-ui-express": "^5.0.1",

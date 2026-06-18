@@ -18,7 +18,7 @@ router.get("/product/:productId", productDetailController.getByProductId);
 // Tạo detail
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createProductDetailSchema),
   productDetailController.create,
@@ -27,7 +27,7 @@ router.post(
 // Update detail
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateProductDetailSchema),
   productDetailController.update,
@@ -36,7 +36,7 @@ router.put(
 // Delete detail
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   productDetailController.delete,
 );

@@ -12,21 +12,21 @@ const {
 router.get("/", categoryController.getAllCategories);
 router.post(
   "/",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(createCategorySchema),
   categoryController.createCategory
 );
 router.put(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   validate(updateCategorySchema),
   categoryController.updateCategory
 );
 router.delete(
   "/:id",
-  verifyToken,
+  verifyToken(),
   checkRole("admin"),
   categoryController.deleteCategory
 );
