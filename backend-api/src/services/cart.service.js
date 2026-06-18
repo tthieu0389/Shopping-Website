@@ -1,6 +1,6 @@
 const knex = require("../database/knex");
 
-// GET OR CREATE CART
+// Lấy hoặc tự động tạo giỏ hàng cho tài khoản người dùng
 const getOrCreateCart = async (user_id, trx = knex) => {
   let cart = await trx("carts").where({ user_id }).first();
 
@@ -11,7 +11,7 @@ const getOrCreateCart = async (user_id, trx = knex) => {
   return cart;
 };
 
-// ADD TO CART
+// THÊM SẢN PHẨM VÀO GIỎ HÀNG
 exports.addToCart = async (user_id, product_id, quantity) => {
   return knex.transaction(async (trx) => {
     const product = await trx("products")
@@ -28,6 +28,7 @@ exports.addToCart = async (user_id, product_id, quantity) => {
 
     const cart = await getOrCreateCart(user_id, trx);
 
+    // Tìm sản phẩm theo cart_id và product_id
     const existing = await trx("cart_items")
       .where({ cart_id: cart.id, product_id })
       .first();
@@ -58,24 +59,22 @@ exports.addToCart = async (user_id, product_id, quantity) => {
   });
 };
 
-// GET CART ITEMS
+// LẤY DANH SÁCH PHẦN TỬ TRONG GIỎ
 exports.getCartItems = async (user_id) => {
   const cart = await getOrCreateCart(user_id);
 
-  return knex("cart_items as ci")
+  const items = await knex("cart_items as ci")
     .join("products as p", "ci.product_id", "p.id")
-    .select(
-      "ci.id",
-      "ci.product_id",
-      "p.name",
-      "p.price",
-      "ci.quantity",
-      knex.raw("ci.quantity * p.price as subtotal"),
-    )
+    .select("ci.id", "ci.product_id", "p.name", "p.price", "ci.quantity")
     .where("ci.cart_id", cart.id);
+
+  return items.map((item) => ({
+    ...item,
+    subtotal: Number(item.quantity) * Number(item.price),
+  }));
 };
 
-// UPDATE ITEM
+// CẬP NHẬT SỐ LƯỢNG MỘT PHẦN TỬ TRONG GIỎ
 exports.updateItem = async (item_id, quantity) => {
   return knex.transaction(async (trx) => {
     const item = await trx("cart_items").where({ id: item_id }).first();
@@ -98,12 +97,12 @@ exports.updateItem = async (item_id, quantity) => {
   });
 };
 
-// REMOVE ITEM
+// XÓA PHẦN TỬ KHỎI GIỎ HÀNG
 exports.removeItem = async (item_id) => {
   return knex("cart_items").where({ id: item_id }).del();
 };
 
-// CLEAR CART
+// XÓA TRỐNG TOÀN BỘ GIỎ HÀNG
 exports.clearCart = async (user_id) => {
   const cart = await knex("carts").where({ user_id }).first();
   if (!cart) return;
@@ -111,6 +110,7 @@ exports.clearCart = async (user_id) => {
   return knex("cart_items").where({ cart_id: cart.id }).del();
 };
 
+// THANH TOÁN ĐƠN HÀNG
 exports.checkout = async (user_id, data) => {
   return knex.transaction(async (trx) => {
     const cart = await trx("carts").where({ user_id }).first();
@@ -142,11 +142,9 @@ exports.checkout = async (user_id, data) => {
 
       if (!product) throw new Error("Product not found");
 
-      // ATOMIC STOCK UPDATE (FIX RACE CONDITION)
+      // CẬP NHẬT KHO (Atomic update chống race condition)
       const updated = await trx("inventory")
-        .where({
-          product_id: item.product_id,
-        })
+        .where({ product_id: item.product_id })
         .andWhere("quantity", ">=", item.quantity)
         .decrement("quantity", item.quantity)
         .returning("*");
@@ -170,7 +168,6 @@ exports.checkout = async (user_id, data) => {
     }
 
     await trx("orders").where({ id: order.id }).update({ total_amount: total });
-
     await trx("cart_items").where({ cart_id: cart.id }).del();
 
     return { ...order, total_amount: total };

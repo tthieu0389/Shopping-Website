@@ -20,19 +20,23 @@ const productFieldLabels = {
   stock: "Tồn kho",
   product_type: "Loại sản phẩm",
   category_id: "Danh mục",
-  is_available: "Trạng thái",
+  brand: "Thương hiệu",
+  model: "Mã thiết bị",
+  attributes: "Thông số kỹ thuật",
+  is_available: "Trạng thái hiển thị",
+  is_featured: "Sản phẩm nổi bật",
 };
 
-// Get all products
+// Lấy danh sách toàn bộ sản phẩm
 router.get("/", pagination(), productController.getAllProducts);
 
-// Get related products (placed above to avoid route conflict)
+// Lấy sản phẩm liên quan
 router.get("/:id/related", productController.getRelatedProducts);
 
-// Get product by ID or Slug
+// Lấy chi tiết sản phẩm theo ID hoặc Slug
 router.get("/:idOrSlug", productController.getProductByIdOrSlug);
 
-// Create product
+// Tạo mới sản phẩm
 router.post(
   "/",
   verifyToken(),
@@ -43,7 +47,7 @@ router.post(
   productController.createProduct,
 );
 
-// Update product
+// Cập nhật thông tin sản phẩm
 router.put(
   "/:id",
   verifyToken(),
@@ -54,7 +58,7 @@ router.put(
   productController.updateProduct,
 );
 
-// Delete product
+// Xóa sản phẩm
 router.delete(
   "/:id",
   verifyToken(),

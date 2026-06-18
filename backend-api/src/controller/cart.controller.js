@@ -10,7 +10,7 @@ exports.getCart = async (req, res, next) => {
   }
 };
 
-// ADD TO CART
+// ADD TO CART (Đã bỏ variant, chỉ nhận product_id và quantity)
 exports.addToCart = async (req, res, next) => {
   try {
     const { product_id, quantity } = req.body;
@@ -63,6 +63,7 @@ exports.clearCart = async (req, res, next) => {
   }
 };
 
+// CHECKOUT
 exports.checkout = async (req, res, next) => {
   try {
     const order = await cartService.checkout(req.user.id, req.body);

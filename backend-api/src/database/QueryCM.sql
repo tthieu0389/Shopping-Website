@@ -63,15 +63,19 @@ CREATE TABLE categories (
 
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(200),
-    slug VARCHAR(200),
+    name VARCHAR(200) NOT NULL,
+    slug VARCHAR(200) UNIQUE NOT NULL,
     description TEXT,
-    price NUMERIC(12,2),
-    stock INT DEFAULT 0,
+    price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    stock INT DEFAULT 0, 
     product_type VARCHAR(20),
-    category_id INT REFERENCES categories(id),
-    is_available BOOLEAN DEFAULT TRUE,
-    is_deleted BOOLEAN DEFAULT FALSE,
+    category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+    brand VARCHAR(100) DEFAULT 'VNPT', 
+    model VARCHAR(100),                
+    attributes JSONB DEFAULT '{}', 
+    is_available BOOLEAN DEFAULT TRUE,  
+    is_featured BOOLEAN DEFAULT FALSE,   
+    is_deleted BOOLEAN DEFAULT FALSE,   
     deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -79,7 +83,8 @@ CREATE TABLE products (
 CREATE TABLE product_images (
     id SERIAL PRIMARY KEY,
     product_id INT REFERENCES products(id) ON DELETE CASCADE,
-    image_url TEXT
+    image_url TEXT,
+    is_thumbnail BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE product_details (
@@ -88,6 +93,13 @@ CREATE TABLE product_details (
     detail_name VARCHAR(100),
     detail_value TEXT
 );
+
+CREATE INDEX idx_products_category_type ON products(category_id, product_type) WHERE is_deleted = FALSE;
+CREATE INDEX idx_products_brand_model ON products(brand, model) WHERE is_deleted = FALSE;
+CREATE INDEX idx_products_price ON products(price) WHERE is_deleted = FALSE;
+
+-- GIN Index: Giúp database quét xuyên thấu vào sâu bên trong nội dung JSONB attributes cực nhanh
+CREATE INDEX idx_products_attributes ON products USING gin (attributes);
 
 -- =========================
 -- CART

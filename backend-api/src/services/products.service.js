@@ -13,6 +13,9 @@ exports.createProduct = async (data) => {
   if (!data.slug && data.name) {
     data.slug = generateSlug(data.name);
   }
+  if (data.attributes && typeof data.attributes === "object") {
+    data.attributes = JSON.stringify(data.attributes);
+  }
   const [product] = await knex("products").insert(data).returning("*");
   return product;
 };
@@ -21,37 +24,87 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   let query = knex("products").where("is_deleted", false).select("*");
   let countQuery = knex("products").where("is_deleted", false);
 
-  if (filters.search) {
-    query = query.where((builder) => {
+  // Nhận từ khóa từ cả q hoặc search
+  const keyword = filters.q || filters.search;
+
+  // Bóc tách các trường chính
+  const {
+    category_id,
+    product_type,
+    brand,
+    model,
+    is_available,
+    featured,
+    ...dynamicFilters
+  } = filters;
+
+  // Tìm kiếm theo từ khóa
+  if (keyword) {
+    const searchBlock = (builder) => {
       builder
-        .where("name", "ilike", `%${filters.search}%`)
-        .orWhere("slug", "ilike", `%${filters.search}%`);
-    });
-    countQuery = countQuery.where((builder) => {
-      builder
-        .where("name", "ilike", `%${filters.search}%`)
-        .orWhere("slug", "ilike", `%${filters.search}%`);
-    });
+        .where("name", "like", `%${keyword}%`)
+        .orWhere("slug", "like", `%${keyword}%`);
+    };
+    query = query.where(searchBlock);
+    countQuery = countQuery.where(searchBlock);
   }
 
-  if (filters.category_id) {
-    query = query.where("category_id", filters.category_id);
-    countQuery = countQuery.where("category_id", filters.category_id);
+  // Lọc theo danh mục
+  if (category_id) {
+    query = query.where("category_id", category_id);
+    countQuery = countQuery.where("category_id", category_id);
   }
 
-  if (filters.product_type) {
-    query = query.where("product_type", filters.product_type);
-    countQuery = countQuery.where("product_type", filters.product_type);
+  // Lọc theo phân loại lớn
+  if (product_type) {
+    query = query.where("product_type", product_type);
+    countQuery = countQuery.where("product_type", product_type);
   }
 
-  if (filters.is_available !== undefined && filters.is_available !== "") {
-    const isAvailable = filters.is_available === "true";
-    query = query.where("is_available", isAvailable);
-    countQuery = countQuery.where("is_available", isAvailable);
+  // Lọc theo thương hiệu (Dùng LIKE tiêu chuẩn)
+  if (brand) {
+    query = query.where("brand", "like", brand);
+    countQuery = countQuery.where("brand", "like", brand);
   }
 
+  // Lọc theo dòng thiết bị
+  if (model) {
+    query = query.where("model", "like", model);
+    countQuery = countQuery.where("model", "like", model);
+  }
+
+  // Lọc theo trạng thái kinh doanh
+  if (is_available !== undefined && is_available !== "") {
+    const isAvail = is_available === "true" || is_available === true ? 1 : 0;
+
+    // Knex sẽ tự dịch giá trị 1/0 thành đúng kiểu Boolean thích hợp cho từng DB
+    query = query.where("is_available", isAvail);
+    countQuery = countQuery.where("is_available", isAvail);
+  }
+
+  // Lọc theo sản phẩm nổi bật
+  if (featured !== undefined && featured !== "") {
+    const isFeatured = featured === "true" || featured === true ? 1 : 0;
+    query = query.where("is_featured", isFeatured);
+    countQuery = countQuery.where("is_featured", isFeatured);
+  }
+
+  // Lọc theo các trường động trong attributes (JSON)
+  Object.keys(dynamicFilters).forEach((key) => {
+    const val = dynamicFilters[key];
+    if (val !== undefined && val !== "") {
+      // Tìm kiếm cặp "key":"value" nằm trong chuỗi văn bản JSON của trường attributes
+      const lookFor = `"${key}":"${val}"`;
+
+      query = query.where("attributes", "like", `%${lookFor}%`);
+      countQuery = countQuery.where("attributes", "like", `%${lookFor}%`);
+    }
+  });
+
+  // Tính toán phân trang và trả kết quả
   const [totalRow] = await countQuery.count("* as count");
   const total = Number(totalRow.count);
+
   const data = await query
     .orderBy("created_at", "desc")
     .limit(limit)
@@ -60,24 +113,20 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   return { data, total };
 };
 
-// Get product by ID or Slug
 exports.getProductByIdOrSlug = async (idOrSlug) => {
   if (!idOrSlug) return null;
 
-  // Check if parameter is a number ID
   if (!isNaN(idOrSlug)) {
     return await knex("products")
       .where({ id: Number(idOrSlug), is_deleted: false })
       .first();
   }
 
-  // Query by slug if parameter is a string
   return await knex("products")
     .where({ slug: idOrSlug, is_deleted: false })
     .first();
 };
 
-// Get related products by sharing same category_id
 exports.getRelatedProducts = async (id) => {
   if (!id || isNaN(id)) return [];
 
@@ -86,7 +135,6 @@ exports.getRelatedProducts = async (id) => {
     .first();
   if (!product) return [];
 
-  // Fetch 8 products in the same category, excluding itself
   return await knex("products")
     .where({ category_id: product.category_id, is_deleted: false })
     .whereNot("id", id)
@@ -98,6 +146,9 @@ exports.updateProduct = async (id, data) => {
     const err = new Error("Invalid product ID");
     err.statusCode = 400;
     throw err;
+  }
+  if (data.attributes && typeof data.attributes === "object") {
+    data.attributes = JSON.stringify(data.attributes);
   }
   const [product] = await knex("products")
     .where("id", id)

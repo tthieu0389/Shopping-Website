@@ -15,7 +15,6 @@ exports.getProductDetailsByProductId = async (product_id) => {
 
 exports.createProductDetail = async (data) => {
   const [inserted] = await knex("product_details").insert(data).returning("*");
-
   return inserted;
 };
 
@@ -24,7 +23,6 @@ exports.updateProductDetail = async (id, data) => {
     .where({ id })
     .update(data)
     .returning("*");
-
   return updated;
 };
 

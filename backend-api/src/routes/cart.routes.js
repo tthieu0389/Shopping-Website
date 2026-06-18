@@ -15,21 +15,26 @@ const {
 router.get("/", verifyToken(), controller.getCart);
 
 // ADD TO CART
-router.post("/", verifyToken(), validate(addToCartSchema), controller.addToCart);
+router.post(
+  "/items",
+  verifyToken(),
+  validate(addToCartSchema),
+  controller.addToCart,
+);
 
 // UPDATE ITEM
 router.put(
-  "/:id",
+  "/items/:id",
   verifyToken(),
   validate(updateCartItemSchema),
   controller.updateItem,
 );
 
-// CLEAR CART (đặt trước :id để tránh conflict)
+// CLEAR CART -> DELETE /cart (Đặt trước tuyến :id của delete item để tránh conflict)
 router.delete("/clear", verifyToken(), controller.clearCart);
 
 // DELETE ITEM
-router.delete("/:id", verifyToken(), controller.removeItem);
+router.delete("/items/:id", verifyToken(), controller.removeItem);
 
 // CHECKOUT
 router.post(
