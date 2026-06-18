@@ -60,9 +60,37 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   return { data, total };
 };
 
-exports.getProductById = async (id) => {
-  if (!id || isNaN(id)) return null;
-  return await knex("products").where({ id, is_deleted: false }).first();
+// Get product by ID or Slug
+exports.getProductByIdOrSlug = async (idOrSlug) => {
+  if (!idOrSlug) return null;
+
+  // Check if parameter is a number ID
+  if (!isNaN(idOrSlug)) {
+    return await knex("products")
+      .where({ id: Number(idOrSlug), is_deleted: false })
+      .first();
+  }
+
+  // Query by slug if parameter is a string
+  return await knex("products")
+    .where({ slug: idOrSlug, is_deleted: false })
+    .first();
+};
+
+// Get related products by sharing same category_id
+exports.getRelatedProducts = async (id) => {
+  if (!id || isNaN(id)) return [];
+
+  const product = await knex("products")
+    .where({ id, is_deleted: false })
+    .first();
+  if (!product) return [];
+
+  // Fetch 8 products in the same category, excluding itself
+  return await knex("products")
+    .where({ category_id: product.category_id, is_deleted: false })
+    .whereNot("id", id)
+    .limit(8);
 };
 
 exports.updateProduct = async (id, data) => {

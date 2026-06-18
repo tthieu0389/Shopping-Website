@@ -1,25 +1,47 @@
 const storeService = require("../services/store.service");
 
-exports.createStore = async (req, res) => {
+// Create a new store
+exports.createStore = async (req, res, next) => {
   try {
-    const store = await storeService.createStore(req.body);
+    // Keep original body data and append userId from token if not provided
+    const data = {
+      ...req.body,
+      user_id: req.body.user_id || req.user.id,
+    };
+
+    const store = await storeService.createStore(data);
     res.status(201).json({ data: store });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
-exports.getAllStores = async (req, res) => {
-  const data = await storeService.getAllStores();
-  res.json({ data });
+// Get all stores
+exports.getAllStores = async (req, res, next) => {
+  try {
+    const data = await storeService.getAllStores();
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.updateStore = async (req, res) => {
-  const store = await storeService.updateStore(req.params.id, req.body);
-  res.json({ data: store });
+// Update store details
+exports.updateStore = async (req, res, next) => {
+  try {
+    const store = await storeService.updateStore(req.params.id, req.body);
+    res.json({ data: store });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.deleteStore = async (req, res) => {
-  await storeService.deleteStore(req.params.id);
-  res.json({ message: "Store deleted" });
+// Delete store
+exports.deleteStore = async (req, res, next) => {
+  try {
+    await storeService.deleteStore(req.params.id);
+    res.json({ message: "Store deleted" });
+  } catch (err) {
+    next(err);
+  }
 };

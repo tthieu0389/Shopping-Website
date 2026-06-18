@@ -1,5 +1,6 @@
 const service = require("../services/favorite.service");
 
+// Add product to favorites
 exports.add = async (req, res, next) => {
   try {
     const data = await service.addFavorite(req.user.id, req.body.product_id);
@@ -9,6 +10,7 @@ exports.add = async (req, res, next) => {
   }
 };
 
+// Get current user's favorites
 exports.get = async (req, res, next) => {
   try {
     const data = await service.getFavorites(req.user.id);
@@ -18,9 +20,11 @@ exports.get = async (req, res, next) => {
   }
 };
 
+// Remove from favorites
 exports.remove = async (req, res, next) => {
   try {
-    await service.removeFavorite(req.params.id, req.user.id);
+    const productId = req.params.productId;
+    await service.removeFavorite(req.user.id, productId);
     res.json({ message: "Removed" });
   } catch (err) {
     next(err);

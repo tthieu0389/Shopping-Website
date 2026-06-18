@@ -5,7 +5,7 @@ const controller = require("../controller/promotion.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/checkRole");
 
-router.get("/", verifyToken(), controller.getAll);
+router.get("/", controller.getAll);
 router.get("/:id", verifyToken(), controller.getById);
 
 router.post("/", verifyToken(), checkRole("admin"), controller.create);

@@ -10,7 +10,7 @@ router.post("/", verifyToken(), favoriteController.add);
 // GET MY FAVORITES
 router.get("/", verifyToken(), favoriteController.get);
 
-// DELETE FAVORITE (soft delete)
-router.delete("/:id", verifyToken(), favoriteController.remove);
+// DELETE FAVORITE
+router.delete("/:productId", verifyToken(), favoriteController.remove);
 
 module.exports = router;

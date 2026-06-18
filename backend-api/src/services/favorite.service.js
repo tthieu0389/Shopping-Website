@@ -27,9 +27,9 @@ exports.getFavorites = async (userId) => {
     .select("f.id", "p.id as product_id", "p.name", "p.price");
 };
 
-// REMOVE FAVORITE (soft delete)
-exports.removeFavorite = async (id, userId) => {
+// REMOVE FAVORITE
+exports.removeFavorite = async (userId, productId) => {
   return knex("favorites")
-    .where({ id, user_id: userId })
+    .where({ user_id: userId, product_id: productId })
     .update({ is_deleted: true });
 };

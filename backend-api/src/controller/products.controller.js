@@ -1,13 +1,10 @@
 const productService = require("../services/products.service");
 
-// Helper function to convert string boolean to actual boolean
 const convertStringBoolean = (value) => {
   if (typeof value === "boolean") return value;
-
   if (typeof value === "string") {
     return value.toLowerCase() === "true";
   }
-
   return Boolean(value);
 };
 
@@ -20,9 +17,7 @@ exports.createProduct = async (req, res, next) => {
           ? convertStringBoolean(req.body.is_available)
           : true,
     };
-
     const product = await productService.createProduct(data);
-
     res.status(201).json({
       message: "Product created",
       data: product,
@@ -39,20 +34,17 @@ exports.getAllProducts = async (req, res, next) => {
       limit: 10,
       offset: 0,
     };
-
     const filters = {
       search: req.query.search,
       category_id: req.query.category_id,
       product_type: req.query.product_type,
       is_available: req.query.is_available,
     };
-
     const result = await productService.getAllProducts({
       limit,
       offset,
       filters,
     });
-
     res.json({
       data: result.data,
       total: result.total,
@@ -67,13 +59,10 @@ exports.getAllProducts = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const data = { ...req.body };
-
     if (data.is_available !== undefined) {
       data.is_available = convertStringBoolean(data.is_available);
     }
-
     const product = await productService.updateProduct(req.params.id, data);
-
     res.json({
       message: "Product updated",
       data: product,
@@ -86,46 +75,51 @@ exports.updateProduct = async (req, res, next) => {
 exports.deleteProduct = async (req, res, next) => {
   try {
     const result = await productService.deleteProduct(req.params.id);
-
     if (result && result.success) {
       return res.json({
         message: result.message,
         data: result.data || { deleted: result.deleted },
       });
     }
-
     res.json({
       message: "Product deleted",
     });
   } catch (err) {
     if (err.message === "Product not found") {
-      return res.status(404).json({
-        message: "Product not found",
-      });
+      return res.status(404).json({ message: "Product not found" });
     }
-
     if (err.message.includes("Cannot delete product")) {
-      return res.status(400).json({
-        message: err.message,
-      });
+      return res.status(400).json({ message: err.message });
     }
-
     next(err);
   }
 };
 
-exports.getProductById = async (req, res, next) => {
+// Get product by ID or Slug
+exports.getProductByIdOrSlug = async (req, res, next) => {
   try {
-    const product = await productService.getProductById(req.params.id);
-
+    const product = await productService.getProductByIdOrSlug(
+      req.params.idOrSlug,
+    );
     if (!product) {
       return res.status(404).json({
         message: "Product not found",
       });
     }
-
     res.json({
       data: product,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get related products
+exports.getRelatedProducts = async (req, res, next) => {
+  try {
+    const products = await productService.getRelatedProducts(req.params.id);
+    res.json({
+      data: products,
     });
   } catch (err) {
     next(err);

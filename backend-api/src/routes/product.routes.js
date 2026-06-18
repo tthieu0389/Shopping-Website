@@ -12,7 +12,6 @@ const {
   updateProductSchema,
 } = require("../schema/products.schema");
 
-// Danh sách nhãn tiếng Việt
 const productFieldLabels = {
   name: "Tên sản phẩm",
   slug: "Slug",
@@ -24,13 +23,16 @@ const productFieldLabels = {
   is_available: "Trạng thái",
 };
 
-// Lấy tất cả sản phẩm
+// Get all products
 router.get("/", pagination(), productController.getAllProducts);
 
-// Lấy sản phẩm theo ID
-router.get("/:id", productController.getProductById);
+// Get related products (placed above to avoid route conflict)
+router.get("/:id/related", productController.getRelatedProducts);
 
-// Tạo sản phẩm mới
+// Get product by ID or Slug
+router.get("/:idOrSlug", productController.getProductByIdOrSlug);
+
+// Create product
 router.post(
   "/",
   verifyToken(),
@@ -41,7 +43,7 @@ router.post(
   productController.createProduct,
 );
 
-// Cập nhật sản phẩm
+// Update product
 router.put(
   "/:id",
   verifyToken(),
@@ -52,7 +54,7 @@ router.put(
   productController.updateProduct,
 );
 
-// Xóa sản phẩm (soft delete)
+// Delete product
 router.delete(
   "/:id",
   verifyToken(),

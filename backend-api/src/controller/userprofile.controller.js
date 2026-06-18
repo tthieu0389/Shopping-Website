@@ -1,8 +1,11 @@
 const userProfileService = require("../services/userprofile.service");
 
+// Create or update user profile
 exports.createOrUpdateProfile = async (req, res, next) => {
   try {
-    const userId = req.params.userId;
+    // Fallback to token userId if route param is missing
+    const userId = req.params.userId || req.user.id;
+
     const profile = await userProfileService.createOrUpdateProfile(
       userId,
       req.body,
@@ -17,20 +20,26 @@ exports.createOrUpdateProfile = async (req, res, next) => {
   }
 };
 
+// Get profile by userId
 exports.getProfileByUserId = async (req, res, next) => {
   try {
-    const profile = await userProfileService.getProfileByUserId(
-      req.params.userId,
-    );
+    // Fallback to token userId if route param is missing
+    const userId = req.params.userId || req.user.id;
+
+    const profile = await userProfileService.getProfileByUserId(userId);
     res.json({ data: profile });
   } catch (err) {
     next(err);
   }
 };
 
+// Delete profile
 exports.deleteProfile = async (req, res, next) => {
   try {
-    await userProfileService.deleteProfile(req.params.userId);
+    // Fallback to token userId if route param is missing
+    const userId = req.params.userId || req.user.id;
+
+    await userProfileService.deleteProfile(userId);
     res.json({ message: "Profile deleted" });
   } catch (err) {
     next(err);
