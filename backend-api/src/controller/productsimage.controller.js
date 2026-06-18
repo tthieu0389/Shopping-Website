@@ -1,6 +1,6 @@
 const productImageService = require("../services/productsimage.service");
 
-// Upload 1 hoặc nhiều ảnh
+// UPLOAD 1 OR MANY IMAGES
 exports.uploadImages = async (req, res, next) => {
   try {
     const product_id = req.body.product_id;
@@ -14,6 +14,7 @@ exports.uploadImages = async (req, res, next) => {
     const images = req.files.map((file) => ({
       product_id: Number(product_id),
       image_url: `/uploads/${file.filename}`,
+      is_thumbnail: false, // default
     }));
 
     const result = await productImageService.createManyProductImages(images);
@@ -27,28 +28,41 @@ exports.uploadImages = async (req, res, next) => {
   }
 };
 
-// Lấy images theo product
+// GET BY PRODUCT
 exports.getByProductId = async (req, res, next) => {
   try {
     const images = await productImageService.getImagesByProductId(
       req.params.productId,
     );
 
-    res.json({
-      data: images,
-    });
+    res.json({ data: images });
   } catch (err) {
     next(err);
   }
 };
 
-// Xoá 1 image
+// DELETE IMAGE
 exports.deleteImage = async (req, res, next) => {
   try {
     await productImageService.deleteImage(req.params.id);
 
+    res.json({ message: "Image deleted" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// SET THUMBNAIL
+exports.setThumbnail = async (req, res, next) => {
+  try {
+    const { product_id } = req.body;
+    const { id } = req.params;
+
+    const result = await productImageService.setThumbnail(id, product_id);
+
     res.json({
-      message: "Image deleted",
+      message: "Thumbnail updated",
+      data: result,
     });
   } catch (err) {
     next(err);
