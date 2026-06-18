@@ -17,17 +17,29 @@ const profileFieldLabels = {
   bio: "Giới thiệu",
 };
 
-router.post(
-  "/:userId",
+// Get current user profile (matches frontend)
+router.get("/", verifyToken(), userProfileController.getProfileByUserId);
+
+// Update current user profile (matches frontend)
+router.put(
+  "/",
   verifyToken(),
-  validate(userProfileSchema, {
-    fieldLabels: profileFieldLabels,
-  }),
+  validate(userProfileSchema, { fieldLabels: profileFieldLabels }),
   userProfileController.createOrUpdateProfile,
 );
 
+// Create or update profile by userId (admin/internal)
+router.post(
+  "/:userId",
+  verifyToken(),
+  validate(userProfileSchema, { fieldLabels: profileFieldLabels }),
+  userProfileController.createOrUpdateProfile,
+);
+
+// Get profile by userId (admin/internal)
 router.get("/:userId", verifyToken(), userProfileController.getProfileByUserId);
 
+// Delete profile by userId
 router.delete("/:userId", verifyToken(), userProfileController.deleteProfile);
 
 module.exports = router;

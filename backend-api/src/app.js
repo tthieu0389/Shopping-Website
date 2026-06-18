@@ -38,7 +38,7 @@ app.use(
   }),
 );
 
-app.set("trust proxy", 1); 
+app.set("trust proxy", 1);
 
 // MIDDLEWARE TOI UU HIEU NANG
 app.use(compression()); // Nén dữ liệu JSON trả về để tiết kiệm băng thông và tăng tốc API
@@ -97,9 +97,11 @@ app.use(
 app.use("/api/reviews", reviewLimiter, require("./routes/review.routes"));
 app.use("/api/stores", require("./routes/store.routes"));
 app.use("/api/users", userLimiter, require("./routes/user.routes"));
-app.use("/api/user-addresses", require("./routes/useraddress.routes"));
-app.use("/api/user-payments", require("./routes/userpayment.routes"));
-app.use("/api/user-profiles", require("./routes/userprofile.routes"));
+
+// ── ĐÃ CHỈNH SỬA: Đồng bộ Số ít (Singular) theo file API của Frontend ──
+app.use("/api/user-address", require("./routes/useraddress.routes"));
+app.use("/api/user-payment", require("./routes/userpayment.routes"));
+app.use("/api/user-profile", require("./routes/userprofile.routes"));
 
 // KIEM TRA TRANG THAI SERVER
 app.get("/health", (req, res) => {

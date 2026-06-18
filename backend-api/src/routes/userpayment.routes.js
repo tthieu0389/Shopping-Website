@@ -30,6 +30,9 @@ router.post(
   userPaymentController.createPaymentMethod,
 );
 
+// Get current user payment methods
+router.get("/", verifyToken(), userPaymentController.getPaymentsByUserId);
+
 // Get payments by user
 router.get(
   "/user/:userId",

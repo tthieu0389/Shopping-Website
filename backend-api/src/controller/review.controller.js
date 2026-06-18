@@ -11,7 +11,10 @@ exports.create = async (req, res, next) => {
 
 exports.getByProduct = async (req, res, next) => {
   try {
-    const data = await service.getProductReviews(req.params.productId);
+    // Supports both query (?product_id=xxx) and param (:productId)
+    const productId = req.query.product_id || req.params.productId;
+
+    const data = await service.getProductReviews(productId);
     res.json({ data });
   } catch (err) {
     next(err);

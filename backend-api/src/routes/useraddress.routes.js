@@ -21,7 +21,10 @@ const addressFieldLabels = {
   is_default: "Địa chỉ mặc định",
 };
 
-// Tạo address
+// Get current user addresses (matches frontend)
+router.get("/", verifyToken(), userAddressController.getAddressesByUserId);
+
+// Create address
 router.post(
   "/",
   verifyToken(),
@@ -29,7 +32,7 @@ router.post(
   userAddressController.createAddress,
 );
 
-// Lấy address theo user
+// Get addresses by user ID (admin/internal)
 router.get(
   "/user/:userId",
   verifyToken(),

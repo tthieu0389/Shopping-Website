@@ -4,14 +4,16 @@ const router = express.Router();
 const reviewController = require("../controller/review.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const validate = require("../middlewares/validate");
-const checkRole = require("../middlewares/checkRole");
 
-const {
-  createReviewSchema,
-  updateReviewSchema,
-} = require("../schema/review.schema");
+const { createReviewSchema } = require("../schema/review.schema");
 
-// CREATE REVIEW
+// Get reviews by query
+router.get("/", reviewController.getByProduct);
+
+// Get reviews by param
+router.get("/product/:productId", reviewController.getByProduct);
+
+// Create review
 router.post(
   "/",
   verifyToken(),
@@ -19,10 +21,7 @@ router.post(
   reviewController.create,
 );
 
-// GET PRODUCT REVIEWS
-router.get("/product/:productId", reviewController.getByProduct);
-
-// DELETE REVIEW (soft delete)
+// Delete review
 router.delete("/:id", verifyToken(), reviewController.remove);
 
 module.exports = router;
