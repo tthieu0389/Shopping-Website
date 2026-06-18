@@ -56,6 +56,13 @@ exports.updateOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;
 
+    // Chặn update cancelled (bắt buộc dùng cancelOrder)
+    if (req.body.status === "cancelled") {
+      return res.status(400).json({
+        message: "Use cancel endpoint to cancel order",
+      });
+    }
+
     const order = await orderService.updateOrder(orderId, {
       status: req.body.status,
       note: req.body.note,

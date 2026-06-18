@@ -1,8 +1,6 @@
 const inventoryService = require("../services/inventory.service");
 
-/**
- * CREATE INVENTORY
- */
+// CREATE INVENTORY
 exports.createInventory = async (req, res) => {
   try {
     const result = await inventoryService.createInventory(req.body);
@@ -18,9 +16,7 @@ exports.createInventory = async (req, res) => {
   }
 };
 
-/**
- * GET ALL
- */
+// GET ALL
 exports.getAllInventory = async (req, res, next) => {
   try {
     const { page, limit, offset } = req.pagination || {
@@ -45,9 +41,7 @@ exports.getAllInventory = async (req, res, next) => {
   }
 };
 
-/**
- * UPDATE
- */
+// UPDATE
 exports.updateInventory = async (req, res) => {
   try {
     const result = await inventoryService.updateInventory(
@@ -70,9 +64,7 @@ exports.updateInventory = async (req, res) => {
   }
 };
 
-/**
- * DELETE
- */
+// DELETE
 exports.deleteInventory = async (req, res) => {
   try {
     const result = await inventoryService.deleteInventory(req.params.id);
@@ -87,67 +79,13 @@ exports.deleteInventory = async (req, res) => {
   }
 };
 
-/**
- * LOW STOCK
- */
+// GET LOW STOCK
 exports.getLowStockItems = async (req, res, next) => {
   try {
     const data = await inventoryService.getLowStockItems();
     res.json({ data });
   } catch (err) {
     next(err);
-  }
-};
-
-/**
- * DECREASE STOCK
- */
-exports.decreaseStock = async (req, res) => {
-  try {
-    const { product_id, amount } = req.body;
-
-    if (!product_id || amount <= 0) {
-      return res.status(400).json({
-        message: "Invalid input",
-      });
-    }
-
-    const result = await inventoryService.decreaseStock(product_id, amount);
-
-    res.json({
-      message: "Stock decreased",
-      data: result,
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
-  }
-};
-
-/**
- * INCREASE STOCK
- */
-exports.increaseStock = async (req, res) => {
-  try {
-    const { product_id, amount } = req.body;
-
-    if (!product_id || amount <= 0) {
-      return res.status(400).json({
-        message: "Invalid input",
-      });
-    }
-
-    const result = await inventoryService.increaseStock(product_id, amount);
-
-    res.json({
-      message: "Stock increased",
-      data: result,
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
   }
 };
 

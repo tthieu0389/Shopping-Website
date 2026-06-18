@@ -6,6 +6,7 @@ exports.seed = async function (knex) {
     return {
       name,
       slug: name.toLowerCase().replace(/\s+/g, "-"),
+      description: faker.commerce.productDescription(),
     };
   });
 

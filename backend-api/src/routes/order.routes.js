@@ -34,7 +34,7 @@ router.put(
   orderController.updateOrder,
 );
 
-// CANCEL ORDER (NEW - IMPORTANT)
+// CANCEL ORDER
 router.post("/:id/cancel", verifyToken(), orderController.cancelOrder);
 
 // DELETE ORDER (ADMIN ONLY)

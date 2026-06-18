@@ -52,7 +52,7 @@ exports.deletePromotion = async (id) => {
   return knex("promotions").where({ id }).del();
 };
 
-// ACTIVE PROMOTIONS
+// GET ACTIVE PROMOTIONS
 exports.getActivePromotionsByProductId = async (productId, trx = knex) => {
   const now = new Date();
   return trx("product_promotions as pp")
