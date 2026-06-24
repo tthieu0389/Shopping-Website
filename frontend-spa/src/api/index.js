@@ -35,6 +35,7 @@ export const cartApi = {
 
 // ── ORDERS ───────────────────────────────────────────────────────────────────
 export const ordersApi = {
+  preview: (data)   => api.post('/orders/preview', data),
   create:  (data)   => api.post('/orders', data),
   getAll:  (params) => api.get('/orders', { params }),
   getById: (id)     => api.get(`/orders/${id}`),
