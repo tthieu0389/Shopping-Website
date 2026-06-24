@@ -12,6 +12,15 @@ const {
   updateOrderSchema,
 } = require("../schema/order.schema");
 
+// PREVIEW ORDER
+// Dùng chung schema validate với Create để check định dạng mảng items
+router.post(
+  "/preview",
+  verifyToken(),
+  validate(createOrderSchema),
+  orderController.previewOrder,
+);
+
 // CREATE ORDER
 router.post(
   "/",

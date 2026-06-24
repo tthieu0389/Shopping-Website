@@ -1,12 +1,88 @@
+// services/order.service.js
 const knex = require("../database/knex");
 const orderItemService = require("./orderitem.service");
 const promotionService = require("./promotion.service");
 const inventoryService = require("./inventory.service");
 
+// HÀM TÍNH TOÁN NỘI BỘ
+const calculateOrderAmount = async (items, trx = knex) => {
+  let totalBaseAmount = 0;
+  let totalDiscountAmount = 0;
+  let totalFinalAmount = 0;
+  const processedItems = [];
+
+  for (const item of items) {
+    if (!item.product_id || !item.quantity) {
+      const err = new Error("Invalid item data");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const product = await trx("products")
+      .where({ id: item.product_id, is_deleted: false })
+      .first();
+
+    if (!product) {
+      const err = new Error(`Product ${item.product_id} not found`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const unitPrice = Number(product.price);
+    const basePrice = unitPrice * item.quantity;
+    let discountAmount = 0;
+
+    // Tính khuyến mãi tốt nhất
+    const promotions = await promotionService.getBestPromotions(
+      item.product_id,
+      trx,
+    );
+    if (promotions && promotions.length > 0) {
+      discountAmount =
+        promotionService.calculateTotalDiscount(unitPrice, promotions) *
+        item.quantity;
+    }
+
+    const finalPrice = basePrice - discountAmount;
+
+    totalBaseAmount += basePrice;
+    totalDiscountAmount += discountAmount;
+    totalFinalAmount += finalPrice;
+
+    processedItems.push({
+      product_id: product.id,
+      product_name: product.name,
+      quantity: item.quantity,
+      unit_price: unitPrice,
+      base_price: basePrice,
+      discount_amount: discountAmount,
+      final_price: finalPrice,
+    });
+  }
+
+  return {
+    items: processedItems,
+    total_base_amount: totalBaseAmount,
+    total_discount_amount: totalDiscountAmount,
+    total_final_amount: totalFinalAmount,
+  };
+};
+
+exports._calculateOrderAmount = calculateOrderAmount;
+
+// PREVIEW ORDER (Cho mua ngay hoặc xem trước giỏ hàng)
+exports.previewOrder = async (data) => {
+  if (!data.items || data.items.length === 0) {
+    const err = new Error("Cart cannot be empty");
+    err.statusCode = 400;
+    throw err;
+  }
+  return await calculateOrderAmount(data.items);
+};
+
 // CREATE ORDER
 exports.createOrder = async (userId, data) => {
   return knex.transaction(async (trx) => {
-    // Validate input
     if (!data.items || data.items.length === 0) {
       const err = new Error("Cart cannot be empty");
       err.statusCode = 400;
@@ -19,7 +95,10 @@ exports.createOrder = async (userId, data) => {
       throw err;
     }
 
-    // Create order
+    // Gọi hàm tính toán để lấy số tiền chuẩn và thông tin chi tiết mặt hàng
+    const calcResult = await calculateOrderAmount(data.items, trx);
+
+    // Tạo đơn hàng với tổng tiền cuối cùng đã giảm giá
     const [order] = await trx("orders")
       .insert({
         order_code: `ORD-${Date.now()}-${userId}`,
@@ -29,32 +108,13 @@ exports.createOrder = async (userId, data) => {
         payment_method: data.payment_method || "cod",
         note: data.note || null,
         status: "pending",
-        total_amount: 0,
+        total_amount: calcResult.total_final_amount, // Giá sau giảm
       })
       .returning("*");
 
-    let totalAmount = 0;
-
-    // Process items
-    for (const item of data.items) {
-      if (!item.product_id || !item.quantity) {
-        const err = new Error("Invalid item");
-        err.statusCode = 400;
-        throw err;
-      }
-
-      // Check product
-      const product = await trx("products")
-        .where({ id: item.product_id, is_deleted: false })
-        .first();
-
-      if (!product) {
-        const err = new Error(`Product ${item.product_id} not found`);
-        err.statusCode = 404;
-        throw err;
-      }
-
-      // DECREASE STOCK VIA INVENTORY SERVICE
+    //  Xử lý trừ kho và lưu danh sách order_items
+    for (const item of calcResult.items) {
+      // Trừ kho qua inventoryService
       await inventoryService.decreaseStock(
         trx,
         item.product_id,
@@ -62,47 +122,21 @@ exports.createOrder = async (userId, data) => {
         order.id,
       );
 
-      // Promotions
-      const promotions = await promotionService.getBestPromotions(
-        item.product_id,
-        trx,
-      );
-
-      const unitPrice = Number(product.price);
-
-      let discountAmount = 0;
-
-      if (promotions.length > 0) {
-        discountAmount =
-          promotionService.calculateTotalDiscount(unitPrice, promotions) *
-          item.quantity;
-      }
-
-      const basePrice = unitPrice * item.quantity;
-      const finalPrice = basePrice - discountAmount;
-
-      totalAmount += finalPrice;
-
-      // Order items
+      // Lưu chi tiết item kèm thông tin giảm giá
       await trx("order_items").insert({
         order_id: order.id,
-        product_id: product.id,
-        product_name: product.name,
-        product_price: unitPrice,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        product_price: item.unit_price,
         quantity: item.quantity,
-        price: basePrice,
-        discount_amount: discountAmount,
+        price: item.base_price,
+        discount_amount: item.discount_amount,
       });
     }
 
-    // Update total
-    await trx("orders")
-      .where({ id: order.id })
-      .update({ total_amount: totalAmount });
-
     return {
       ...order,
-      total_amount: totalAmount,
+      order_details: calcResult,
     };
   });
 };
@@ -126,16 +160,9 @@ exports.cancelOrder = async (orderId) => {
       throw err;
     }
 
-    if (order.status === "cancelled") {
-      const err = new Error("Order already cancelled");
-      err.statusCode = 400;
-      throw err;
-    }
-
+    // Hoàn kho cho từng sản phẩm
     const items = await trx("order_items").where("order_id", orderId);
-
     for (const item of items) {
-      // RETURN STOCK VIA INVENTORY SERVICE
       await inventoryService.increaseStock(
         trx,
         item.product_id,
@@ -145,7 +172,6 @@ exports.cancelOrder = async (orderId) => {
     }
 
     await trx("orders").where("id", orderId).update({ status: "cancelled" });
-
     return true;
   });
 };
@@ -170,16 +196,12 @@ exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
   }
 
   const totalRow = await countQuery.count("* as count").first();
-
   const data = await query
     .orderBy("created_at", "desc")
     .limit(limit)
     .offset(offset);
 
-  return {
-    data,
-    total: Number(totalRow.count),
-  };
+  return { data, total: Number(totalRow.count) };
 };
 
 // GET ORDERS BY USER
@@ -198,16 +220,12 @@ exports.getOrdersByUser = async ({
   }
 
   const totalRow = await countQuery.count("* as count").first();
-
   const data = await query
     .orderBy("created_at", "desc")
     .limit(limit)
     .offset(offset);
 
-  return {
-    data,
-    total: Number(totalRow.count),
-  };
+  return { data, total: Number(totalRow.count) };
 };
 
 // UPDATE ORDER
@@ -215,7 +233,6 @@ exports.updateOrder = async (id, data) => {
   if (!id || isNaN(id)) return null;
 
   const currentOrder = await knex("orders").where("id", id).first();
-
   if (!currentOrder) {
     const err = new Error("Order not found");
     err.statusCode = 404;
@@ -224,11 +241,8 @@ exports.updateOrder = async (id, data) => {
 
   const allowedFields = ["status", "note"];
   const cleanData = {};
-
   for (const field of allowedFields) {
-    if (data[field] !== undefined) {
-      cleanData[field] = data[field];
-    }
+    if (data[field] !== undefined) cleanData[field] = data[field];
   }
 
   if (Object.keys(cleanData).length === 0) return null;
@@ -255,7 +269,6 @@ exports.updateOrder = async (id, data) => {
 
     if (currentStatus !== nextStatus) {
       const allowed = validTransitions[currentStatus] || [];
-
       if (!allowed.includes(nextStatus)) {
         const err = new Error(
           `Invalid status transition: ${currentStatus} -> ${nextStatus}`,
@@ -270,14 +283,12 @@ exports.updateOrder = async (id, data) => {
     .where("id", id)
     .update(cleanData)
     .returning("*");
-
   return updatedOrder;
 };
 
 // DELETE ORDER
 exports.deleteOrder = async (id) => {
   if (!id || isNaN(id)) return null;
-
   return knex("orders").where("id", id).del();
 };
 
@@ -286,13 +297,8 @@ exports.getOrderById = async (orderId) => {
   if (!orderId || isNaN(orderId)) return null;
 
   const order = await knex("orders").where("id", orderId).first();
-
   if (!order) return null;
 
   const items = await orderItemService.getOrderItemsByOrderId(orderId);
-
-  return {
-    ...order,
-    items,
-  };
+  return { ...order, items };
 };

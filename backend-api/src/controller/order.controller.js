@@ -1,10 +1,24 @@
 const orderService = require("../services/order.service");
 
+// PREVIEW ORDER
+exports.previewOrder = async (req, res, next) => {
+  try {
+    // Nhận mảng items [{ product_id, quantity }] để tính tiền trước khi mua
+    const result = await orderService.previewOrder(req.body);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // CREATE ORDER
 exports.createOrder = async (req, res, next) => {
   try {
     const userId = req.user.id;
-
     const order = await orderService.createOrder(userId, req.body);
 
     res.status(201).json({
@@ -56,7 +70,6 @@ exports.updateOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;
 
-    // Chặn update cancelled (bắt buộc dùng cancelOrder)
     if (req.body.status === "cancelled") {
       return res.status(400).json({
         message: "Use cancel endpoint to cancel order",
@@ -83,11 +96,10 @@ exports.updateOrder = async (req, res, next) => {
   }
 };
 
-// CANCEL ORDER (NEW - IMPORTANT)
+// CANCEL ORDER (IMPORTANT)
 exports.cancelOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;
-
     const result = await orderService.cancelOrder(orderId);
 
     res.json({
@@ -99,7 +111,7 @@ exports.cancelOrder = async (req, res, next) => {
   }
 };
 
-// DELETE ORDER (ADMIN ONLY - HARD DELETE)
+// DELETE ORDER (ADMIN ONLY)
 exports.deleteOrder = async (req, res, next) => {
   try {
     await orderService.deleteOrder(req.params.id);
