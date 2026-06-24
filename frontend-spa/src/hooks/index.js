@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi } from '../api/index.js'
-import { debounce } from '../utils/index.js'
 
 // ── useProducts ───────────────────────────────────────────────────────────────
 export const useProducts = (params = {}) => {
@@ -208,22 +207,34 @@ export const useSearch = (delay = 400) => {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const search = useCallback(
-    debounce(async (q) => {
-      if (!q.trim()) { setResults([]); return }
-      setLoading(true)
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    let cancelled = false
+
+    const timer = setTimeout(async () => {
       try {
-        const res = await productsApi.getAll({ search: q, limit: 8 })
-        setResults(res.data || [])
-      } catch (_) { setResults([]) }
-      finally { setLoading(false) }
-    }, delay),
-    [delay]
-  )
+        const res = await productsApi.getAll({ search: query, limit: 8 })
+        if (!cancelled) setResults(res.data || [])
+      } catch (_) {
+        if (!cancelled) setResults([])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, delay)
 
-  const handleChange = (q) => { setQuery(q); search(q) }
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query, delay])
 
-  return { query, setQuery: handleChange, results, loading }
+  return { query, setQuery, results, loading }
 }
 
 // ── useCountdown ──────────────────────────────────────────────────────────────

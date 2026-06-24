@@ -68,12 +68,17 @@ function BlogDetail() {
   const [error, setError]     = useState(null)
 
   useEffect(() => {
-    setLoading(true)
     blogsApi.getBySlug(slug)
-      .then(res => { setBlog(res.data || null); setLoading(false) })
-      .catch(() => { setError('Không tìm thấy bài viết'); setLoading(false) })
+      .then(res => {
+        setBlog(res.data || null)
+        setLoading(false) // Update loading to false inside the effect
+      })
+      .catch(() => {
+        setError('Không tìm thấy bài viết')
+        setLoading(false) // Update loading to false inside the effect
+      })
   }, [slug])
-
+  
   if (loading) return <LoadingSpinner />
   if (error || !blog) return (
     <EmptyState

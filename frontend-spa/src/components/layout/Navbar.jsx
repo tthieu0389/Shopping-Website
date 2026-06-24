@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import useCartStore from '../../store/cartStore.js'
@@ -13,8 +13,36 @@ export default function Navbar() {
 
   const { query, setQuery, results, loading } = useSearch()
   const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef(null)
 
   const handleLogout = () => { logout(); navigate('/') }
+
+  // Đóng dropdown khi click ra ngoài vùng search
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleInputChange = (e) => {
+    setQuery(e.target.value)
+    setSearchOpen(true)
+  }
+
+  const handleSelectResult = (slug) => {
+    setSearchOpen(false)
+    setQuery('')
+    navigate(`/products/${slug}`)
+  }
+
+  const handleClearSearch = () => {
+    setQuery('')
+    setSearchOpen(false)
+  }
 
   const navLinks = [
     { to: '/',                          label: 'Trang chủ' },
@@ -24,6 +52,8 @@ export default function Navbar() {
     { to: '/flash-sale',                label: '🔥 Flash Sale' },
     { to: '/blog',                      label: 'Tin tức' },
   ]
+
+  const showDropdown = searchOpen && query.trim().length > 0
 
   return (
     <>
@@ -68,7 +98,10 @@ export default function Navbar() {
           </div>
 
           {/* Search */}
-          <div className="relative hidden md:flex items-center bg-cream border border-shade rounded-full px-4 py-1.5 gap-2 min-w-[200px] focus-within:border-vnpt transition-colors">
+          <div
+            ref={searchRef}
+            className="relative hidden md:flex items-center bg-cream border border-shade rounded-full px-4 py-1.5 gap-2 min-w-[220px] focus-within:border-vnpt transition-colors"
+          >
             <svg className="w-4 h-4 text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
@@ -77,29 +110,45 @@ export default function Navbar() {
               placeholder="Tìm sản phẩm..."
               className="bg-transparent border-none outline-none text-sm font-body w-full text-body"
               value={query}
-              onChange={e => { setQuery(e.target.value); setSearchOpen(true) }}
-              onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-              onFocus={() => query && setSearchOpen(true)}
+              onChange={handleInputChange}
+              onFocus={() => { if (query.trim()) setSearchOpen(true) }}
+              autoComplete="off"
             />
-            {searchOpen && (query || loading) && (
+            {/* Nút X xóa nhanh */}
+            {query && (
+              <button
+                onClick={handleClearSearch}
+                className="text-muted hover:text-body transition-colors flex-shrink-0 text-base leading-none"
+              >
+                ✕
+              </button>
+            )}
+
+            {/* Dropdown kết quả */}
+            {showDropdown && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-shade rounded-xl shadow-lg z-50 overflow-hidden">
-                {loading && <div className="p-4 text-sm text-muted text-center">Đang tìm...</div>}
-                {!loading && results.length === 0 && query && (
-                  <div className="p-4 text-sm text-muted text-center">Không tìm thấy kết quả</div>
+                {loading && (
+                  <div className="p-4 text-sm text-muted text-center">Đang tìm...</div>
                 )}
-                {results.map(p => (
-                  <Link
+                {!loading && results.length === 0 && (
+                  <div className="p-4 text-sm text-muted text-center">Không tìm thấy kết quả cho &ldquo;{query}&rdquo;</div>
+                )}
+                {!loading && results.length > 0 && results.map(p => (
+                  <button
                     key={p.id}
-                    to={`/products/${p.slug}`}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-cream transition-colors"
-                    onClick={() => { setSearchOpen(false); setQuery('') }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-cream transition-colors text-left"
+                    onMouseDown={(e) => {
+                      // dùng onMouseDown thay vì onClick để không bị onBlur chặn
+                      e.preventDefault()
+                      handleSelectResult(p.slug)
+                    }}
                   >
                     <div className="w-10 h-10 bg-cream rounded-md flex items-center justify-center flex-shrink-0 text-xl">📦</div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-body line-clamp-1">{p.name}</div>
                       <div className="text-xs text-accent font-bold">{formatPrice(p.price)}</div>
                     </div>
-                  </Link>
+                  </button>
                 ))}
               </div>
             )}
