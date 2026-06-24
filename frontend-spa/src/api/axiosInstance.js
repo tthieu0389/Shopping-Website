@@ -27,7 +27,8 @@ api.interceptors.response.use(
 
     if (status === 401) {
       localStorage.removeItem('vnpt_token')
-      localStorage.removeItem('vnpt_user')
+      // Xóa đúng key Zustand persist (vnpt_auth) thay vì vnpt_user
+      localStorage.removeItem('vnpt_auth')
       window.location.href = '/login'
     }
 

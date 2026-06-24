@@ -15,8 +15,12 @@ export const productsApi = {
 }
 
 // ── CATEGORIES ───────────────────────────────────────────────────────────────
+// Backend: res.json(categories) → trả thẳng array, không wrap { data }
+// Wrapper normalise về { data: [] } để hooks dùng res.data nhất quán
 export const categoriesApi = {
-  getAll: () => api.get('/categories'),
+  getAll: () => api.get('/categories').then(res => ({
+    data: Array.isArray(res) ? res : (res.data || [])
+  })),
 }
 
 // ── CART ─────────────────────────────────────────────────────────────────────

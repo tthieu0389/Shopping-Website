@@ -18,8 +18,9 @@ export default function RegisterPage() {
     }
     const res = await registerUser(payload)
     if (res.success) {
-      toast.success('Đăng ký thành công! 🎉')
-      navigate('/')
+      toast.success('Đăng ký thành công! Vui lòng đăng nhập 🎉')
+      // Backend không trả token sau register → chuyển sang trang login
+      navigate('/login')
     }
   }
 

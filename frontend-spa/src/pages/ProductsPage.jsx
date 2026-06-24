@@ -21,8 +21,8 @@ const SORT_OPTIONS = [
 ]
 
 const PRICE_RANGES = [
-  { label: 'Tất cả',             min: '',       max: '' },
-  { label: 'Dưới 1 triệu',       min: '',       max: '1000000' },
+  { label: 'Tất cả',             min: '',        max: '' },
+  { label: 'Dưới 1 triệu',       min: '',        max: '1000000' },
   { label: '1 - 5 triệu',        min: '1000000', max: '5000000' },
   { label: '5 - 10 triệu',       min: '5000000', max: '10000000' },
   { label: '10 - 20 triệu',      min: '10000000',max: '20000000' },
@@ -36,8 +36,10 @@ export default function ProductsPage() {
   const { data: categories } = useCategories()
 
   const [filters, setFilters] = useState({
-    q:            searchParams.get('q') || '',
-    category:     searchParams.get('category') || '',
+    // Dùng category_id (số) thay vì category slug
+    // vì backend products service chỉ filter theo category_id
+    search:       searchParams.get('search') || searchParams.get('q') || '',
+    category_id:  searchParams.get('category_id') || '',
     product_type: searchParams.get('product_type') || '',
     price_min:    searchParams.get('price_min') || '',
     price_max:    searchParams.get('price_max') || '',
@@ -46,24 +48,33 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1)
 
   // Sync URL → filters khi URL thay đổi bên ngoài
+  // Nếu URL có ?category=slug (từ link cũ), resolve sang category_id
   useEffect(() => {
+    const slugFromUrl = searchParams.get('category')
+    let categoryId = searchParams.get('category_id') || ''
+
+    if (slugFromUrl && categories.length > 0) {
+      const matched = categories.find(c => c.slug === slugFromUrl)
+      if (matched) categoryId = String(matched.id)
+    }
+
     setFilters({
-      q:            searchParams.get('q') || '',
-      category:     searchParams.get('category') || '',
+      search:       searchParams.get('search') || searchParams.get('q') || '',
+      category_id:  categoryId,
       product_type: searchParams.get('product_type') || '',
       price_min:    searchParams.get('price_min') || '',
       price_max:    searchParams.get('price_max') || '',
       sort:         searchParams.get('sort') || 'newest',
     })
     setPage(1)
-  }, [searchParams])
+  }, [searchParams, categories])
 
-  // Build params cho API
+  // Build params cho API — khớp đúng tên param backend nhận
   const apiParams = {
-    limit: LIMIT,
+    limit:  LIMIT,
     offset: (page - 1) * LIMIT,
-    ...(filters.q            && { q: filters.q }),
-    ...(filters.category     && { category: filters.category }),
+    ...(filters.search       && { search: filters.search }),
+    ...(filters.category_id  && { category_id: filters.category_id }),
     ...(filters.product_type && { product_type: filters.product_type }),
     ...(filters.price_min    && { price_min: filters.price_min }),
     ...(filters.price_max    && { price_max: filters.price_max }),
@@ -83,12 +94,13 @@ export default function ProductsPage() {
   }
 
   const clearFilters = () => {
-    setFilters({ q: '', category: '', product_type: '', price_min: '', price_max: '', sort: 'newest' })
+    setFilters({ search: '', category_id: '', product_type: '', price_min: '', price_max: '', sort: 'newest' })
     setPage(1)
     setSearchParams({})
   }
 
-  const hasActiveFilters = filters.q || filters.category || filters.product_type || filters.price_min || filters.price_max
+  const hasActiveFilters = filters.search || filters.category_id || filters.product_type || filters.price_min || filters.price_max
+  const selectedCategory = categories.find(c => String(c.id) === String(filters.category_id))
 
   return (
     <div>
@@ -106,12 +118,12 @@ export default function ProductsPage() {
               <input
                 type="text"
                 placeholder="Tên sản phẩm..."
-                value={filters.q}
-                onChange={e => updateFilter('q', e.target.value)}
+                value={filters.search}
+                onChange={e => updateFilter('search', e.target.value)}
                 className="w-full px-4 py-2.5 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors pr-8"
               />
-              {filters.q && (
-                <button onClick={() => updateFilter('q', '')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-body">✕</button>
+              {filters.search && (
+                <button onClick={() => updateFilter('search', '')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-body">✕</button>
               )}
             </div>
           </div>
@@ -121,7 +133,7 @@ export default function ProductsPage() {
             <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Danh mục</div>
             <div className="space-y-1">
               <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-                <input type="radio" name="category" checked={!filters.category} onChange={() => updateFilter('category', '')} className="accent-vnpt w-4 h-4" />
+                <input type="radio" name="category" checked={!filters.category_id} onChange={() => updateFilter('category_id', '')} className="accent-vnpt w-4 h-4" />
                 <span className="text-sm text-body flex-1">Tất cả danh mục</span>
               </label>
               {categories.map(c => (
@@ -129,8 +141,8 @@ export default function ProductsPage() {
                   <input
                     type="radio"
                     name="category"
-                    checked={filters.category === c.slug}
-                    onChange={() => updateFilter('category', c.slug)}
+                    checked={String(filters.category_id) === String(c.id)}
+                    onChange={() => updateFilter('category_id', String(c.id))}
                     className="accent-vnpt w-4 h-4"
                   />
                   <span className="text-sm text-body flex-1">{c.name}</span>
@@ -231,16 +243,16 @@ export default function ProductsPage() {
           {/* Active filter tags */}
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {filters.q && (
+              {filters.search && (
                 <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
-                  Tìm: {filters.q}
-                  <button onClick={() => updateFilter('q', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
+                  Tìm: {filters.search}
+                  <button onClick={() => updateFilter('search', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
                 </span>
               )}
-              {filters.category && (
+              {filters.category_id && selectedCategory && (
                 <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
-                  {categories.find(c => c.slug === filters.category)?.name || filters.category}
-                  <button onClick={() => updateFilter('category', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
+                  {selectedCategory.name}
+                  <button onClick={() => updateFilter('category_id', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
                 </span>
               )}
               {filters.product_type && (

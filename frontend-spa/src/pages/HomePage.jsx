@@ -102,7 +102,7 @@ export default function HomePage() {
             {CATEGORIES.map(({ slug, icon, name, count }) => (
               <Link
                 key={slug}
-                to={`/products?category=${slug}`}
+                to={`/products?product_type=${slug}`}
                 className="bg-white rounded-xl p-6 text-center border border-shade hover:border-vnpt hover:-translate-y-0.5 hover:shadow-md transition-all duration-250"
               >
                 <div className="w-14 h-14 bg-vnpt-light rounded-[14px] flex items-center justify-center mx-auto mb-3 text-[26px]">{icon}</div>
@@ -155,7 +155,7 @@ export default function HomePage() {
             <div className="text-[11px] font-bold uppercase tracking-[2px] opacity-75 mb-2.5">Sim số đẹp</div>
             <div className="font-display text-[28px] font-bold leading-snug mb-2.5">Sim phong thủy<br />Giá từ 200.000₫</div>
             <div className="text-sm opacity-80 mb-6 leading-relaxed">Hàng ngàn đầu số đẹp, sim tứ quý, ngũ quý, thần tài</div>
-            <Link to="/products?category=sim-so" className="inline-block px-5 py-2.5 bg-white text-vnpt rounded-full text-sm font-bold hover:shadow-md transition-all">
+            <Link to="/products?product_type=sim" className="inline-block px-5 py-2.5 bg-white text-vnpt rounded-full text-sm font-bold hover:shadow-md transition-all">
               Xem sim ngay →
             </Link>
           </div>
@@ -163,7 +163,7 @@ export default function HomePage() {
             <div className="text-[11px] font-bold uppercase tracking-[2px] opacity-75 mb-2.5">Ưu đãi cước</div>
             <div className="font-display text-[28px] font-bold leading-snug mb-2.5">5G không giới hạn<br />Chỉ 99.000₫/tháng</div>
             <div className="text-sm opacity-80 mb-6 leading-relaxed">Tốc độ đến 1Gbps, vùng phủ sóng toàn quốc</div>
-            <Link to="/products?category=goi-cuoc" className="inline-block px-5 py-2.5 bg-white text-accent rounded-full text-sm font-bold hover:shadow-md transition-all">
+            <Link to="/products?product_type=internet" className="inline-block px-5 py-2.5 bg-white text-accent rounded-full text-sm font-bold hover:shadow-md transition-all">
               Đăng ký ngay →
             </Link>
           </div>

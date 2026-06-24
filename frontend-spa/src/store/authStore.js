@@ -14,6 +14,7 @@ const useAuthStore = create(
       login: async (credentials) => {
         set({ isLoading: true, error: null })
         try {
+          // Backend: { message, token, user }
           const res = await authApi.login(credentials)
           const { token, user } = res
           localStorage.setItem('vnpt_token', token)
@@ -28,14 +29,10 @@ const useAuthStore = create(
       register: async (data) => {
         set({ isLoading: true, error: null })
         try {
-          const res = await authApi.register(data)
-          const { token, user } = res
-          if (token) {
-            localStorage.setItem('vnpt_token', token)
-            set({ user, token, isAuthenticated: true, isLoading: false })
-          } else {
-            set({ isLoading: false })
-          }
+          // Backend: { message, data: user } — không trả token
+          // Sau khi đăng ký thành công, redirect về /login để user tự đăng nhập
+          await authApi.register(data)
+          set({ isLoading: false })
           return { success: true }
         } catch (err) {
           set({ isLoading: false, error: err.message })
@@ -45,6 +42,8 @@ const useAuthStore = create(
 
       logout: () => {
         localStorage.removeItem('vnpt_token')
+        // Xóa đúng key Zustand persist dùng
+        localStorage.removeItem('vnpt_auth')
         set({ user: null, token: null, isAuthenticated: false })
       },
 

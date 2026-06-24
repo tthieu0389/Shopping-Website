@@ -74,8 +74,9 @@ export const useCategories = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // categoriesApi.getAll() đã normalize về { data: [] }
     categoriesApi.getAll()
-      .then(res => { setData(res.data || res || []); setLoading(false) })
+      .then(res => { setData(res.data || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
@@ -212,7 +213,7 @@ export const useSearch = (delay = 400) => {
       if (!q.trim()) { setResults([]); return }
       setLoading(true)
       try {
-        const res = await productsApi.getAll({ q, limit: 8 })
+        const res = await productsApi.getAll({ search: q, limit: 8 })
         setResults(res.data || [])
       } catch (_) { setResults([]) }
       finally { setLoading(false) }
