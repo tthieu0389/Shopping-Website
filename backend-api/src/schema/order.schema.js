@@ -51,3 +51,16 @@ exports.updateOrderSchema = z.object({
 
   note: z.string().optional(),
 });
+
+exports.previewOrderSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        product_id: z.coerce.number().int().min(1),
+        quantity: z.coerce.number().int().min(1),
+      }),
+    )
+    .min(1),
+  address_id: z.coerce.number().int().positive().optional(),
+  pickup_store_id: z.coerce.number().int().positive().optional(),
+});

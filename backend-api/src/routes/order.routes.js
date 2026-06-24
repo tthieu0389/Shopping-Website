@@ -10,14 +10,14 @@ const pagination = require("../middlewares/pagination");
 const {
   createOrderSchema,
   updateOrderSchema,
+  previewOrderSchema,
 } = require("../schema/order.schema");
 
 // PREVIEW ORDER
-// Dùng chung schema validate với Create để check định dạng mảng items
 router.post(
   "/preview",
   verifyToken(),
-  validate(createOrderSchema),
+  validate(previewOrderSchema),
   orderController.previewOrder,
 );
 
@@ -35,22 +35,23 @@ router.get("/", verifyToken(), pagination(), orderController.getAllOrders);
 // GET ORDER BY ID
 router.get("/:id", verifyToken(), orderController.getOrderById);
 
-// UPDATE ORDER (STATUS + NOTE ONLY)
+// UPDATE ORDER (Chỉ Admin hoặc những role có quyền mới được đổi trạng thái đơn của khách)
 router.put(
   "/:id",
   verifyToken(),
+  checkRole(["admin"]),
   validate(updateOrderSchema),
   orderController.updateOrder,
 );
 
-// CANCEL ORDER
+// CANCEL ORDER (Khách hàng hoặc Admin tự hủy đơn)
 router.post("/:id/cancel", verifyToken(), orderController.cancelOrder);
 
 // DELETE ORDER (ADMIN ONLY)
 router.delete(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole(["admin"]),
   orderController.deleteOrder,
 );
 

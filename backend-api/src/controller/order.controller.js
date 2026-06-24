@@ -3,7 +3,6 @@ const orderService = require("../services/order.service");
 // PREVIEW ORDER
 exports.previewOrder = async (req, res, next) => {
   try {
-    // Nhận mảng items [{ product_id, quantity }] để tính tiền trước khi mua
     const result = await orderService.previewOrder(req.body);
 
     res.status(200).json({
@@ -76,16 +75,11 @@ exports.updateOrder = async (req, res, next) => {
       });
     }
 
+    // Service da tu dong throw loi 404 neu khong tim thay order
     const order = await orderService.updateOrder(orderId, {
       status: req.body.status,
       note: req.body.note,
     });
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
 
     res.json({
       message: "Order updated successfully",
@@ -96,7 +90,7 @@ exports.updateOrder = async (req, res, next) => {
   }
 };
 
-// CANCEL ORDER (IMPORTANT)
+// CANCEL ORDER
 exports.cancelOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;

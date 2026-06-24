@@ -1,16 +1,22 @@
-// services/order.service.js
 const knex = require("../database/knex");
 const orderItemService = require("./orderitem.service");
 const promotionService = require("./promotion.service");
 const inventoryService = require("./inventory.service");
 
-// HÀM TÍNH TOÁN NỘI BỘ
-const calculateOrderAmount = async (items, trx = knex) => {
+// Ham tinh toan noi bo: Tinh tien hang, khuyen mai va phi ship
+const calculateOrderAmount = async (
+  items,
+  addressId = null,
+  pickupStoreId = null,
+  trx = knex,
+) => {
   let totalBaseAmount = 0;
   let totalDiscountAmount = 0;
   let totalFinalAmount = 0;
+  let shippingFee = 0;
   const processedItems = [];
 
+  // 1. Tinh toan tien hang va ap dung khuyen mai tot nhat
   for (const item of items) {
     if (!item.product_id || !item.quantity) {
       const err = new Error("Invalid item data");
@@ -32,7 +38,6 @@ const calculateOrderAmount = async (items, trx = knex) => {
     const basePrice = unitPrice * item.quantity;
     let discountAmount = 0;
 
-    // Tính khuyến mãi tốt nhất
     const promotions = await promotionService.getBestPromotions(
       item.product_id,
       trx,
@@ -60,8 +65,44 @@ const calculateOrderAmount = async (items, trx = knex) => {
     });
   }
 
+  // 2. Logic tinh phi van chuyen dua tren hinh thuc nhan hang
+  if (addressId) {
+    const address = await trx("user_addresses")
+      .where({ id: addressId })
+      .first();
+    if (!address) {
+      const err = new Error("Dia chi giao hang khong ton tai");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // So sanh tinh cua khach voi he thong cua hang de phan loai phi ship
+    const storeInSameProvince = await trx("stores")
+      .where({ province: address.province, is_deleted: false })
+      .first();
+
+    if (storeInSameProvince) {
+      shippingFee = 15000; // Phi noi tinh
+    } else {
+      shippingFee = 25000; // Phi ngoai tinh
+    }
+  } else if (pickupStoreId) {
+    const store = await trx("stores")
+      .where({ id: pickupStoreId, is_deleted: false })
+      .first();
+    if (!store) {
+      const err = new Error("Cua hang da chon khong ton tai hoac da dong cua");
+      err.statusCode = 404;
+      throw err;
+    }
+    shippingFee = 0; // Nhan tai cua hang duoc mien phi ship
+  }
+
+  totalFinalAmount += shippingFee;
+
   return {
     items: processedItems,
+    shipping_fee: shippingFee,
     total_base_amount: totalBaseAmount,
     total_discount_amount: totalDiscountAmount,
     total_final_amount: totalFinalAmount,
@@ -70,17 +111,21 @@ const calculateOrderAmount = async (items, trx = knex) => {
 
 exports._calculateOrderAmount = calculateOrderAmount;
 
-// PREVIEW ORDER (Cho mua ngay hoặc xem trước giỏ hàng)
+// Preview don hang (Khong ghi DB, dung cho luong xem truoc giohang / muangay)
 exports.previewOrder = async (data) => {
   if (!data.items || data.items.length === 0) {
     const err = new Error("Cart cannot be empty");
     err.statusCode = 400;
     throw err;
   }
-  return await calculateOrderAmount(data.items);
+  return await calculateOrderAmount(
+    data.items,
+    data.address_id,
+    data.pickup_store_id,
+  );
 };
 
-// CREATE ORDER
+// Tao don hang moi (Chot don, tru kho va luu lich su)
 exports.createOrder = async (userId, data) => {
   return knex.transaction(async (trx) => {
     if (!data.items || data.items.length === 0) {
@@ -90,15 +135,26 @@ exports.createOrder = async (userId, data) => {
     }
 
     if (!data.address_id && !data.pickup_store_id) {
-      const err = new Error("Address or pickup store is required");
+      const err = new Error(
+        "Vui long chon dia chi rieng hoac cua hang nhan hang!",
+      );
       err.statusCode = 400;
       throw err;
     }
 
-    // Gọi hàm tính toán để lấy số tiền chuẩn và thông tin chi tiết mặt hàng
-    const calcResult = await calculateOrderAmount(data.items, trx);
+    if (data.address_id && data.pickup_store_id) {
+      const err = new Error("Chi duoc chon mot trong hai hinh thuc nhan hang!");
+      err.statusCode = 400;
+      throw err;
+    }
 
-    // Tạo đơn hàng với tổng tiền cuối cùng đã giảm giá
+    const calcResult = await calculateOrderAmount(
+      data.items,
+      data.address_id,
+      data.pickup_store_id,
+      trx,
+    );
+
     const [order] = await trx("orders")
       .insert({
         order_code: `ORD-${Date.now()}-${userId}`,
@@ -108,13 +164,12 @@ exports.createOrder = async (userId, data) => {
         payment_method: data.payment_method || "cod",
         note: data.note || null,
         status: "pending",
-        total_amount: calcResult.total_final_amount, // Giá sau giảm
+        shipping_fee: calcResult.shipping_fee,
+        total_amount: calcResult.total_final_amount,
       })
       .returning("*");
 
-    //  Xử lý trừ kho và lưu danh sách order_items
     for (const item of calcResult.items) {
-      // Trừ kho qua inventoryService
       await inventoryService.decreaseStock(
         trx,
         item.product_id,
@@ -122,7 +177,6 @@ exports.createOrder = async (userId, data) => {
         order.id,
       );
 
-      // Lưu chi tiết item kèm thông tin giảm giá
       await trx("order_items").insert({
         order_id: order.id,
         product_id: item.product_id,
@@ -141,7 +195,7 @@ exports.createOrder = async (userId, data) => {
   });
 };
 
-// CANCEL ORDER
+// Huy don hang va hoan lai so luong vao kho
 exports.cancelOrder = async (orderId) => {
   return knex.transaction(async (trx) => {
     const order = await trx("orders").where("id", orderId).first();
@@ -160,7 +214,6 @@ exports.cancelOrder = async (orderId) => {
       throw err;
     }
 
-    // Hoàn kho cho từng sản phẩm
     const items = await trx("order_items").where("order_id", orderId);
     for (const item of items) {
       await inventoryService.increaseStock(
@@ -176,7 +229,7 @@ exports.cancelOrder = async (orderId) => {
   });
 };
 
-// GET ALL ORDERS
+// Lay danh sach tat ca don hang (Phan trang + Bo loc)
 exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
   let query = knex("orders");
   let countQuery = knex("orders");
@@ -204,7 +257,7 @@ exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
   return { data, total: Number(totalRow.count) };
 };
 
-// GET ORDERS BY USER
+// Lay danh sach don hang theo User ID
 exports.getOrdersByUser = async ({
   userId,
   limit = 10,
@@ -228,7 +281,7 @@ exports.getOrdersByUser = async ({
   return { data, total: Number(totalRow.count) };
 };
 
-// UPDATE ORDER
+// Cap nhat trang thai hoac ghi chu don hang (Check logic chuyen trang thai)
 exports.updateOrder = async (id, data) => {
   if (!id || isNaN(id)) return null;
 
@@ -286,13 +339,13 @@ exports.updateOrder = async (id, data) => {
   return updatedOrder;
 };
 
-// DELETE ORDER
+// Xoa vinh vien don hang khoi DB
 exports.deleteOrder = async (id) => {
   if (!id || isNaN(id)) return null;
   return knex("orders").where("id", id).del();
 };
 
-// GET ORDER BY ID
+// Lay chi tiet mot don hang kem danh sach mat hang
 exports.getOrderById = async (orderId) => {
   if (!orderId || isNaN(orderId)) return null;
 
