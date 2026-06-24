@@ -116,8 +116,6 @@ exports.updateInventory = async (id, data) => {
   });
 };
 
-const knex = require("../database/knex");
-
 // ... các hàm khác giữ nguyên ...
 
 // DECREASE STOCK
