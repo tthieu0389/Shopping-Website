@@ -116,8 +116,6 @@ exports.updateInventory = async (id, data) => {
   });
 };
 
-// ... các hàm khác giữ nguyên ...
-
 // DECREASE STOCK
 exports.decreaseStock = async (
   trx,
