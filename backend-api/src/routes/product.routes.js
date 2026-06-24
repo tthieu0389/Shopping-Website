@@ -30,13 +30,13 @@ const productFieldLabels = {
 // Lấy danh sách toàn bộ sản phẩm
 router.get("/", pagination(), productController.getAllProducts);
 
-// Lấy sản phẩm liên quan
+// Lấy sản phẩm liên quan (Xếp trên vì có hậu tố rõ ràng '/related')
 router.get("/:id/related", productController.getRelatedProducts);
 
-// Lấy chi tiết sản phẩm theo ID hoặc Slug
+// Lấy chi tiết sản phẩm theo ID hoặc Slug (PHẢI XẾP DƯỚI CÙNG trong nhóm GET)
 router.get("/:idOrSlug", productController.getProductByIdOrSlug);
 
-// Tạo mới sản phẩm
+// Tạo mới sản phẩm (Admin)
 router.post(
   "/",
   verifyToken(),
@@ -47,7 +47,7 @@ router.post(
   productController.createProduct,
 );
 
-// Cập nhật thông tin sản phẩm
+// Cập nhật thông tin sản phẩm (Admin)
 router.put(
   "/:id",
   verifyToken(),
@@ -58,7 +58,7 @@ router.put(
   productController.updateProduct,
 );
 
-// Xóa sản phẩm
+// Xóa sản phẩm (Admin)
 router.delete(
   "/:id",
   verifyToken(),

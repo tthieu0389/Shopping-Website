@@ -24,21 +24,26 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   let query = knex("products").where("is_deleted", false).select("*");
   let countQuery = knex("products").where("is_deleted", false);
 
-  // Nhận từ khóa từ cả q hoặc search
-  const keyword = filters.q || filters.search;
-
-  // Bóc tách các trường chính
   const {
+    q,
+    search,
+    limit: _l,
+    page: _p,
+    offset: _o,
     category_id,
     product_type,
     brand,
     model,
     is_available,
     featured,
+    sort,
+    price_min,
+    price_max,
     ...dynamicFilters
   } = filters;
 
-  // Tìm kiếm theo từ khóa
+  const keyword = q || search;
+
   if (keyword) {
     const searchBlock = (builder) => {
       builder
@@ -49,66 +54,76 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     countQuery = countQuery.where(searchBlock);
   }
 
-  // Lọc theo danh mục
   if (category_id) {
     query = query.where("category_id", category_id);
     countQuery = countQuery.where("category_id", category_id);
   }
 
-  // Lọc theo phân loại lớn
   if (product_type) {
     query = query.where("product_type", product_type);
     countQuery = countQuery.where("product_type", product_type);
   }
 
-  // Lọc theo thương hiệu (Dùng LIKE tiêu chuẩn)
   if (brand) {
-    query = query.where("brand", "like", brand);
-    countQuery = countQuery.where("brand", "like", brand);
+    query = query.where("brand", "like", `%${brand}%`);
+    countQuery = countQuery.where("brand", "like", `%${brand}%`);
   }
 
-  // Lọc theo dòng thiết bị
   if (model) {
-    query = query.where("model", "like", model);
-    countQuery = countQuery.where("model", "like", model);
+    query = query.where("model", "like", `%${model}%`);
+    countQuery = countQuery.where("model", "like", `%${model}%`);
   }
 
-  // Lọc theo trạng thái kinh doanh
   if (is_available !== undefined && is_available !== "") {
     const isAvail = is_available === "true" || is_available === true ? 1 : 0;
-
-    // Knex sẽ tự dịch giá trị 1/0 thành đúng kiểu Boolean thích hợp cho từng DB
     query = query.where("is_available", isAvail);
     countQuery = countQuery.where("is_available", isAvail);
   }
 
-  // Lọc theo sản phẩm nổi bật
   if (featured !== undefined && featured !== "") {
     const isFeatured = featured === "true" || featured === true ? 1 : 0;
     query = query.where("is_featured", isFeatured);
     countQuery = countQuery.where("is_featured", isFeatured);
   }
 
-  // Lọc theo các trường động trong attributes (JSON)
+  // Bộ lọc khoảng giá
+  if (price_min !== undefined && price_min !== "") {
+    query = query.where("price", ">=", Number(price_min));
+    countQuery = countQuery.where("price", ">=", Number(price_min));
+  }
+  if (price_max !== undefined && price_max !== "") {
+    query = query.where("price", "<=", Number(price_max));
+    countQuery = countQuery.where("price", "<=", Number(price_max));
+  }
+
   Object.keys(dynamicFilters).forEach((key) => {
     const val = dynamicFilters[key];
     if (val !== undefined && val !== "") {
-      // Tìm kiếm cặp "key":"value" nằm trong chuỗi văn bản JSON của trường attributes
       const lookFor = `"${key}":"${val}"`;
-
       query = query.where("attributes", "like", `%${lookFor}%`);
       countQuery = countQuery.where("attributes", "like", `%${lookFor}%`);
     }
   });
 
-  // Tính toán phân trang và trả kết quả
   const [totalRow] = await countQuery.count("* as count");
-  const total = Number(totalRow.count);
+  const total = Number(totalRow.count || 0);
+
+  const safeLimit = isNaN(Number(limit)) ? 20 : Number(limit);
+  const safeOffset = isNaN(Number(offset)) ? 0 : Number(offset);
+
+  // Map các giá trị sort từ client sang câu lệnh sắp xếp tương ứng trong database
+  const sortMapping = {
+    newest: { column: "created_at", direction: "desc" },
+    price_asc: { column: "price", direction: "asc" },
+    price_desc: { column: "price", direction: "desc" },
+    name_asc: { column: "name", direction: "asc" },
+  };
+  const currentSort = sortMapping[sort] || sortMapping.newest;
 
   const data = await query
-    .orderBy("created_at", "desc")
-    .limit(limit)
-    .offset(offset);
+    .orderBy(currentSort.column, currentSort.direction)
+    .limit(safeLimit)
+    .offset(safeOffset);
 
   return { data, total };
 };

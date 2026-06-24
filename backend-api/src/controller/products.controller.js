@@ -29,22 +29,21 @@ exports.createProduct = async (req, res, next) => {
 
 exports.getAllProducts = async (req, res, next) => {
   try {
+    // Lấy thông tin phân trang từ middleware (nếu có) hoặc dùng mặc định
     const { page, limit, offset } = req.pagination || {
       page: 1,
       limit: 10,
       offset: 0,
     };
-    const filters = {
-      search: req.query.search,
-      category_id: req.query.category_id,
-      product_type: req.query.product_type,
-      is_available: req.query.is_available,
-    };
+
+    const filters = { ...req.query };
+
     const result = await productService.getAllProducts({
       limit,
       offset,
       filters,
     });
+
     res.json({
       data: result.data,
       total: result.total,

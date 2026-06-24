@@ -1,9 +1,17 @@
-// services/cart.service.js
 const knex = require("../database/knex");
 const { _calculateOrderAmount } = require("./order.service"); // Import hàm tính toán dùng chung
 
 // Lấy hoặc tự động tạo giỏ hàng cho tài khoản người dùng
 const getOrCreateCart = async (user_id, trx = knex) => {
+  // Chặn trường hợp user_id không hợp lệ (null, undefined, trống) khi frontend bị mất session
+  if (!user_id) {
+    const err = new Error(
+      "Yêu cầu mã định danh người dùng (User ID is required)",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
   let cart = await trx("carts").where({ user_id }).first();
   if (!cart) {
     [cart] = await trx("carts").insert({ user_id }).returning("*");
@@ -47,14 +55,14 @@ exports.addToCart = async (user_id, product_id, quantity) => {
   });
 };
 
-// LẤY DANH SÁCH GIỎ HÀNG (ĐÃ TÍCH HỢP REVIEW GIÁ GIẢM)
+// LẤY DANH SÁCH GIỎ HÀNG
 exports.getCartItems = async (user_id) => {
   const cart = await getOrCreateCart(user_id);
 
-  // Lấy các item thô trong DB ra trước
+  // Lấy các item thô trong DB ra trước kèm theo ID của cart_item
   const rawItems = await knex("cart_items")
     .where("cart_id", cart.id)
-    .select("product_id", "quantity");
+    .select("id as cart_item_id", "product_id", "quantity");
 
   if (rawItems.length === 0) {
     return {
@@ -65,7 +73,19 @@ exports.getCartItems = async (user_id) => {
     };
   }
 
-  return await _calculateOrderAmount(rawItems);
+  // Chạy tính toán giá tiền, khuyến mãi của danh sách sản phẩm
+  const calculated = await _calculateOrderAmount(rawItems);
+
+  // Gộp id của cart_item vào danh sách kết quả trả về cho frontend sử dụng
+  calculated.items = calculated.items.map((item) => {
+    const rawMatch = rawItems.find((r) => r.product_id === item.product_id);
+    return {
+      id: rawMatch ? rawMatch.cart_item_id : null,
+      ...item,
+    };
+  });
+
+  return calculated;
 };
 
 // CẬP NHẬT SỐ LƯỢNG MỘT PHẦN TỬ TRONG GIỎ
@@ -112,10 +132,8 @@ exports.checkout = async (user_id, data) => {
       .select("product_id", "quantity");
     if (rawItems.length === 0) throw new Error("Cart is empty");
 
-    // Tính toán giá tiền chuẩn bằng hàm dùng chung (Đảm bảo giá khớp 100% với lúc xem)
-    const calcResult = await _calculateOrderAmount(rawItems, trx);
+    const calcResult = await _calculateOrderAmount(rawItems, null, null, trx);
 
-    // Tạo đơn hàng với giá cuối cùng đã giảm
     const [order] = await trx("orders")
       .insert({
         order_code: `ORD-${Date.now()}-${user_id}`,
@@ -125,11 +143,10 @@ exports.checkout = async (user_id, data) => {
         payment_method: data.payment_method || "cod",
         note: data.note || null,
         status: "pending",
-        total_amount: calcResult.total_final_amount, // Lưu số tiền chuẩn sau giảm
+        total_amount: calcResult.total_final_amount,
       })
       .returning("*");
 
-    // Trừ kho và tạo order_items
     for (const item of calcResult.items) {
       const updated = await trx("inventory")
         .where({ product_id: item.product_id })
@@ -151,7 +168,6 @@ exports.checkout = async (user_id, data) => {
       });
     }
 
-    // Xóa trống giỏ hàng sau khi đặt thành công
     await trx("cart_items").where({ cart_id: cart.id }).del();
 
     return { ...order, order_details: calcResult };
