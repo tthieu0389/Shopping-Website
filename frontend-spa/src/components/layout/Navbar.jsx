@@ -45,12 +45,12 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { to: '/',                          label: 'Trang chủ' },
-    { to: '/products',                  label: 'Điện thoại' },
-    { to: '/products?category=sim-so',  label: 'Sim số' },
-    { to: '/products?category=goi-cuoc',label: 'Dịch vụ' },
-    { to: '/flash-sale',                label: '🔥 Flash Sale' },
-    { to: '/blog',                      label: 'Tin tức' },
+    { to: '/',                              label: 'Trang chủ' },
+    { to: '/products?product_type=device',  label: 'Điện thoại' },
+    { to: '/products?product_type=sim',     label: 'Sim số' },
+    { to: '/products?product_type=internet',label: 'Dịch vụ' },
+    { to: '/flash-sale',                    label: '🔥 Flash Sale' },
+    { to: '/blog',                          label: 'Tin tức' },
   ]
 
   const showDropdown = searchOpen && query.trim().length > 0
@@ -86,11 +86,19 @@ export default function Navbar() {
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) =>
-                  `px-3.5 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive ? 'text-vnpt bg-vnpt-light' : 'text-muted hover:text-vnpt hover:bg-vnpt-light'
+                end
+                className={({ isActive }) => {
+                  // Với link có query params, kiểm tra pathname + search khớp
+                  const [path, qs] = to.split('?')
+                  const currentPath = window.location.pathname
+                  const currentSearch = window.location.search
+                  const active = qs
+                    ? currentPath === path && currentSearch.includes(qs)
+                    : isActive
+                  return `px-3.5 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    active ? 'text-vnpt bg-vnpt-light' : 'text-muted hover:text-vnpt hover:bg-vnpt-light'
                   }`
-                }
+                }}
               >
                 {label}
               </NavLink>
