@@ -290,7 +290,7 @@ export default function CheckoutPage() {
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-muted">Tạm tính</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatPrice(total())}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Vận chuyển</span>
@@ -300,7 +300,7 @@ export default function CheckoutPage() {
 
             <div className="flex justify-between items-center pt-4 border-t-2 border-shade mb-5">
               <span className="text-base font-bold">Tổng cộng</span>
-              <span className="text-xl font-bold text-accent font-display">{formatPrice(total)}</span>
+              <span className="text-xl font-bold text-accent font-display">{formatPrice(total())}</span>
             </div>
 
             <button

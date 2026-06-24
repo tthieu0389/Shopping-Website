@@ -6,15 +6,15 @@ const useCartStore = create(
     (set, get) => ({
       items: [], // [{ key, id, product_id, name, price, img, qty }]
 
-      get count() {
-        return get().items.reduce((s, i) => s + i.qty, 0)
-      },
-      get subtotal() {
-        return get().items.reduce((s, i) => s + i.price * i.qty, 0)
-      },
-      get total() {
-        return get().subtotal
-      },
+      // NOTE: dùng hàm thường (không dùng `get xxx()` getter) vì zustand
+      // `persist` middleware sẽ gọi Object.assign(currentState, persistedState)
+      // khi rehydrate sau khi reload trang. Object.assign đọc getter ngay lúc đó,
+      // nhưng `get` nội bộ của store chưa sẵn sàng -> getter throw lỗi ->
+      // toàn bộ quá trình rehydrate bị fail -> items không được khôi phục từ
+      // localStorage -> cart bị "reset" sau khi reload.
+      count: () => get().items.reduce((s, i) => s + i.qty, 0),
+      subtotal: () => get().items.reduce((s, i) => s + i.price * i.qty, 0),
+      total: () => get().subtotal(),
 
       addItem: (product, qty = 1) => {
         const items = get().items

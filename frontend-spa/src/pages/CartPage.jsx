@@ -124,7 +124,7 @@ export default function CartPage() {
             <div className="space-y-3 text-sm mb-5">
               <div className="flex justify-between">
                 <span className="text-muted">Tạm tính ({items.reduce((s, i) => s + i.qty, 0)} sản phẩm)</span>
-                <span className="font-semibold">{formatPrice(subtotal)}</span>
+                <span className="font-semibold">{formatPrice(subtotal())}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Phí vận chuyển</span>
@@ -134,7 +134,7 @@ export default function CartPage() {
 
             <div className="flex justify-between items-center pt-4 border-t-2 border-shade mb-5">
               <span className="text-base font-bold text-body">Tổng cộng</span>
-              <span className="text-2xl font-bold text-accent font-display">{formatPrice(total)}</span>
+              <span className="text-2xl font-bold text-accent font-display">{formatPrice(total())}</span>
             </div>
 
             <Link
