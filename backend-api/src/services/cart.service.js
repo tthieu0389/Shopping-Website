@@ -132,7 +132,13 @@ exports.checkout = async (user_id, data) => {
       .select("product_id", "quantity");
     if (rawItems.length === 0) throw new Error("Cart is empty");
 
-    const calcResult = await _calculateOrderAmount(rawItems, null, null, trx);
+    // Truyền địa chỉ nhận hàng hoặc id cửa hàng nhận để tính đúng phí ship
+    const calcResult = await _calculateOrderAmount(
+      rawItems,
+      data.address_id || null,
+      data.pickup_store_id || null,
+      trx,
+    );
 
     const [order] = await trx("orders")
       .insert({
@@ -143,7 +149,7 @@ exports.checkout = async (user_id, data) => {
         payment_method: data.payment_method || "cod",
         note: data.note || null,
         status: "pending",
-        total_amount: calcResult.total_final_amount,
+        total_amount: calcResult.total_final_amount, // Đã bao gồm shipping_fee được tính từ _calculateOrderAmount
       })
       .returning("*");
 
