@@ -1,17 +1,9 @@
 const knex = require("../database/knex");
-const { _calculateOrderAmount } = require("./order.service"); // Import hàm tính toán dùng chung
+const { _calculateOrderAmount } = require("./order.service");
 
-// Lấy hoặc tự động tạo giỏ hàng cho tài khoản người dùng
+// Lấy hoặc tạo giỏ hàng
 const getOrCreateCart = async (user_id, trx = knex) => {
-  // Chặn trường hợp user_id không hợp lệ (null, undefined, trống) khi frontend bị mất session
-  if (!user_id) {
-    const err = new Error(
-      "Yêu cầu mã định danh người dùng (User ID is required)",
-    );
-    err.statusCode = 400;
-    throw err;
-  }
-
+  if (!user_id) throw new Error("User ID is required");
   let cart = await trx("carts").where({ user_id }).first();
   if (!cart) {
     [cart] = await trx("carts").insert({ user_id }).returning("*");
@@ -19,7 +11,7 @@ const getOrCreateCart = async (user_id, trx = knex) => {
   return cart;
 };
 
-// THÊM SẢN PHẨM VÀO GIỎ HÀNG
+// Thêm sản phẩm
 exports.addToCart = async (user_id, product_id, quantity) => {
   return knex.transaction(async (trx) => {
     const product = await trx("products")
@@ -27,155 +19,118 @@ exports.addToCart = async (user_id, product_id, quantity) => {
       .first();
     if (!product) throw new Error("Product not found");
 
-    const inventory = await trx("inventory").where({ product_id }).first();
-    if (!inventory || inventory.quantity < quantity)
-      throw new Error("Not enough stock");
-
     const cart = await getOrCreateCart(user_id, trx);
     const existing = await trx("cart_items")
       .where({ cart_id: cart.id, product_id })
       .first();
 
     if (existing) {
-      const newQty = existing.quantity + quantity;
-      if (inventory.quantity < newQty)
-        throw new Error("Not enough stock (cart total)");
-
       return trx("cart_items")
         .where({ id: existing.id })
-        .update({ quantity: newQty, updated_at: trx.fn.now() })
-        .returning("*")
-        .then(([r]) => r);
+        .update({
+          quantity: existing.quantity + quantity,
+          updated_at: trx.fn.now(),
+        })
+        .returning("*");
     }
-
-    const [item] = await trx("cart_items")
-      .insert({ cart_id: cart.id, product_id, quantity })
+    return trx("cart_items")
+      .insert({ cart_id: cart.id, product_id, quantity, is_selected: false })
       .returning("*");
-    return item;
   });
 };
 
-// LẤY DANH SÁCH GIỎ HÀNG
+// Lấy giỏ hàng
 exports.getCartItems = async (user_id) => {
   const cart = await getOrCreateCart(user_id);
+  const rawItems = await knex("cart_items").where("cart_id", cart.id);
+  if (rawItems.length === 0) return { items: [], total_final_amount: 0 };
 
-  // Lấy các item thô trong DB ra trước kèm theo ID của cart_item
-  const rawItems = await knex("cart_items")
-    .where("cart_id", cart.id)
-    .select("id as cart_item_id", "product_id", "quantity");
-
-  if (rawItems.length === 0) {
-    return {
-      items: [],
-      total_base_amount: 0,
-      total_discount_amount: 0,
-      total_final_amount: 0,
-    };
-  }
-
-  // Chạy tính toán giá tiền, khuyến mãi của danh sách sản phẩm
   const calculated = await _calculateOrderAmount(rawItems);
-
-  // Gộp id của cart_item vào danh sách kết quả trả về cho frontend sử dụng
   calculated.items = calculated.items.map((item) => {
     const rawMatch = rawItems.find((r) => r.product_id === item.product_id);
-    return {
-      id: rawMatch ? rawMatch.cart_item_id : null,
-      ...item,
-    };
+    return { id: rawMatch.id, is_selected: rawMatch.is_selected, ...item };
   });
-
   return calculated;
 };
 
-// CẬP NHẬT SỐ LƯỢNG MỘT PHẦN TỬ TRONG GIỎ
-exports.updateItem = async (item_id, quantity) => {
-  return knex.transaction(async (trx) => {
-    const item = await trx("cart_items").where({ id: item_id }).first();
-    if (!item) throw new Error("Cart item not found");
-
-    const inventory = await trx("inventory")
-      .where({ product_id: item.product_id })
-      .first();
-    if (!inventory || inventory.quantity < quantity)
-      throw new Error("Not enough stock");
-
-    const [updated] = await trx("cart_items")
-      .where({ id: item_id })
-      .update({ quantity, updated_at: trx.fn.now() })
-      .returning("*");
-
-    return updated;
+// Preview chi phí (chỉ tính toán, không lưu đơn)
+exports.previewCart = async (user_id, data) => {
+  const cart = await getOrCreateCart(user_id);
+  const selectedItems = await knex("cart_items").where({
+    cart_id: cart.id,
+    is_selected: true,
   });
+
+  if (selectedItems.length === 0) throw new Error("Chưa chọn sản phẩm");
+
+  return await _calculateOrderAmount(
+    selectedItems,
+    data.address_id,
+    data.pickup_store_id,
+  );
 };
 
-// XÓA PHẦN TỬ KHỎI GIỎ HÀNG
+// Update trạng thái chọn
+exports.toggleSelectItem = async (item_id, is_selected) => {
+  return knex("cart_items").where({ id: item_id }).update({ is_selected });
+};
+
+// Update số lượng
+exports.updateItem = async (item_id, quantity) => {
+  return knex("cart_items").where({ id: item_id }).update({ quantity });
+};
+
+// Xóa 1 món
 exports.removeItem = async (item_id) => {
+  if (!item_id) throw new Error("Item ID required");
   return knex("cart_items").where({ id: item_id }).del();
 };
 
-// XÓA TRỐNG TOÀN BỘ GIỎ HÀNG
-exports.clearCart = async (user_id) => {
-  const cart = await knex("carts").where({ user_id }).first();
-  if (!cart) return;
-  return knex("cart_items").where({ cart_id: cart.id }).del();
-};
-
-// THANH TOÁN ĐƠN HÀNG (Từ giỏ hàng)
+// Thanh toán thật
 exports.checkout = async (user_id, data) => {
   return knex.transaction(async (trx) => {
     const cart = await trx("carts").where({ user_id }).first();
-    if (!cart) throw new Error("Cart not found");
+    const selectedItems = await trx("cart_items").where({
+      cart_id: cart.id,
+      is_selected: true,
+    });
 
-    const rawItems = await trx("cart_items")
-      .where({ cart_id: cart.id })
-      .select("product_id", "quantity");
-    if (rawItems.length === 0) throw new Error("Cart is empty");
+    if (selectedItems.length === 0) throw new Error("Chưa chọn sản phẩm");
 
-    // Truyền địa chỉ nhận hàng hoặc id cửa hàng nhận để tính đúng phí ship
     const calcResult = await _calculateOrderAmount(
-      rawItems,
-      data.address_id || null,
-      data.pickup_store_id || null,
+      selectedItems,
+      data.address_id,
+      data.pickup_store_id,
       trx,
     );
 
+    // Tạo đơn hàng
     const [order] = await trx("orders")
       .insert({
         order_code: `ORD-${Date.now()}-${user_id}`,
         user_id,
-        address_id: data.address_id || null,
-        pickup_store_id: data.pickup_store_id || null,
-        payment_method: data.payment_method || "cod",
-        note: data.note || null,
+        total_amount: calcResult.total_final_amount,
         status: "pending",
-        total_amount: calcResult.total_final_amount, // Đã bao gồm shipping_fee được tính từ _calculateOrderAmount
+        receiver_name: calcResult.shipping_details?.receiver_name,
+        receiver_phone: calcResult.shipping_details?.receiver_phone,
+        shipping_address: calcResult.shipping_details?.shipping_address,
+        address_id: data.address_id,
+        pickup_store_id: data.pickup_store_id,
       })
       .returning("*");
 
+    // Trừ kho & Insert chi tiết đơn
     for (const item of calcResult.items) {
-      const updated = await trx("inventory")
+      await trx("inventory")
         .where({ product_id: item.product_id })
-        .andWhere("quantity", ">=", item.quantity)
-        .decrement("quantity", item.quantity)
-        .returning("*");
-
-      if (!updated.length)
-        throw new Error(`Not enough stock for product ${item.product_id}`);
-
-      await trx("order_items").insert({
-        order_id: order.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_price: item.unit_price,
-        quantity: item.quantity,
-        price: item.base_price,
-        discount_amount: item.discount_amount,
-      });
+        .decrement("quantity", item.quantity);
+      await trx("order_items").insert({ order_id: order.id, ...item });
     }
 
-    await trx("cart_items").where({ cart_id: cart.id }).del();
-
+    // Xóa giỏ hàng sau khi mua thành công
+    await trx("cart_items")
+      .where({ cart_id: cart.id, is_selected: true })
+      .del();
     return { ...order, order_details: calcResult };
   });
 };

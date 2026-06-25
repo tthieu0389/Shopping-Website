@@ -30,11 +30,14 @@ router.put(
   controller.updateItem,
 );
 
-// CLEAR CART -> DELETE /cart (Đặt trước tuyến :id của delete item để tránh conflict)
+// CLEAR CART - DELETE /cart (Đặt trước tuyến :id của delete item để tránh conflict)
 router.delete("/clear", verifyToken(), controller.clearCart);
 
 // DELETE ITEM
 router.delete("/items/:id", verifyToken(), controller.removeItem);
+
+// PREVIEW CART (Chỉ tính toán, không lưu đơn)
+router.post("/preview", verifyToken(), controller.previewCart);
 
 // CHECKOUT
 router.post(
@@ -43,5 +46,8 @@ router.post(
   validate(checkoutSchema),
   controller.checkout,
 );
+
+// Dùng PATCH vì đây là cập nhật một phần thuộc tính
+router.patch("/toggle-select/:id", verifyToken(), controller.toggleSelectItem);
 
 module.exports = router;

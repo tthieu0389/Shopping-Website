@@ -115,6 +115,7 @@ CREATE TABLE cart_items (
     cart_id INT REFERENCES carts(id),
     product_id INT REFERENCES products(id),
     quantity INT DEFAULT 1,
+    is_selected BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(cart_id, product_id)
@@ -129,6 +130,9 @@ CREATE TABLE orders (
     user_id INT REFERENCES users(id),
     address_id INT REFERENCES user_addresses(id),
     pickup_store_id INT,
+    receiver_name VARCHAR(100),
+    receiver_phone VARCHAR(20),
+    shipping_address TEXT,
     total_amount NUMERIC(12,2),
     payment_method VARCHAR(30),
     status VARCHAR(30) DEFAULT 'pending',

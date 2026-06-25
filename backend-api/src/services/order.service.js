@@ -3,7 +3,7 @@ const orderItemService = require("./orderitem.service");
 const promotionService = require("./promotion.service");
 const inventoryService = require("./inventory.service");
 
-// Ham tinh toan noi bo: Tinh tien hang, khuyen mai va phi ship
+// Ham tinh toan noi bo: Tinh tien hang, khuyen mai, phi ship va snapshot thong tin giao hang
 const calculateOrderAmount = async (
   items,
   addressId = null,
@@ -14,9 +14,10 @@ const calculateOrderAmount = async (
   let totalDiscountAmount = 0;
   let totalFinalAmount = 0;
   let shippingFee = 0;
+  let shippingDetails = null; // Biến này sẽ chứa dữ liệu snapshot
   const processedItems = [];
 
-  // 1. Tinh toan tien hang va ap dung khuyen mai tot nhat
+  // 1. Tinh toan tien hang va ap dung khuyen mai
   for (const item of items) {
     if (!item.product_id || !item.quantity) {
       const err = new Error("Invalid item data");
@@ -49,7 +50,6 @@ const calculateOrderAmount = async (
     }
 
     const finalPrice = basePrice - discountAmount;
-
     totalBaseAmount += basePrice;
     totalDiscountAmount += discountAmount;
     totalFinalAmount += finalPrice;
@@ -65,7 +65,7 @@ const calculateOrderAmount = async (
     });
   }
 
-  // 2. Logic tinh phi van chuyen dua tren hinh thuc nhan hang
+  // 2. Logic tinh phi van chuyen va lay snapshot thong tin
   if (addressId) {
     const address = await trx("user_addresses")
       .where({ id: addressId })
@@ -76,16 +76,18 @@ const calculateOrderAmount = async (
       throw err;
     }
 
-    // So sanh tinh cua khach voi he thong cua hang de phan loai phi ship
+    // Luu thong tin vao bien snapshot
+    shippingDetails = {
+      receiver_name: address.receiver_name,
+      receiver_phone: address.phone,
+      shipping_address: `${address.address_line}, ${address.ward}, ${address.district}, ${address.province}`,
+    };
+
     const storeInSameProvince = await trx("stores")
       .where({ province: address.province, is_deleted: false })
       .first();
 
-    if (storeInSameProvince) {
-      shippingFee = 15000; // Phi noi tinh
-    } else {
-      shippingFee = 25000; // Phi ngoai tinh
-    }
+    shippingFee = storeInSameProvince ? 15000 : 25000;
   } else if (pickupStoreId) {
     const store = await trx("stores")
       .where({ id: pickupStoreId, is_deleted: false })
@@ -95,7 +97,7 @@ const calculateOrderAmount = async (
       err.statusCode = 404;
       throw err;
     }
-    shippingFee = 0; // Nhan tai cua hang duoc mien phi ship
+    shippingFee = 0;
   }
 
   totalFinalAmount += shippingFee;
@@ -103,6 +105,7 @@ const calculateOrderAmount = async (
   return {
     items: processedItems,
     shipping_fee: shippingFee,
+    shipping_details: shippingDetails, // Trả về snapshot info
     total_base_amount: totalBaseAmount,
     total_discount_amount: totalDiscountAmount,
     total_final_amount: totalFinalAmount,
@@ -128,6 +131,7 @@ exports.previewOrder = async (data) => {
 // Tao don hang moi (Chot don, tru kho va luu lich su)
 exports.createOrder = async (userId, data) => {
   return knex.transaction(async (trx) => {
+    // Validate du lieu co ban
     if (!data.items || data.items.length === 0) {
       const err = new Error("Cart cannot be empty");
       err.statusCode = 400;
@@ -136,7 +140,7 @@ exports.createOrder = async (userId, data) => {
 
     if (!data.address_id && !data.pickup_store_id) {
       const err = new Error(
-        "Vui long chon dia chi rieng hoac cua hang nhan hang!",
+        "Vui long chon dia chi giao hang hoac cua hang nhan hang!",
       );
       err.statusCode = 400;
       throw err;
@@ -148,6 +152,7 @@ exports.createOrder = async (userId, data) => {
       throw err;
     }
 
+    // Tinh toan tien hang, phi ship va lay snapshot thong tin nguoi nhan
     const calcResult = await calculateOrderAmount(
       data.items,
       data.address_id,
@@ -155,12 +160,19 @@ exports.createOrder = async (userId, data) => {
       trx,
     );
 
+    // Luu don hang vao DB
     const [order] = await trx("orders")
       .insert({
         order_code: `ORD-${Date.now()}-${userId}`,
         user_id: userId,
         address_id: data.address_id || null,
         pickup_store_id: data.pickup_store_id || null,
+
+        // Luu thong tin Snapshot vao bang orders
+        receiver_name: calcResult.shipping_details?.receiver_name || null,
+        receiver_phone: calcResult.shipping_details?.receiver_phone || null,
+        shipping_address: calcResult.shipping_details?.shipping_address || null,
+
         payment_method: data.payment_method || "cod",
         note: data.note || null,
         status: "pending",
@@ -169,6 +181,7 @@ exports.createOrder = async (userId, data) => {
       })
       .returning("*");
 
+    // Tru kho va luu chi tiet tung mat hang
     for (const item of calcResult.items) {
       await inventoryService.decreaseStock(
         trx,
@@ -183,7 +196,7 @@ exports.createOrder = async (userId, data) => {
         product_name: item.product_name,
         product_price: item.unit_price,
         quantity: item.quantity,
-        price: item.base_price,
+        price: item.final_price, // Luu gia sau khi tru discount
         discount_amount: item.discount_amount,
       });
     }
