@@ -190,14 +190,16 @@ exports.createOrder = async (userId, data) => {
         order.id,
       );
 
-      await trx("order_items").insert({
+      // Gọi qua service để kích hoạt tự động
+      await orderItemService.createOrderItem(trx, {
         order_id: order.id,
         product_id: item.product_id,
         product_name: item.product_name,
-        product_price: item.unit_price,
         quantity: item.quantity,
-        price: item.final_price, // Luu gia sau khi tru discount
+        base_price: item.base_price,
+        unit_price: item.unit_price,
         discount_amount: item.discount_amount,
+        final_price: item.final_price,
       });
     }
 

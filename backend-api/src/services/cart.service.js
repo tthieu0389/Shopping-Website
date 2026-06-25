@@ -1,5 +1,6 @@
 const knex = require("../database/knex");
 const { _calculateOrderAmount } = require("./order.service");
+const orderItemService = require("./orderitem.service");
 
 // Lấy hoặc tạo giỏ hàng
 const getOrCreateCart = async (user_id, trx = knex) => {
@@ -124,7 +125,17 @@ exports.checkout = async (user_id, data) => {
       await trx("inventory")
         .where({ product_id: item.product_id })
         .decrement("quantity", item.quantity);
-      await trx("order_items").insert({ order_id: order.id, ...item });
+
+      await orderItemService.createOrderItem(trx, {
+        order_id: order.id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        base_price: item.base_price,
+        unit_price: item.unit_price,
+        discount_amount: item.discount_amount,
+        final_price: item.final_price,
+      });
     }
 
     // Xóa giỏ hàng sau khi mua thành công

@@ -142,13 +142,14 @@ CREATE TABLE orders (
 
 CREATE TABLE order_items (
     id SERIAL PRIMARY KEY,
-    order_id INT REFERENCES orders(id),
-    product_id INT REFERENCES products(id),
+    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id INT NOT NULL REFERENCES products(id),
     product_name VARCHAR(200),
-    product_price NUMERIC(12,2),
-    quantity INT,
-    price NUMERIC(12,2),
-    discount_amount NUMERIC(12,2) DEFAULT 0
+    quantity INT NOT NULL,
+    base_price NUMERIC(12,2) NOT NULL,
+    unit_price NUMERIC(12,2) NOT NULL,
+    discount_amount NUMERIC(12,2) DEFAULT 0,
+    final_price NUMERIC(12,2) NOT NULL
 );
 
 -- =========================
