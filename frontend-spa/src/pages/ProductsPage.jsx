@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useProducts, useCategories, usePagination } from '../hooks/index.js'
+import { useProducts, useCategories } from '../hooks/index.js'
 import { ProductCard, Breadcrumb, LoadingSpinner, EmptyState, Pagination } from '../components/common/index.jsx'
 import { formatPrice } from '../utils/index.js'
 
@@ -35,39 +34,29 @@ export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: categories } = useCategories()
 
-  const [filters, setFilters] = useState({
+  // Derived state: filters & page được TÍNH TRỰC TIẾP từ searchParams mỗi lần
+  // render, không lưu state riêng -> không cần effect để "đồng bộ" nữa, tránh
+  // hẳn lỗi eslint(react-hooks/set-state-in-effect) và cascading renders.
+  // searchParams (từ useSearchParams) đã là state, nên đây vẫn re-render đúng
+  // khi URL đổi (back/forward, sửa filter, v.v).
+  const slugFromUrl = searchParams.get('category')
+  let categoryId = searchParams.get('category_id') || ''
+  if (slugFromUrl && categories.length > 0) {
+    const matched = categories.find(c => c.slug === slugFromUrl)
+    if (matched) categoryId = String(matched.id)
+  }
+
+  const filters = {
     // Dùng category_id (số) thay vì category slug
     // vì backend products service chỉ filter theo category_id
     search:       searchParams.get('search') || searchParams.get('q') || '',
-    category_id:  searchParams.get('category_id') || '',
+    category_id:  categoryId,
     product_type: searchParams.get('product_type') || '',
     price_min:    searchParams.get('price_min') || '',
     price_max:    searchParams.get('price_max') || '',
     sort:         searchParams.get('sort') || 'newest',
-  })
-  const [page, setPage] = useState(1)
-
-  // Sync URL → filters khi URL thay đổi bên ngoài
-  // Nếu URL có ?category=slug (từ link cũ), resolve sang category_id
-  useEffect(() => {
-    const slugFromUrl = searchParams.get('category')
-    let categoryId = searchParams.get('category_id') || ''
-
-    if (slugFromUrl && categories.length > 0) {
-      const matched = categories.find(c => c.slug === slugFromUrl)
-      if (matched) categoryId = String(matched.id)
-    }
-
-    setFilters({
-      search:       searchParams.get('search') || searchParams.get('q') || '',
-      category_id:  categoryId,
-      product_type: searchParams.get('product_type') || '',
-      price_min:    searchParams.get('price_min') || '',
-      price_max:    searchParams.get('price_max') || '',
-      sort:         searchParams.get('sort') || 'newest',
-    })
-    setPage(1)
-  }, [searchParams, categories])
+  }
+  const page = Number(searchParams.get('page')) || 1
 
   // Build params cho API — khớp đúng tên param backend nhận
   const apiParams = {
@@ -85,19 +74,26 @@ export default function ProductsPage() {
   const totalPages = Math.ceil(total / LIMIT)
 
   const updateFilter = (key, value) => {
-    const next = { ...filters, [key]: value }
-    setFilters(next)
-    setPage(1)
+    updateFilters({ [key]: value })
+  }
+
+  // Cập nhật nhiều field cùng lúc, viết thẳng xuống URL (nguồn state duy nhất),
+  // luôn reset về trang 1 khi đổi filter.
+  const updateFilters = (patch) => {
+    const next = { ...filters, ...patch }
     const params = {}
     Object.entries(next).forEach(([k, v]) => { if (v) params[k] = v })
     setSearchParams(params)
   }
 
-  const clearFilters = () => {
-    setFilters({ search: '', category_id: '', product_type: '', price_min: '', price_max: '', sort: 'newest' })
-    setPage(1)
-    setSearchParams({})
+  const goToPage = (p) => {
+    const params = {}
+    Object.entries(filters).forEach(([k, v]) => { if (v) params[k] = v })
+    if (p > 1) params.page = p
+    setSearchParams(params)
   }
+
+  const clearFilters = () => setSearchParams({})
 
   const hasActiveFilters = filters.search || filters.category_id || filters.product_type || filters.price_min || filters.price_max
   const selectedCategory = categories.find(c => String(c.id) === String(filters.category_id))
@@ -180,7 +176,7 @@ export default function ProductsPage() {
                     type="radio"
                     name="price_range"
                     checked={filters.price_min === r.min && filters.price_max === r.max}
-                    onChange={() => { updateFilter('price_min', r.min); updateFilter('price_max', r.max) }}
+                    onChange={() => updateFilters({ price_min: r.min, price_max: r.max })}
                     className="accent-vnpt w-4 h-4"
                   />
                   <span className="text-sm text-body">{r.label}</span>
@@ -264,7 +260,7 @@ export default function ProductsPage() {
               {(filters.price_min || filters.price_max) && (
                 <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
                   {filters.price_min ? formatPrice(filters.price_min) : '0'} - {filters.price_max ? formatPrice(filters.price_max) : '∞'}
-                  <button onClick={() => { updateFilter('price_min', ''); updateFilter('price_max', '') }} className="ml-1 hover:text-vnpt-dark">✕</button>
+                  <button onClick={() => updateFilters({ price_min: '', price_max: '' })} className="ml-1 hover:text-vnpt-dark">✕</button>
                 </span>
               )}
             </div>
@@ -291,7 +287,7 @@ export default function ProductsPage() {
               <div className="grid grid-cols-3 gap-4">
                 {products.map(p => <ProductCard key={p.id} product={p} />)}
               </div>
-              <Pagination page={page} totalPages={totalPages} goTo={setPage} />
+              <Pagination page={page} totalPages={totalPages} goTo={goToPage} />
             </>
           )}
         </div>
