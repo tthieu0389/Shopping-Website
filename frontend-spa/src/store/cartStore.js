@@ -84,6 +84,16 @@ const useCartStore = create((set, get) => ({
     set({ items: [] })
     try { await cartApi.clear() } catch { /* ignore */ }
   },
+
+  // ── Xoá chỉ các item đã đặt hàng, giữ lại phần còn lại ──────────────────
+  removeSelectedItems: async (cartItemIds) => {
+    set({ items: get().items.filter(i => !cartItemIds.includes(i.id)) })
+    try {
+      await Promise.all(cartItemIds.map(id => cartApi.removeItem(id)))
+    } catch {
+      await get().fetchCart()
+    }
+  },
 }))
 
 export default useCartStore

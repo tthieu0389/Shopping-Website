@@ -23,7 +23,15 @@ const toBackendPayment = (value) => {
 const STEPS = ['Giỏ hàng', 'Thông tin', 'Thanh toán', 'Xác nhận']
 
 export default function CheckoutPage() {
-  const { items, total, clearCart } = useCartStore()
+  const { items: allItems, removeSelectedItems } = useCartStore()
+
+  // Lọc chỉ những item user đã chọn từ CartPage
+  const selectedIds = (() => {
+    try { return new Set(JSON.parse(sessionStorage.getItem('checkout_items') || '[]')) }
+    catch { return new Set() }
+  })()
+  const items = selectedIds.size > 0 ? allItems.filter(i => selectedIds.has(i.id)) : allItems
+  const selectedTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
   const { user } = useAuthStore()
   const { data: addresses } = useUserAddresses()
   const navigate = useNavigate()
@@ -71,7 +79,8 @@ export default function CheckoutPage() {
       }
 
       await cartApi.checkout(payload)
-      await clearCart()
+      sessionStorage.removeItem('checkout_items')
+      await removeSelectedItems(items.map(i => i.id))
       toast.success('Đặt hàng thành công! 🎉')
       navigate('/checkout/success')
     } catch (err) {
@@ -304,7 +313,7 @@ export default function CheckoutPage() {
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-muted">Tạm tính</span>
-                <span>{formatPrice(total())}</span>
+                <span>{formatPrice(selectedTotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Vận chuyển</span>
@@ -314,7 +323,7 @@ export default function CheckoutPage() {
 
             <div className="flex justify-between items-center pt-4 border-t-2 border-shade mb-5">
               <span className="text-base font-bold">Tổng cộng</span>
-              <span className="text-xl font-bold text-accent font-display">{formatPrice(total())}</span>
+              <span className="text-xl font-bold text-accent font-display">{formatPrice(selectedTotal)}</span>
             </div>
 
             <button
