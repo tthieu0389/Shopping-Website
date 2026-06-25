@@ -7,6 +7,7 @@ exports.addToCartSchema = z.object({
 
 exports.updateCartItemSchema = z.object({
   quantity: z.number().int().min(1),
+  is_selected: z.boolean().optional(),
 });
 
 exports.checkoutSchema = z.object({

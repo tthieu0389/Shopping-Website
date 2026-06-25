@@ -11,8 +11,8 @@ exports.seed = async function (knex) {
     district: faker.location.city(),
     ward: faker.location.street(),
     address_line: faker.location.streetAddress(),
-    latitude: faker.location.latitude(),
-    longitude: faker.location.longitude(),
+    latitude: parseFloat(faker.location.latitude().toFixed(7)),
+    longitude: parseFloat(faker.location.longitude().toFixed(7)),
     is_default: true,
   }));
 

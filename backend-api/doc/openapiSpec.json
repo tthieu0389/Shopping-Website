@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Shopping Website API",
-    "version": "1.0.0",
-    "description": "REST API cho hệ thống thương mại điện tử. Xác thực bằng Bearer JWT token."
+    "description": "REST API cho hệ thống thương mại điện tử – Node.js / Express / PostgreSQL",
+    "version": "1.0.0"
   },
   "servers": [
     { "url": "http://localhost:3000", "description": "Local development" }
@@ -24,71 +24,95 @@
           "error": { "type": "string" }
         }
       },
-      "Register": {
+      "SuccessResponse": {
         "type": "object",
-        "required": ["name", "email", "password"],
         "properties": {
-          "name": { "type": "string", "example": "Nguyen Van A" },
-          "email": { "type": "string", "format": "email" },
-          "password": { "type": "string", "minLength": 6 }
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "object" }
         }
       },
-      "Login": {
+      "PaginationMeta": {
         "type": "object",
-        "required": ["email", "password"],
         "properties": {
-          "email": { "type": "string", "format": "email" },
-          "password": { "type": "string", "minLength": 6 }
+          "page": { "type": "integer", "example": 1 },
+          "limit": { "type": "integer", "example": 20 },
+          "total": { "type": "integer", "example": 100 }
         }
       },
-      "CreateUser": {
+      "User": {
         "type": "object",
-        "required": ["name", "email", "password", "role"],
         "properties": {
+          "id": { "type": "integer" },
           "name": { "type": "string" },
           "email": { "type": "string", "format": "email" },
-          "password": { "type": "string", "minLength": 6 },
-          "role": { "type": "string", "enum": ["admin", "user"] }
+          "role": { "type": "string", "enum": ["user", "admin"] },
+          "is_deleted": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
-      "UpdateUser": {
+      "UserProfile": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
-          "password": { "type": "string", "minLength": 6 },
-          "role": { "type": "string", "enum": ["admin", "user"] }
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
+          "full_name": { "type": "string" },
+          "date_of_birth": { "type": "string", "format": "date" },
+          "gender": { "type": "string", "enum": ["male", "female", "other"] },
+          "phone": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
-      "CreateProduct": {
+      "UserAddress": {
         "type": "object",
-        "required": ["name", "price"],
         "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
+          "receiver_name": { "type": "string" },
+          "phone": { "type": "string" },
+          "province": { "type": "string" },
+          "district": { "type": "string" },
+          "ward": { "type": "string" },
+          "address_line": { "type": "string" },
+          "latitude": { "type": "number" },
+          "longitude": { "type": "number" },
+          "is_default": { "type": "boolean" },
+          "is_deleted": { "type": "boolean" }
+        }
+      },
+      "UserPaymentMethod": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
+          "bank_name": { "type": "string" },
+          "card_holder_name": { "type": "string" },
+          "card_last4": { "type": "string", "maxLength": 4 },
+          "expiry_month": { "type": "integer" },
+          "expiry_year": { "type": "integer" },
+          "payment_type": { "type": "string" },
+          "provider": { "type": "string" },
+          "is_default": { "type": "boolean" },
+          "is_deleted": { "type": "boolean" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
           "name": { "type": "string" },
           "slug": { "type": "string" },
           "description": { "type": "string" },
-          "price": { "type": "number", "minimum": 0 },
-          "stock": { "type": "integer", "minimum": 0, "default": 0 },
-          "product_type": {
-            "type": "string",
-            "maxLength": 50,
-            "default": "device"
-          },
-          "category_id": { "type": "integer" },
-          "brand": { "type": "string", "maxLength": 100, "default": "VNPT" },
-          "model": { "type": "string", "maxLength": 100 },
-          "attributes": { "type": "object", "additionalProperties": true },
-          "is_available": { "type": "boolean", "default": true },
-          "is_featured": { "type": "boolean", "default": false }
+          "is_deleted": { "type": "boolean" }
         }
       },
-      "UpdateProduct": {
+      "Product": {
         "type": "object",
         "properties": {
+          "id": { "type": "integer" },
           "name": { "type": "string" },
           "slug": { "type": "string" },
           "description": { "type": "string" },
-          "price": { "type": "number" },
+          "price": { "type": "number", "format": "double" },
           "stock": { "type": "integer" },
           "product_type": { "type": "string" },
           "category_id": { "type": "integer" },
@@ -96,164 +120,152 @@
           "model": { "type": "string" },
           "attributes": { "type": "object" },
           "is_available": { "type": "boolean" },
-          "is_featured": { "type": "boolean" }
-        }
-      },
-      "CreateCategory": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "description": { "type": "string", "default": "" }
-        }
-      },
-      "UpdateCategory": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "description": { "type": "string" }
-        }
-      },
-      "AddToCart": {
-        "type": "object",
-        "required": ["product_id"],
-        "properties": {
-          "product_id": { "type": "integer" },
-          "quantity": { "type": "integer", "minimum": 1, "default": 1 }
-        }
-      },
-      "UpdateCartItem": {
-        "type": "object",
-        "required": ["quantity"],
-        "properties": { "quantity": { "type": "integer", "minimum": 1 } }
-      },
-      "Checkout": {
-        "type": "object",
-        "required": ["payment_method"],
-        "properties": {
-          "address_id": { "type": "integer" },
-          "pickup_store_id": { "type": "integer" },
-          "payment_method": {
+          "is_featured": { "type": "boolean" },
+          "is_deleted": { "type": "boolean" },
+          "deleted_at": {
             "type": "string",
-            "enum": ["cod", "card", "wallet"]
+            "format": "date-time",
+            "nullable": true
           },
-          "note": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProductDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "product_id": { "type": "integer" },
+          "detail_name": { "type": "string" },
+          "detail_value": { "type": "string" }
+        }
+      },
+      "ProductImage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "product_id": { "type": "integer" },
+          "image_url": { "type": "string" },
+          "is_thumbnail": { "type": "boolean" }
+        }
+      },
+      "Cart": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
           "items": {
             "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "product_id": { "type": "integer" },
-                "quantity": { "type": "integer", "minimum": 1 }
-              }
-            }
+            "items": { "$ref": "#/components/schemas/CartItem" }
           }
         }
       },
-      "CreateOrder": {
+      "CartItem": {
         "type": "object",
-        "required": ["items"],
-        "description": "Phải có address_id hoặc pickup_store_id, không thể có cả hai",
         "properties": {
-          "address_id": { "type": "integer" },
-          "pickup_store_id": { "type": "integer" },
-          "payment_method": {
-            "oneOf": [
-              { "type": "string", "enum": ["cod"] },
-              { "type": "integer", "description": "ID từ user_payment_methods" }
-            ],
-            "default": "cod"
-          },
-          "note": { "type": "string" },
-          "items": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "object",
-              "required": ["product_id", "quantity"],
-              "properties": {
-                "product_id": { "type": "integer" },
-                "quantity": { "type": "integer", "minimum": 1 }
-              }
-            }
-          }
+          "id": { "type": "integer" },
+          "cart_id": { "type": "integer" },
+          "product_id": { "type": "integer" },
+          "quantity": { "type": "integer" },
+          "is_selected": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
-      "UpdateOrder": {
+      "Order": {
         "type": "object",
         "properties": {
+          "id": { "type": "integer" },
+          "order_code": { "type": "string" },
+          "user_id": { "type": "integer" },
+          "address_id": { "type": "integer", "nullable": true },
+          "pickup_store_id": { "type": "integer", "nullable": true },
+          "receiver_name": { "type": "string" },
+          "receiver_phone": { "type": "string" },
+          "shipping_address": { "type": "string" },
+          "total_amount": { "type": "number" },
+          "payment_method": { "type": "string" },
           "status": {
             "type": "string",
             "enum": ["pending", "confirmed", "shipping", "completed"]
           },
-          "note": { "type": "string" }
+          "note": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
-      "CreateBlog": {
-        "type": "object",
-        "required": ["title", "content"],
-        "properties": {
-          "title": { "type": "string" },
-          "slug": { "type": "string" },
-          "content": { "type": "string" }
-        }
-      },
-      "UpdateBlog": {
+      "OrderItem": {
         "type": "object",
         "properties": {
-          "title": { "type": "string" },
-          "slug": { "type": "string" },
-          "content": { "type": "string" }
-        }
-      },
-      "CreateReview": {
-        "type": "object",
-        "required": ["product_id", "rating"],
-        "properties": {
+          "id": { "type": "integer" },
+          "order_id": { "type": "integer" },
           "product_id": { "type": "integer" },
-          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
-          "comment": { "type": "string" }
+          "product_name": { "type": "string" },
+          "product_price": { "type": "number" },
+          "quantity": { "type": "integer" },
+          "price": { "type": "number" },
+          "discount_amount": { "type": "number" }
         }
       },
-      "CreateStore": {
+      "Inventory": {
         "type": "object",
-        "required": ["name", "province", "address", "phone"],
         "properties": {
+          "id": { "type": "integer" },
+          "product_id": { "type": "integer" },
+          "quantity": { "type": "integer" },
+          "min_quantity": { "type": "integer" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "archived"]
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "InventoryLog": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "inventory_id": { "type": "integer" },
+          "product_id": { "type": "integer" },
+          "action": { "type": "string" },
+          "quantity_before": { "type": "integer" },
+          "quantity_change": { "type": "integer" },
+          "quantity_after": { "type": "integer" },
+          "reference_id": { "type": "integer" },
+          "note": { "type": "string" },
+          "created_by": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Blog": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "slug": { "type": "string" },
+          "content": { "type": "string" },
+          "is_deleted": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
           "name": { "type": "string" },
-          "province": { "type": "string" },
-          "address": { "type": "string" },
-          "phone": { "type": "string" }
+          "email": { "type": "string", "format": "email" },
+          "message": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
-      "UpdateStore": {
+      "Promotion": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "province": { "type": "string" },
-          "address": { "type": "string" },
-          "phone": { "type": "string" }
-        }
-      },
-      "CreatePromotion": {
-        "type": "object",
-        "required": ["name", "discount_type", "discount_value"],
-        "properties": {
-          "name": { "type": "string" },
-          "description": { "type": "string" },
-          "discount_type": { "type": "string", "enum": ["percent", "fixed"] },
-          "discount_value": { "type": "number", "minimum": 0 },
-          "start_date": { "type": "string", "format": "date-time" },
-          "end_date": { "type": "string", "format": "date-time" },
-          "is_active": { "type": "boolean", "default": true },
-          "priority": { "type": "integer" },
-          "stackable": { "type": "boolean" }
-        }
-      },
-      "UpdatePromotion": {
-        "type": "object",
-        "properties": {
+          "id": { "type": "integer" },
           "name": { "type": "string" },
           "description": { "type": "string" },
           "discount_type": { "type": "string", "enum": ["percent", "fixed"] },
@@ -265,138 +277,54 @@
           "stackable": { "type": "boolean" }
         }
       },
-      "CreateProductPromotion": {
+      "ProductPromotion": {
         "type": "object",
-        "required": ["product_id", "promotion_id"],
         "properties": {
+          "id": { "type": "integer" },
           "product_id": { "type": "integer" },
           "promotion_id": { "type": "integer" }
         }
       },
-      "CreateInventory": {
+      "Review": {
         "type": "object",
-        "required": ["product_id"],
         "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
           "product_id": { "type": "integer" },
-          "quantity": { "type": "integer", "minimum": 0, "default": 0 },
-          "min_quantity": { "type": "integer", "minimum": 0, "default": 5 },
-          "status": {
-            "type": "string",
-            "enum": ["active", "inactive", "archived"],
-            "default": "active"
-          }
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "comment": { "type": "string" },
+          "is_deleted": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
-      "UpdateInventory": {
+      "Favorite": {
         "type": "object",
         "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer" },
           "product_id": { "type": "integer" },
-          "quantity": { "type": "integer", "minimum": 0 },
-          "min_quantity": { "type": "integer", "minimum": 0 },
-          "status": {
-            "type": "string",
-            "enum": ["active", "inactive", "archived"]
-          }
+          "is_deleted": { "type": "boolean" }
         }
       },
-      "CreateContact": {
+      "Store": {
         "type": "object",
-        "required": ["name", "email", "message"],
         "properties": {
+          "id": { "type": "integer" },
           "name": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
-          "message": { "type": "string" }
-        }
-      },
-      "CreateAddress": {
-        "type": "object",
-        "properties": {
-          "receiver_name": { "type": "string" },
-          "phone": { "type": "string", "pattern": "^[0-9]{9,11}$" },
           "province": { "type": "string" },
-          "district": { "type": "string" },
-          "ward": { "type": "string" },
-          "address_line": { "type": "string" },
-          "latitude": { "type": "number" },
-          "longitude": { "type": "number" },
-          "is_default": { "type": "boolean" }
+          "address": { "type": "string" },
+          "phone": { "type": "string" },
+          "is_deleted": { "type": "boolean" }
         }
-      },
-      "UpdateAddress": {
-        "type": "object",
-        "properties": {
-          "receiver_name": { "type": "string" },
-          "phone": { "type": "string", "pattern": "^[0-9]{9,11}$" },
-          "province": { "type": "string" },
-          "district": { "type": "string" },
-          "ward": { "type": "string" },
-          "address_line": { "type": "string" },
-          "latitude": { "type": "number" },
-          "longitude": { "type": "number" },
-          "is_default": { "type": "boolean" }
-        }
-      },
-      "CreatePayment": {
-        "type": "object",
-        "properties": {
-          "payment_type": { "type": "string", "example": "card" },
-          "provider": { "type": "string", "example": "Visa" },
-          "bank_name": { "type": "string" },
-          "card_holder_name": { "type": "string" },
-          "card_last4": { "type": "string", "pattern": "^[0-9]{4}$" },
-          "expiry_month": { "type": "integer" },
-          "expiry_year": { "type": "integer" },
-          "is_default": { "type": "boolean" }
-        }
-      },
-      "UpdatePayment": {
-        "type": "object",
-        "properties": {
-          "payment_type": { "type": "string" },
-          "provider": { "type": "string" },
-          "bank_name": { "type": "string" },
-          "card_holder_name": { "type": "string" },
-          "card_last4": { "type": "string", "pattern": "^[0-9]{4}$" },
-          "expiry_month": { "type": "integer" },
-          "expiry_year": { "type": "integer" },
-          "is_default": { "type": "boolean" }
-        }
-      },
-      "UserProfile": {
-        "type": "object",
-        "properties": {
-          "full_name": { "type": "string" },
-          "avatar": { "type": "string" },
-          "phone": { "type": "string", "pattern": "^[0-9]{9,11}$" },
-          "birthday": { "type": "string", "format": "date" },
-          "gender": { "type": "string", "enum": ["male", "female", "other"] },
-          "bio": { "type": "string", "maxLength": 500 }
-        }
-      },
-      "CreateProductDetail": {
-        "type": "object",
-        "required": ["product_id", "detail_name", "detail_value"],
-        "properties": {
-          "product_id": { "type": "integer" },
-          "detail_name": { "type": "string" },
-          "detail_value": { "type": "string" }
-        }
-      },
-      "UpdateProductDetail": {
-        "type": "object",
-        "properties": {
-          "product_id": { "type": "integer" },
-          "detail_name": { "type": "string" },
-          "detail_value": { "type": "string" }
-        }
-      },
-      "AddFavorite": {
-        "type": "object",
-        "required": ["product_id"],
-        "properties": { "product_id": { "type": "integer" } }
       }
     },
     "parameters": {
+      "IdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" }
+      },
       "PageParam": {
         "name": "page",
         "in": "query",
@@ -405,18 +333,12 @@
       "LimitParam": {
         "name": "limit",
         "in": "query",
-        "schema": { "type": "integer", "default": 10 }
-      },
-      "IdParam": {
-        "name": "id",
-        "in": "path",
-        "required": true,
-        "schema": { "type": "integer" }
+        "schema": { "type": "integer", "default": 20 }
       }
     },
     "responses": {
       "Unauthorized": {
-        "description": "Token không hợp lệ hoặc hết hạn",
+        "description": "Token không hợp lệ hoặc thiếu",
         "content": {
           "application/json": {
             "schema": { "$ref": "#/components/schemas/ErrorResponse" }
@@ -424,7 +346,7 @@
         }
       },
       "Forbidden": {
-        "description": "Không có quyền truy cập (yêu cầu role admin)",
+        "description": "Không có quyền truy cập",
         "content": {
           "application/json": {
             "schema": { "$ref": "#/components/schemas/ErrorResponse" }
@@ -439,7 +361,7 @@
           }
         }
       },
-      "ValidationError": {
+      "BadRequest": {
         "description": "Dữ liệu đầu vào không hợp lệ",
         "content": {
           "application/json": {
@@ -450,56 +372,103 @@
     }
   },
   "tags": [
-    { "name": "Auth" },
-    { "name": "Users" },
-    { "name": "UserProfile" },
-    { "name": "UserAddress" },
-    { "name": "UserPayment" },
-    { "name": "Products" },
-    { "name": "ProductDetails" },
-    { "name": "ProductImages" },
-    { "name": "Categories" },
-    { "name": "Cart" },
-    { "name": "Orders" },
-    { "name": "OrderItems" },
-    { "name": "Reviews" },
-    { "name": "Favorites" },
-    { "name": "Blogs" },
-    { "name": "Stores" },
-    { "name": "Promotions" },
-    { "name": "ProductPromotions" },
-    { "name": "Inventory" },
-    { "name": "InventoryLogs" },
-    { "name": "Contacts" }
+    { "name": "Auth", "description": "Đăng ký & đăng nhập" },
+    { "name": "Users", "description": "Quản lý người dùng (Admin)" },
+    { "name": "User Profile", "description": "Hồ sơ cá nhân" },
+    { "name": "User Address", "description": "Địa chỉ giao hàng" },
+    { "name": "User Payment", "description": "Phương thức thanh toán" },
+    { "name": "Categories", "description": "Danh mục sản phẩm" },
+    { "name": "Products", "description": "Sản phẩm" },
+    { "name": "Product Details", "description": "Thông số kỹ thuật sản phẩm" },
+    { "name": "Product Images", "description": "Ảnh sản phẩm" },
+    { "name": "Cart", "description": "Giỏ hàng" },
+    { "name": "Orders", "description": "Đơn hàng" },
+    { "name": "Order Items", "description": "Chi tiết đơn hàng" },
+    { "name": "Inventory", "description": "Quản lý kho" },
+    { "name": "Inventory Logs", "description": "Lịch sử kho" },
+    { "name": "Blogs", "description": "Bài viết" },
+    { "name": "Contacts", "description": "Liên hệ" },
+    { "name": "Promotions", "description": "Khuyến mãi" },
+    {
+      "name": "Product Promotions",
+      "description": "Gán khuyến mãi cho sản phẩm"
+    },
+    { "name": "Reviews", "description": "Đánh giá sản phẩm" },
+    { "name": "Favorites", "description": "Sản phẩm yêu thích" },
+    { "name": "Stores", "description": "Cửa hàng" }
   ],
   "paths": {
     "/api/auth/register": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Đăng ký tài khoản",
+        "summary": "Đăng ký tài khoản mới",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/Register" }
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "Nguyen Van A" },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "123456"
+                  }
+                }
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "Đăng ký thành công" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          "201": {
+            "description": "Đăng ký thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }
     },
     "/api/auth/login": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Đăng nhập, trả về JWT",
+        "summary": "Đăng nhập",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/Login" }
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "123456"
+                  }
+                }
+              }
             }
           }
         },
@@ -512,68 +481,104 @@
                   "type": "object",
                   "properties": {
                     "success": { "type": "boolean" },
-                    "token": { "type": "string" }
+                    "token": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/User" }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Sai email hoặc mật khẩu" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/users": {
       "get": {
         "tags": ["Users"],
-        "summary": "Danh sách người dùng (admin)",
+        "summary": "Lấy danh sách người dùng (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "$ref": "#/components/parameters/PageParam" },
           { "$ref": "#/components/parameters/LimitParam" }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    },
+                    "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
       },
       "post": {
         "tags": ["Users"],
-        "summary": "Tạo người dùng mới (admin)",
+        "summary": "Tạo người dùng mới (Admin)",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateUser" }
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password", "role"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 },
+                  "role": { "type": "string", "enum": ["admin", "user"] }
+                }
+              }
             }
           }
         },
         "responses": {
           "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          "403": { "$ref": "#/components/responses/Forbidden" }
         }
       }
     },
     "/api/users/{id}": {
       "put": {
         "tags": ["Users"],
-        "summary": "Cập nhật người dùng (admin)",
+        "summary": "Cập nhật người dùng (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateUser" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 },
+                  "role": { "type": "string", "enum": ["admin", "user"] }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Cập nhật thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
@@ -581,11 +586,11 @@
       },
       "delete": {
         "tags": ["Users"],
-        "summary": "Xóa người dùng (admin)",
+        "summary": "Xóa người dùng (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
@@ -594,36 +599,63 @@
     },
     "/api/user-profile": {
       "get": {
-        "tags": ["UserProfile"],
-        "summary": "Hồ sơ người dùng hiện tại",
+        "tags": ["User Profile"],
+        "summary": "Lấy hồ sơ cá nhân của user hiện tại",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/UserProfile" }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "put": {
-        "tags": ["UserProfile"],
-        "summary": "Cập nhật hồ sơ người dùng hiện tại",
+        "tags": ["User Profile"],
+        "summary": "Cập nhật hồ sơ cá nhân của user hiện tại",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UserProfile" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": { "type": "string" },
+                  "avatar": { "type": "string" },
+                  "phone": { "type": "string", "pattern": "^[0-9]{9,11}$" },
+                  "birthday": { "type": "string", "format": "date" },
+                  "gender": {
+                    "type": "string",
+                    "enum": ["male", "female", "other"]
+                  },
+                  "bio": { "type": "string", "maxLength": 500 }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Cập nhật thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/user-profile/{userId}": {
       "get": {
-        "tags": ["UserProfile"],
-        "summary": "Hồ sơ theo userId",
+        "tags": ["User Profile"],
+        "summary": "Lấy hồ sơ theo userId (Admin/internal)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -634,14 +666,14 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
       "post": {
-        "tags": ["UserProfile"],
-        "summary": "Upsert hồ sơ theo userId",
+        "tags": ["User Profile"],
+        "summary": "Tạo hoặc cập nhật hồ sơ theo userId (Admin/internal)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -655,18 +687,31 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UserProfile" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": { "type": "string" },
+                  "avatar": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "birthday": { "type": "string", "format": "date" },
+                  "gender": {
+                    "type": "string",
+                    "enum": ["male", "female", "other"]
+                  },
+                  "bio": { "type": "string" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "delete": {
-        "tags": ["UserProfile"],
-        "summary": "Xóa hồ sơ người dùng",
+        "tags": ["User Profile"],
+        "summary": "Xóa hồ sơ theo userId",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -677,43 +722,73 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/user-address": {
       "get": {
-        "tags": ["UserAddress"],
-        "summary": "Địa chỉ của người dùng hiện tại",
+        "tags": ["User Address"],
+        "summary": "Lấy danh sách địa chỉ của user hiện tại",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/UserAddress" }
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "post": {
-        "tags": ["UserAddress"],
+        "tags": ["User Address"],
         "summary": "Tạo địa chỉ mới",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateAddress" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receiver_name": { "type": "string" },
+                  "phone": { "type": "string", "pattern": "^[0-9]{9,11}$" },
+                  "province": { "type": "string" },
+                  "district": { "type": "string" },
+                  "ward": { "type": "string" },
+                  "address_line": { "type": "string" },
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "is_default": { "type": "boolean" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "OK" },
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/user-address/user/{userId}": {
       "get": {
-        "tags": ["UserAddress"],
-        "summary": "Địa chỉ theo userId",
+        "tags": ["User Address"],
+        "summary": "Lấy địa chỉ theo userId (Admin/internal)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -724,14 +799,14 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/user-address/{id}": {
       "put": {
-        "tags": ["UserAddress"],
+        "tags": ["User Address"],
         "summary": "Cập nhật địa chỉ",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
@@ -739,59 +814,108 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateAddress" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receiver_name": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "province": { "type": "string" },
+                  "district": { "type": "string" },
+                  "ward": { "type": "string" },
+                  "address_line": { "type": "string" },
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "is_default": { "type": "boolean" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Cập nhật thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
       "delete": {
-        "tags": ["UserAddress"],
+        "tags": ["User Address"],
         "summary": "Xóa địa chỉ",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     },
     "/api/user-payment": {
       "get": {
-        "tags": ["UserPayment"],
-        "summary": "Phương thức thanh toán của người dùng hiện tại",
+        "tags": ["User Payment"],
+        "summary": "Lấy danh sách phương thức thanh toán của user hiện tại",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserPaymentMethod"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "post": {
-        "tags": ["UserPayment"],
+        "tags": ["User Payment"],
         "summary": "Thêm phương thức thanh toán",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreatePayment" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bank_name": { "type": "string" },
+                  "card_holder_name": { "type": "string" },
+                  "card_last4": { "type": "string", "maxLength": 4 },
+                  "expiry_month": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12
+                  },
+                  "expiry_year": { "type": "integer" },
+                  "payment_type": { "type": "string" },
+                  "provider": { "type": "string" },
+                  "is_default": { "type": "boolean" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "OK" },
+          "201": { "description": "Thêm thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/user-payment/user/{userId}": {
       "get": {
-        "tags": ["UserPayment"],
-        "summary": "Phương thức thanh toán theo userId",
+        "tags": ["User Payment"],
+        "summary": "Lấy phương thức thanh toán theo userId",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -802,14 +926,14 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/user-payment/{id}": {
       "put": {
-        "tags": ["UserPayment"],
+        "tags": ["User Payment"],
         "summary": "Cập nhật phương thức thanh toán",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
@@ -817,284 +941,87 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdatePayment" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      },
-      "delete": {
-        "tags": ["UserPayment"],
-        "summary": "Xóa phương thức thanh toán",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/products": {
-      "get": {
-        "tags": ["Products"],
-        "summary": "Danh sách sản phẩm (public)",
-        "parameters": [
-          { "$ref": "#/components/parameters/PageParam" },
-          { "$ref": "#/components/parameters/LimitParam" }
-        ],
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Products"],
-        "summary": "Tạo sản phẩm (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateProduct" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/products/{idOrSlug}": {
-      "get": {
-        "tags": ["Products"],
-        "summary": "Chi tiết sản phẩm theo ID hoặc slug (public)",
-        "parameters": [
-          {
-            "name": "idOrSlug",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK" },
-          "404": { "$ref": "#/components/responses/NotFound" }
-        }
-      },
-      "put": {
-        "tags": ["Products"],
-        "summary": "Cập nhật sản phẩm (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "name": "idOrSlug",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateProduct" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      },
-      "delete": {
-        "tags": ["Products"],
-        "summary": "Xóa sản phẩm (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "name": "idOrSlug",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/products/{id}/related": {
-      "get": {
-        "tags": ["Products"],
-        "summary": "Sản phẩm liên quan (public)",
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/product-details/product/{productId}": {
-      "get": {
-        "tags": ["ProductDetails"],
-        "summary": "Thông số kỹ thuật theo productId (public)",
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/product-details": {
-      "post": {
-        "tags": ["ProductDetails"],
-        "summary": "Thêm thông số kỹ thuật (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateProductDetail" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/product-details/{id}": {
-      "put": {
-        "tags": ["ProductDetails"],
-        "summary": "Cập nhật thông số kỹ thuật (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateProductDetail" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      },
-      "delete": {
-        "tags": ["ProductDetails"],
-        "summary": "Xóa thông số kỹ thuật (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/product-images/upload": {
-      "post": {
-        "tags": ["ProductImages"],
-        "summary": "Upload ảnh sản phẩm (admin, multipart)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["images", "product_id"],
                 "properties": {
-                  "images": {
-                    "type": "array",
-                    "items": { "type": "string", "format": "binary" },
-                    "maxItems": 10
-                  },
-                  "product_id": { "type": "integer" }
+                  "bank_name": { "type": "string" },
+                  "card_holder_name": { "type": "string" },
+                  "card_last4": { "type": "string" },
+                  "expiry_month": { "type": "integer" },
+                  "expiry_year": { "type": "integer" },
+                  "payment_type": { "type": "string" },
+                  "provider": { "type": "string" },
+                  "is_default": { "type": "boolean" }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Upload thành công" },
+          "200": { "description": "Cập nhật thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
-      }
-    },
-    "/api/product-images/product/{productId}": {
-      "get": {
-        "tags": ["ProductImages"],
-        "summary": "Ảnh sản phẩm theo productId (public)",
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/product-images/{id}": {
+      },
       "delete": {
-        "tags": ["ProductImages"],
-        "summary": "Xóa ảnh (admin)",
+        "tags": ["User Payment"],
+        "summary": "Xóa phương thức thanh toán",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/product-images/{id}/thumbnail": {
-      "patch": {
-        "tags": ["ProductImages"],
-        "summary": "Đặt ảnh làm thumbnail (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     },
     "/api/categories": {
       "get": {
         "tags": ["Categories"],
-        "summary": "Danh sách danh mục (public)",
-        "responses": { "200": { "description": "OK" } }
+        "summary": "Lấy danh sách danh mục (Public)",
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Category" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "post": {
         "tags": ["Categories"],
-        "summary": "Tạo danh mục (admin)",
+        "summary": "Tạo danh mục mới (Admin)",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCategory" }
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "OK" },
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1103,30 +1030,407 @@
     "/api/categories/{id}": {
       "put": {
         "tags": ["Categories"],
-        "summary": "Cập nhật danh mục (admin)",
+        "summary": "Cập nhật danh mục (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateCategory" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Cập nhật thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
       "delete": {
         "tags": ["Categories"],
-        "summary": "Xóa danh mục (admin)",
+        "summary": "Xóa danh mục (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lấy danh sách sản phẩm (Public)",
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/LimitParam" },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          { "name": "brand", "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "product_type",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "is_featured",
+            "in": "query",
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Product" }
+                    },
+                    "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Tạo sản phẩm mới (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "description": { "type": "string" },
+                  "price": { "type": "number", "minimum": 0 },
+                  "stock": { "type": "integer", "minimum": 0, "default": 0 },
+                  "product_type": { "type": "string", "default": "device" },
+                  "category_id": { "type": "integer" },
+                  "brand": { "type": "string", "default": "VNPT" },
+                  "model": { "type": "string" },
+                  "attributes": { "type": "object" },
+                  "is_available": { "type": "boolean", "default": true },
+                  "is_featured": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/products/{idOrSlug}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lấy chi tiết sản phẩm theo ID hoặc Slug (Public)",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID (số nguyên) hoặc slug của sản phẩm"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/products/{id}/related": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lấy sản phẩm liên quan (Public)",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Thành công" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "put": {
+        "tags": ["Products"],
+        "summary": "Cập nhật sản phẩm (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "description": { "type": "string" },
+                  "price": { "type": "number" },
+                  "stock": { "type": "integer" },
+                  "product_type": { "type": "string" },
+                  "category_id": { "type": "integer" },
+                  "brand": { "type": "string" },
+                  "model": { "type": "string" },
+                  "attributes": { "type": "object" },
+                  "is_available": { "type": "boolean" },
+                  "is_featured": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Xóa sản phẩm (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/product-details/product/{productId}": {
+      "get": {
+        "tags": ["Product Details"],
+        "summary": "Lấy thông số kỹ thuật theo productId (Public)",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ProductDetail" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product-details": {
+      "post": {
+        "tags": ["Product Details"],
+        "summary": "Thêm thông số kỹ thuật (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id", "detail_name", "detail_value"],
+                "properties": {
+                  "product_id": { "type": "integer" },
+                  "detail_name": { "type": "string" },
+                  "detail_value": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Thêm thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/product-details/{id}": {
+      "put": {
+        "tags": ["Product Details"],
+        "summary": "Cập nhật thông số kỹ thuật (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "detail_name": { "type": "string" },
+                  "detail_value": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Product Details"],
+        "summary": "Xóa thông số kỹ thuật (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/product-images/product/{productId}": {
+      "get": {
+        "tags": ["Product Images"],
+        "summary": "Lấy ảnh theo productId (Public)",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ProductImage" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product-images/upload": {
+      "post": {
+        "tags": ["Product Images"],
+        "summary": "Upload ảnh sản phẩm (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id", "images"],
+                "properties": {
+                  "product_id": { "type": "integer" },
+                  "images": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" },
+                    "maxItems": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Upload thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/product-images/{id}": {
+      "delete": {
+        "tags": ["Product Images"],
+        "summary": "Xóa ảnh (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/product-images/{id}/thumbnail": {
+      "patch": {
+        "tags": ["Product Images"],
+        "summary": "Đặt ảnh làm thumbnail (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1135,10 +1439,23 @@
     "/api/cart": {
       "get": {
         "tags": ["Cart"],
-        "summary": "Giỏ hàng của người dùng hiện tại",
+        "summary": "Lấy giỏ hàng của user hiện tại",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Cart" }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
@@ -1146,18 +1463,26 @@
     "/api/cart/items": {
       "post": {
         "tags": ["Cart"],
-        "summary": "Thêm sản phẩm vào giỏ",
+        "summary": "Thêm sản phẩm vào giỏ hàng",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/AddToCart" }
+              "schema": {
+                "type": "object",
+                "required": ["product_id"],
+                "properties": {
+                  "product_id": { "type": "integer" },
+                  "quantity": { "type": "integer", "minimum": 1, "default": 1 }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thêm thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
@@ -1165,29 +1490,35 @@
     "/api/cart/items/{id}": {
       "put": {
         "tags": ["Cart"],
-        "summary": "Cập nhật số lượng item trong giỏ",
+        "summary": "Cập nhật số lượng / trạng thái chọn của item",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateCartItem" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "integer", "minimum": 1 },
+                  "is_selected": { "type": "boolean" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Cập nhật thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "delete": {
         "tags": ["Cart"],
-        "summary": "Xóa item khỏi giỏ",
+        "summary": "Xóa một item khỏi giỏ hàng",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
@@ -1198,7 +1529,30 @@
         "summary": "Xóa toàn bộ giỏ hàng",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/cart/toggle-select/{id}": {
+      "patch": {
+        "tags": ["Cart"],
+        "summary": "Toggle trạng thái chọn của item",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/cart/preview": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Xem trước đơn hàng (tính toán, không tạo đơn)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
@@ -1206,70 +1560,128 @@
     "/api/cart/checkout": {
       "post": {
         "tags": ["Cart"],
-        "summary": "Checkout từ giỏ hàng",
+        "summary": "Thanh toán giỏ hàng (tạo đơn hàng)",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/Checkout" }
+              "schema": {
+                "type": "object",
+                "required": ["payment_method"],
+                "properties": {
+                  "address_id": { "type": "integer" },
+                  "pickup_store_id": { "type": "integer" },
+                  "payment_method": {
+                    "type": "string",
+                    "enum": ["cod", "card", "wallet"]
+                  },
+                  "note": { "type": "string" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "product_id": { "type": "integer" },
+                        "quantity": { "type": "integer", "minimum": 1 }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         },
         "responses": {
           "201": { "description": "Đặt hàng thành công" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/orders/preview": {
-      "post": {
-        "tags": ["Orders"],
-        "summary": "Preview đơn hàng (kiểm tra giá, khuyến mãi)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateOrder" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/api/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Lấy danh sách đơn hàng",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/LimitParam" },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "confirmed", "shipping", "completed"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Order" }
+                    },
+                    "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
       "post": {
         "tags": ["Orders"],
-        "summary": "Tạo đơn hàng",
+        "summary": "Tạo đơn hàng mới",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateOrder" }
+              "schema": {
+                "type": "object",
+                "required": ["items"],
+                "properties": {
+                  "address_id": { "type": "integer" },
+                  "pickup_store_id": { "type": "integer" },
+                  "payment_method": {
+                    "oneOf": [
+                      { "type": "string", "enum": ["cod"] },
+                      {
+                        "type": "integer",
+                        "description": "ID của user_payment_methods"
+                      }
+                    ]
+                  },
+                  "note": { "type": "string" },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["product_id", "quantity"],
+                      "properties": {
+                        "product_id": { "type": "integer" },
+                        "quantity": { "type": "integer", "minimum": 1 }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
-        }
-      },
-      "get": {
-        "tags": ["Orders"],
-        "summary": "Danh sách đơn hàng (user = của mình, admin = tất cả)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "$ref": "#/components/parameters/PageParam" },
-          { "$ref": "#/components/parameters/LimitParam" }
-        ],
-        "responses": {
-          "200": { "description": "OK" },
+          "201": { "description": "Tạo đơn hàng thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
@@ -1277,61 +1689,162 @@
     "/api/orders/{id}": {
       "get": {
         "tags": ["Orders"],
-        "summary": "Chi tiết đơn hàng",
+        "summary": "Lấy chi tiết đơn hàng",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
       "put": {
         "tags": ["Orders"],
-        "summary": "Cập nhật trạng thái / ghi chú đơn hàng",
+        "summary": "Cập nhật trạng thái đơn hàng (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateOrder" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "confirmed", "shipping", "completed"]
+                  },
+                  "note": { "type": "string" }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
       "delete": {
         "tags": ["Orders"],
-        "summary": "Xóa đơn hàng (admin)",
+        "summary": "Hủy / xóa đơn hàng",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Hủy thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     },
-    "/api/orders/{id}/cancel": {
+    "/api/orders/preview": {
       "post": {
         "tags": ["Orders"],
-        "summary": "Hủy đơn hàng",
+        "summary": "Xem trước đơn hàng – tính tổng tiền, phí ship, khuyến mãi (không tạo đơn)",
         "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["items"],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["product_id", "quantity"],
+                      "properties": {
+                        "product_id": { "type": "integer", "minimum": 1 },
+                        "quantity": { "type": "integer", "minimum": 1 }
+                      }
+                    }
+                  },
+                  "address_id": {
+                    "type": "integer",
+                    "description": "ID địa chỉ giao hàng (dùng để tính phí ship)"
+                  },
+                  "pickup_store_id": {
+                    "type": "integer",
+                    "description": "ID cửa hàng nhận (phí ship = 0)"
+                  }
+                }
+              },
+              "example": {
+                "items": [
+                  { "product_id": 1, "quantity": 2 },
+                  { "product_id": 5, "quantity": 1 }
+                ],
+                "address_id": 3
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "200": {
+            "description": "Kết quả tính toán đơn hàng (không lưu DB)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "product_id": { "type": "integer" },
+                              "product_name": { "type": "string" },
+                              "quantity": { "type": "integer" },
+                              "unit_price": { "type": "number" },
+                              "base_price": { "type": "number" },
+                              "discount_amount": { "type": "number" },
+                              "final_price": { "type": "number" }
+                            }
+                          }
+                        },
+                        "total_base_amount": { "type": "number" },
+                        "total_discount_amount": { "type": "number" },
+                        "shipping_fee": { "type": "number" },
+                        "total_final_amount": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     },
     "/api/order-items/order/{orderId}": {
       "get": {
-        "tags": ["OrderItems"],
-        "summary": "Items theo orderId",
+        "tags": ["Order Items"],
+        "summary": "Lấy danh sách sản phẩm trong đơn hàng",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -1342,370 +1855,89 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/reviews": {
-      "get": {
-        "tags": ["Reviews"],
-        "summary": "Đánh giá (lọc qua query ?product_id=)",
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "query",
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Reviews"],
-        "summary": "Tạo đánh giá",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateReview" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/reviews/product/{productId}": {
-      "get": {
-        "tags": ["Reviews"],
-        "summary": "Đánh giá theo productId (public)",
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/reviews/{id}": {
-      "delete": {
-        "tags": ["Reviews"],
-        "summary": "Xóa đánh giá (chủ sở hữu hoặc admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/favorites": {
-      "get": {
-        "tags": ["Favorites"],
-        "summary": "Sản phẩm yêu thích",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      },
-      "post": {
-        "tags": ["Favorites"],
-        "summary": "Thêm vào yêu thích",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/AddFavorite" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/favorites/{productId}": {
-      "delete": {
-        "tags": ["Favorites"],
-        "summary": "Xóa khỏi yêu thích",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
-        }
-      }
-    },
-    "/api/blogs": {
-      "get": {
-        "tags": ["Blogs"],
-        "summary": "Danh sách bài viết (public)",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Blogs"],
-        "summary": "Tạo bài viết (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateBlog" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/blogs/slug/{slug}": {
-      "get": {
-        "tags": ["Blogs"],
-        "summary": "Bài viết theo slug (public)",
-        "parameters": [
-          {
-            "name": "slug",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK" },
-          "404": { "$ref": "#/components/responses/NotFound" }
-        }
-      }
-    },
-    "/api/blogs/{id}": {
-      "put": {
-        "tags": ["Blogs"],
-        "summary": "Cập nhật bài viết (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateBlog" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      },
-      "delete": {
-        "tags": ["Blogs"],
-        "summary": "Xóa mềm bài viết (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/stores": {
-      "get": {
-        "tags": ["Stores"],
-        "summary": "Danh sách cửa hàng (public)",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Stores"],
-        "summary": "Tạo cửa hàng (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateStore" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/stores/{id}": {
-      "put": {
-        "tags": ["Stores"],
-        "summary": "Cập nhật cửa hàng (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateStore" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      },
-      "delete": {
-        "tags": ["Stores"],
-        "summary": "Xóa cửa hàng (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/promotions": {
-      "get": {
-        "tags": ["Promotions"],
-        "summary": "Danh sách khuyến mãi (public)",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["Promotions"],
-        "summary": "Tạo khuyến mãi (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreatePromotion" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/promotions/{id}": {
-      "get": {
-        "tags": ["Promotions"],
-        "summary": "Chi tiết khuyến mãi",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" }
-        }
-      },
-      "put": {
-        "tags": ["Promotions"],
-        "summary": "Cập nhật khuyến mãi (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdatePromotion" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      },
-      "delete": {
-        "tags": ["Promotions"],
-        "summary": "Xóa khuyến mãi (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/api/product-promotions": {
-      "get": {
-        "tags": ["ProductPromotions"],
-        "summary": "Danh sách gắn khuyến mãi - sản phẩm",
-        "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "tags": ["ProductPromotions"],
-        "summary": "Gắn khuyến mãi vào sản phẩm",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductPromotion"
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/OrderItem" }
+                    }
+                  }
+                }
               }
             }
-          }
-        },
-        "responses": { "201": { "description": "OK" } }
-      }
-    },
-    "/api/product-promotions/{id}": {
-      "delete": {
-        "tags": ["ProductPromotions"],
-        "summary": "Gỡ khuyến mãi khỏi sản phẩm",
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": { "200": { "description": "OK" } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
       }
     },
     "/api/inventory": {
       "get": {
         "tags": ["Inventory"],
-        "summary": "Toàn bộ tồn kho (có phân trang)",
+        "summary": "Lấy danh sách tồn kho",
         "parameters": [
           { "$ref": "#/components/parameters/PageParam" },
           { "$ref": "#/components/parameters/LimitParam" }
         ],
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Inventory" }
+                    },
+                    "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "post": {
         "tags": ["Inventory"],
-        "summary": "Tạo bản ghi tồn kho (admin)",
+        "summary": "Tạo bản ghi tồn kho (Admin)",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateInventory" }
+              "schema": {
+                "type": "object",
+                "required": ["product_id"],
+                "properties": {
+                  "product_id": { "type": "integer" },
+                  "quantity": { "type": "integer", "minimum": 0, "default": 0 },
+                  "min_quantity": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 5
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "inactive", "archived"],
+                    "default": "active"
+                  }
+                }
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "OK" },
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1714,10 +1946,10 @@
     "/api/inventory/low-stock": {
       "get": {
         "tags": ["Inventory"],
-        "summary": "Hàng sắp hết (admin)",
+        "summary": "Lấy danh sách sản phẩm tồn kho thấp (Admin)",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1726,7 +1958,7 @@
     "/api/inventory/product/{product_id}": {
       "get": {
         "tags": ["Inventory"],
-        "summary": "Tồn kho theo productId (admin)",
+        "summary": "Lấy tồn kho theo productId (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -1737,7 +1969,7 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1746,30 +1978,40 @@
     "/api/inventory/{id}": {
       "put": {
         "tags": ["Inventory"],
-        "summary": "Cập nhật tồn kho (admin)",
+        "summary": "Cập nhật tồn kho (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateInventory" }
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "integer", "minimum": 0 },
+                  "min_quantity": { "type": "integer", "minimum": 0 },
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "inactive", "archived"]
+                  }
+                }
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Cập nhật thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
       },
       "delete": {
         "tags": ["Inventory"],
-        "summary": "Archive tồn kho (admin, soft delete)",
+        "summary": "Soft-delete tồn kho (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Xóa thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1777,15 +2019,32 @@
     },
     "/api/inventory-logs": {
       "get": {
-        "tags": ["InventoryLogs"],
-        "summary": "Toàn bộ lịch sử kho (admin)",
+        "tags": ["Inventory Logs"],
+        "summary": "Lấy toàn bộ lịch sử kho (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "$ref": "#/components/parameters/PageParam" },
           { "$ref": "#/components/parameters/LimitParam" }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/InventoryLog" }
+                    },
+                    "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+                  }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1793,8 +2052,8 @@
     },
     "/api/inventory-logs/inventory/{inventory_id}": {
       "get": {
-        "tags": ["InventoryLogs"],
-        "summary": "Lịch sử theo inventory_id (admin)",
+        "tags": ["Inventory Logs"],
+        "summary": "Lấy lịch sử theo inventoryId (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -1805,7 +2064,7 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1813,8 +2072,8 @@
     },
     "/api/inventory-logs/product/{product_id}": {
       "get": {
-        "tags": ["InventoryLogs"],
-        "summary": "Lịch sử theo product_id (admin)",
+        "tags": ["Inventory Logs"],
+        "summary": "Lấy lịch sử theo productId (Admin)",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -1825,7 +2084,117 @@
           }
         ],
         "responses": {
-          "200": { "description": "OK" },
+          "200": { "description": "Thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/blogs": {
+      "get": {
+        "tags": ["Blogs"],
+        "summary": "Lấy danh sách bài viết (Public)",
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Blog" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Blogs"],
+        "summary": "Tạo bài viết mới (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "content"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "content": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/blogs/slug/{slug}": {
+      "get": {
+        "tags": ["Blogs"],
+        "summary": "Lấy bài viết theo slug (Public)",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Thành công" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/blogs/{id}": {
+      "put": {
+        "tags": ["Blogs"],
+        "summary": "Cập nhật bài viết (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "content": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Blogs"],
+        "summary": "Xóa bài viết (Admin – soft delete)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -1834,63 +2203,496 @@
     "/api/contacts": {
       "get": {
         "tags": ["Contacts"],
-        "summary": "Danh sách liên hệ (admin)",
+        "summary": "Lấy danh sách liên hệ (Admin)",
         "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      },
-      "post": {
-        "tags": ["Contacts"],
-        "summary": "Gửi liên hệ (public)",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateContact" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "OK" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
-        }
-      }
-    },
-    "/api/contacts/{id}": {
-      "delete": {
-        "tags": ["Contacts"],
-        "summary": "Xóa liên hệ (admin)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
-        "responses": {
-          "200": { "description": "OK" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
-        }
-      }
-    },
-    "/health": {
-      "get": {
-        "summary": "Health check",
         "responses": {
           "200": {
-            "description": "Server đang hoạt động",
+            "description": "Thành công",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "success": { "type": "boolean" },
-                    "message": { "type": "string" },
-                    "timestamp": { "type": "string", "format": "date-time" }
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Contact" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "tags": ["Contacts"],
+        "summary": "Gửi form liên hệ (Public)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "message"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "message": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Gửi thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/contacts/{id}": {
+      "delete": {
+        "tags": ["Contacts"],
+        "summary": "Xóa liên hệ (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/promotions": {
+      "get": {
+        "tags": ["Promotions"],
+        "summary": "Lấy danh sách khuyến mãi (Public)",
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Promotion" }
+                    }
                   }
                 }
               }
             }
           }
+        }
+      },
+      "post": {
+        "tags": ["Promotions"],
+        "summary": "Tạo khuyến mãi mới (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "discount_type", "discount_value"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "discount_type": {
+                    "type": "string",
+                    "enum": ["percent", "fixed"]
+                  },
+                  "discount_value": { "type": "number" },
+                  "start_date": { "type": "string", "format": "date-time" },
+                  "end_date": { "type": "string", "format": "date-time" },
+                  "is_active": { "type": "boolean", "default": true },
+                  "priority": { "type": "integer" },
+                  "stackable": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/promotions/{id}": {
+      "get": {
+        "tags": ["Promotions"],
+        "summary": "Lấy chi tiết khuyến mãi",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Promotions"],
+        "summary": "Cập nhật khuyến mãi (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "discount_type": {
+                    "type": "string",
+                    "enum": ["percent", "fixed"]
+                  },
+                  "discount_value": { "type": "number" },
+                  "start_date": { "type": "string", "format": "date-time" },
+                  "end_date": { "type": "string", "format": "date-time" },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "delete": {
+        "tags": ["Promotions"],
+        "summary": "Xóa khuyến mãi (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/product-promotions": {
+      "get": {
+        "tags": ["Product Promotions"],
+        "summary": "Lấy danh sách gán khuyến mãi (Public)",
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductPromotion"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Product Promotions"],
+        "summary": "Gán khuyến mãi cho sản phẩm",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id", "promotion_id"],
+                "properties": {
+                  "product_id": { "type": "integer" },
+                  "promotion_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Gán thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/product-promotions/{id}": {
+      "delete": {
+        "tags": ["Product Promotions"],
+        "summary": "Xóa gán khuyến mãi",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Lấy đánh giá theo sản phẩm (query: product_id)",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Review" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reviews"],
+        "summary": "Tạo đánh giá sản phẩm",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id", "rating"],
+                "properties": {
+                  "product_id": { "type": "integer" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "comment": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/reviews/product/{productId}": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Lấy đánh giá theo productId (path param)",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Thành công" }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "delete": {
+        "tags": ["Reviews"],
+        "summary": "Xóa đánh giá",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/favorites": {
+      "get": {
+        "tags": ["Favorites"],
+        "summary": "Lấy danh sách yêu thích của user hiện tại",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Favorite" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Favorites"],
+        "summary": "Thêm sản phẩm vào yêu thích",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id"],
+                "properties": {
+                  "product_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Thêm thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/favorites/{productId}": {
+      "delete": {
+        "tags": ["Favorites"],
+        "summary": "Xóa sản phẩm khỏi yêu thích",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/stores": {
+      "get": {
+        "tags": ["Stores"],
+        "summary": "Lấy danh sách cửa hàng (Public)",
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Store" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Stores"],
+        "summary": "Tạo cửa hàng mới (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "province", "address", "phone"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "province": { "type": "string" },
+                  "address": { "type": "string" },
+                  "phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tạo thành công" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/stores/{id}": {
+      "put": {
+        "tags": ["Stores"],
+        "summary": "Cập nhật cửa hàng (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "province": { "type": "string" },
+                  "address": { "type": "string" },
+                  "phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Stores"],
+        "summary": "Xóa cửa hàng (Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Xóa thành công" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
         }
       }
     }
