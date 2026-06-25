@@ -20,7 +20,7 @@ const toBackendPayment = (value) => {
   return value
 }
 
-const STEPS = ['Giỏ hàng', 'Thông tin', 'Thanh toán', 'Xác nhận']
+const STEPS = ['Giỏ hàng', 'Địa chỉ', 'Thanh toán', 'Xác nhận']
 
 export default function CheckoutPage() {
   const { items: allItems, removeSelectedItems, selectItemsForCheckout } = useCartStore()
@@ -105,17 +105,6 @@ export default function CheckoutPage() {
 
   return (
     <div>
-      {/* Checkout Navbar */}
-      <nav className="bg-white border-b border-shade px-10 h-16 flex items-center justify-between sticky top-0 z-50">
-        <Link to="/" className="flex items-center gap-2 font-extrabold text-xl text-vnpt">
-          <div className="w-9 h-9 bg-vnpt rounded-lg flex items-center justify-center">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png" alt="" className="w-6 brightness-0 invert" />
-          </div>
-          VNPT Shop
-        </Link>
-        <div className="text-sm text-muted">🔒 Thanh toán an toàn</div>
-      </nav>
-
       {/* Steps */}
       <div className="max-w-[1100px] mx-auto px-10 mt-6 flex items-center">
         {STEPS.map((label, i, arr) => (
@@ -145,118 +134,58 @@ export default function CheckoutPage() {
           {/* ── LEFT COLUMN ─────────────────────────────────────────────── */}
           <div className="space-y-5">
 
-            {/* Thông tin liên hệ */}
+            {/* Địa chỉ (gộp thông tin liên hệ + giao hàng) */}
             <div className="bg-white border border-shade rounded-xl p-7">
-              <div className="flex items-center gap-3 text-base font-bold text-body mb-5">
-                <span className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold">1</span>
-                Thông tin liên hệ
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold block mb-1.5">Họ và tên *</label>
-                  <input
-                    {...register('name', { required: 'Vui lòng nhập họ tên' })}
-                    placeholder="Nguyễn Văn A"
-                    className={`w-full px-4 py-3 border rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors ${errors.name ? 'border-accent' : 'border-shade'}`}
-                  />
-                  {errors.name && <p className="text-xs text-accent mt-1">{errors.name.message}</p>}
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3 text-base font-bold text-body">
+                  <span className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold">1</span>
+                  Địa chỉ
                 </div>
-                <div>
-                  <label className="text-sm font-semibold block mb-1.5">Số điện thoại *</label>
-                  <input
-                    {...register('phone', { required: 'Vui lòng nhập số điện thoại', pattern: { value: /^[0-9]{9,11}$/, message: 'Số điện thoại không hợp lệ' } })}
-                    type="tel"
-                    placeholder="0901 234 567"
-                    className={`w-full px-4 py-3 border rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors ${errors.phone ? 'border-accent' : 'border-shade'}`}
-                  />
-                  {errors.phone && <p className="text-xs text-accent mt-1">{errors.phone.message}</p>}
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-semibold block mb-1.5">Email</label>
-                  <input
-                    {...register('email')}
-                    type="email"
-                    placeholder="example@email.com"
-                    className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Địa chỉ giao hàng */}
-            <div className="bg-white border border-shade rounded-xl p-7">
-              <div className="flex items-center gap-3 text-base font-bold text-body mb-5">
-                <span className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold">2</span>
-                Địa chỉ giao hàng
+                <a href="/account/addresses" className="text-xs text-vnpt font-semibold hover:underline">
+                  Quản lý địa chỉ →
+                </a>
               </div>
 
-              {addresses.length > 0 && (
-                <div className="flex gap-4 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setUseExistingAddress(true)}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${useExistingAddress ? 'bg-vnpt text-white' : 'border border-shade text-muted hover:border-vnpt'}`}
-                  >
-                    Dùng địa chỉ đã lưu
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUseExistingAddress(false)}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${!useExistingAddress ? 'bg-vnpt text-white' : 'border border-shade text-muted hover:border-vnpt'}`}
-                  >
-                    Nhập địa chỉ mới
-                  </button>
-                </div>
-              )}
-
-              {useExistingAddress && addresses.length > 0 ? (
+              {addresses.length > 0 ? (
                 <div className="space-y-2">
                   {addresses.map(addr => (
                     <label key={addr.id} className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${selectedAddressId == addr.id ? 'border-vnpt bg-vnpt-light' : 'border-shade hover:border-vnpt-light'}`}>
                       <input type="radio" {...register('address_id')} value={addr.id} className="accent-vnpt mt-0.5" />
-                      <div className="text-sm">
-                        <div className="font-semibold text-body">{addr.receiver_name} · {addr.phone}</div>
+                      <div className="text-sm flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-body">{addr.receiver_name}</span>
+                          <span className="text-muted">·</span>
+                          <span className="text-muted">{addr.phone}</span>
+                          {addr.is_default && (
+                            <span className="ml-auto text-[11px] text-vnpt font-semibold bg-vnpt-light border border-vnpt/20 px-2 py-0.5 rounded-full">
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
                         <div className="text-muted">{addr.address_line}, {addr.ward}, {addr.district}, {addr.province}</div>
-                        {addr.is_default && <span className="text-xs text-vnpt font-semibold">Địa chỉ mặc định</span>}
                       </div>
                     </label>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-semibold block mb-1.5">Tỉnh / Thành phố *</label>
-                    <input
-                      {...register('city', { required: !useExistingAddress })}
-                      placeholder="TP. Hồ Chí Minh"
-                      className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold block mb-1.5">Quận / Huyện *</label>
-                    <input
-                      {...register('district', { required: !useExistingAddress })}
-                      placeholder="Quận 1"
-                      className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-semibold block mb-1.5">Địa chỉ cụ thể *</label>
-                    <input
-                      {...register('address', { required: !useExistingAddress && 'Vui lòng nhập địa chỉ' })}
-                      placeholder="Số nhà, tên đường..."
-                      className={`w-full px-4 py-3 border rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors ${errors.address ? 'border-accent' : 'border-shade'}`}
-                    />
-                    {errors.address && <p className="text-xs text-accent mt-1">{errors.address.message}</p>}
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-semibold block mb-1.5">Ghi chú</label>
-                    <input
-                      {...register('note')}
-                      placeholder="Giao giờ hành chính, gọi trước 30 phút..."
-                      className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
-                    />
-                  </div>
+                <div className="text-center py-8 text-muted">
+                  <div className="text-3xl mb-2">📍</div>
+                  <p className="text-sm mb-3">Bạn chưa có địa chỉ nào được lưu.</p>
+                  <a href="/account/addresses" className="inline-block px-5 py-2 border border-vnpt text-vnpt rounded-full text-sm font-semibold hover:bg-vnpt hover:text-white transition-colors">
+                    Thêm địa chỉ mới
+                  </a>
+                </div>
+              )}
+
+              {/* Ghi chú đơn hàng */}
+              {(addresses.length > 0) && (
+                <div className="mt-4 pt-4 border-t border-shade">
+                  <label className="text-sm font-semibold block mb-1.5">Ghi chú</label>
+                  <input
+                    {...register('note')}
+                    placeholder="Giao giờ hành chính, gọi trước 30 phút..."
+                    className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
+                  />
                 </div>
               )}
             </div>
@@ -264,7 +193,7 @@ export default function CheckoutPage() {
             {/* Phương thức thanh toán */}
             <div className="bg-white border border-shade rounded-xl p-7">
               <div className="flex items-center gap-3 text-base font-bold text-body mb-5">
-                <span className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold">3</span>
+                <span className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold">2</span>
                 Phương thức thanh toán
               </div>
               <div className="space-y-3">
