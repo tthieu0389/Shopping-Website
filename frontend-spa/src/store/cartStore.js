@@ -94,6 +94,16 @@ const useCartStore = create((set, get) => ({
       await get().fetchCart()
     }
   },
+
+  // ── Đánh dấu is_selected=true cho các item trước khi checkout ─────────────
+  // itemIds: mảng cart_item id cần select. Nếu không truyền → select tất cả.
+  selectItemsForCheckout: async (itemIds) => {
+    const ids = itemIds ?? get().items.map(i => i.id)
+    if (ids.length === 0) return
+    await Promise.all(
+      ids.map(id => cartApi.toggleSelect(id, { is_selected: true }))
+    )
+  },
 }))
 
 export default useCartStore
