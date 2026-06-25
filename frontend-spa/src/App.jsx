@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/layout/Layout.jsx'
 import { ProtectedRoute } from './components/common/index.jsx'
+import useAuthStore from './store/authStore.js'
+import useCartStore from './store/cartStore.js'
 
 import HomePage            from './pages/HomePage.jsx'
 import ProductsPage        from './pages/ProductsPage.jsx'
@@ -17,6 +20,16 @@ import ContactPage         from './pages/ContactPage.jsx'
 import NotFoundPage        from './pages/NotFoundPage.jsx'
 
 export default function App() {
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const fetchCart = useCartStore(s => s.fetchCart)
+
+  // Dọn dẹp localStorage cart cũ (từ phiên bản trước dùng persist)
+  useEffect(() => { localStorage.removeItem('vnpt_cart') }, [])
+
+  // Khi app khởi động và user đã đăng nhập, sync giỏ hàng từ DB
+  useEffect(() => {
+    if (isAuthenticated) fetchCart()
+  }, [isAuthenticated])
   return (
     <BrowserRouter>
       <Routes>

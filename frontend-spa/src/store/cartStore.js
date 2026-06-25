@@ -1,57 +1,89 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { cartApi } from '../api/index.js'
 
-const useCartStore = create(
-  persist(
-    (set, get) => ({
-      items: [], // [{ key, id, product_id, name, price, img, qty }]
+// Cart store — single source of truth là DB.
+// localStorage KHÔNG còn được dùng để lưu items.
+// Items chỉ được lấy từ server qua fetchCart().
 
-      // NOTE: dùng hàm thường (không dùng `get xxx()` getter) vì zustand
-      // `persist` middleware sẽ gọi Object.assign(currentState, persistedState)
-      // khi rehydrate sau khi reload trang. Object.assign đọc getter ngay lúc đó,
-      // nhưng `get` nội bộ của store chưa sẵn sàng -> getter throw lỗi ->
-      // toàn bộ quá trình rehydrate bị fail -> items không được khôi phục từ
-      // localStorage -> cart bị "reset" sau khi reload.
-      count: () => get().items.reduce((s, i) => s + i.qty, 0),
-      subtotal: () => get().items.reduce((s, i) => s + i.price * i.qty, 0),
-      total: () => get().subtotal(),
+const useCartStore = create((set, get) => ({
+  items: [],      // [{ id, product_id, name, price, img, brand, qty }]
+  loading: false,
+  syncing: false, // true khi đang gọi add/update/remove
 
-      addItem: (product, qty = 1) => {
-        const items = get().items
-        const key = `${product.id}`
-        const existing = items.find(i => i.key === key)
-        if (existing) {
-          set({ items: items.map(i => i.key === key ? { ...i, qty: i.qty + qty } : i) })
-        } else {
-          set({
-            items: [...items, {
-              key,
-              id: Date.now(),
-              product_id: product.id,
-              name: product.name,
-              price: Number(product.price),
-              img: product.img || product.thumbnail || product.image_url || null,
-              brand: product.brand || '',
-              qty,
-            }]
-          })
-        }
-      },
+  count:    () => get().items.reduce((s, i) => s + i.qty, 0),
+  subtotal: () => get().items.reduce((s, i) => s + i.price * i.qty, 0),
+  total:    () => get().subtotal(),
 
-      updateQty: (key, qty) => {
-        if (qty < 1) { get().removeItem(key); return }
-        set({ items: get().items.map(i => i.key === key ? { ...i, qty } : i) })
-      },
-
-      removeItem: (key) => set({ items: get().items.filter(i => i.key !== key) }),
-
-      clearCart: () => set({ items: [] }),
-    }),
-    {
-      name: 'vnpt_cart',
-      partialize: (state) => ({ items: state.items }),
+  // ── Lấy giỏ hàng từ server ───────────────────────────────────────────────
+  fetchCart: async () => {
+    set({ loading: true })
+    try {
+      const res = await cartApi.get()
+      const serverItems = res?.data?.items ?? []
+      set({
+        items: serverItems.map(item => ({
+          id:         item.id,           // cart_item id (dùng để update/delete)
+          product_id: item.product_id,
+          name:       item.product_name,
+          price:      Number(item.unit_price ?? item.final_price ?? item.base_price ?? 0),
+          img:        item.image_url ?? item.thumbnail ?? item.img ?? null,
+          brand:      item.brand ?? '',
+          qty:        item.quantity,
+        })),
+        loading: false,
+      })
+    } catch {
+      set({ loading: false })
     }
-  )
-)
+  },
+
+  // ── Thêm sản phẩm ────────────────────────────────────────────────────────
+  addItem: async (product, qty = 1) => {
+    set({ syncing: true })
+    try {
+      await cartApi.addItem({ product_id: product.id, quantity: qty })
+      await get().fetchCart()
+    } finally {
+      set({ syncing: false })
+    }
+  },
+
+  // ── Cập nhật số lượng ────────────────────────────────────────────────────
+  // cartItemId = item.id (cart_item id từ DB, không phải product_id)
+  updateQty: async (cartItemId, qty) => {
+    if (qty < 1) { get().removeItem(cartItemId); return }
+    // Optimistic update
+    set({ items: get().items.map(i => i.id === cartItemId ? { ...i, qty } : i) })
+    set({ syncing: true })
+    try {
+      await cartApi.updateItem(cartItemId, { quantity: qty })
+    } catch {
+      // Rollback khi lỗi
+      await get().fetchCart()
+    } finally {
+      set({ syncing: false })
+    }
+  },
+
+  // ── Xoá một sản phẩm ─────────────────────────────────────────────────────
+  removeItem: async (cartItemId) => {
+    // Optimistic update
+    set({ items: get().items.filter(i => i.id !== cartItemId) })
+    set({ syncing: true })
+    try {
+      await cartApi.removeItem(cartItemId)
+    } catch {
+      await get().fetchCart()
+    } finally {
+      set({ syncing: false })
+    }
+  },
+
+  // ── Xoá toàn bộ giỏ (gọi sau checkout thành công) ────────────────────────
+  clearCart: async () => {
+    set({ items: [] })
+    try { await cartApi.clear() } catch { /* ignore */ }
+  },
+}))
 
 export default useCartStore

@@ -1,10 +1,21 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Breadcrumb, EmptyState } from '../components/common/index.jsx'
 import { formatPrice } from '../utils/index.js'
 import useCartStore from '../store/cartStore.js'
 
 export default function CartPage() {
-  const { items, updateQty, removeItem, subtotal, total } = useCartStore()
+  const { items, updateQty, removeItem, subtotal, total, fetchCart, loading, syncing } = useCartStore()
+
+  useEffect(() => { fetchCart() }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-10 py-20 text-center text-muted">
+        ⏳ Đang tải giỏ hàng...
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (
@@ -49,7 +60,7 @@ export default function CartPage() {
             </div>
 
             {items.map(item => (
-              <div key={item.key} className="grid grid-cols-[2fr_1fr_1fr_1fr_40px] px-5 py-4 border-b border-shade last:border-none items-center gap-2">
+              <div key={item.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_40px] px-5 py-4 border-b border-shade last:border-none items-center gap-2">
                 {/* Product */}
                 <div className="flex items-center gap-3.5">
                   <div className="w-[70px] h-[70px] rounded-lg bg-cream border border-shade flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -81,15 +92,17 @@ export default function CartPage() {
                 {/* Quantity */}
                 <div className="flex items-center border border-shade rounded-lg overflow-hidden w-fit">
                   <button
-                    onClick={() => updateQty(item.key, item.qty - 1)}
-                    className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors"
+                    onClick={() => updateQty(item.id, item.qty - 1)}
+                    disabled={syncing}
+                    className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors disabled:opacity-50"
                   >−</button>
                   <span className="w-10 text-center text-sm font-bold border-x border-shade h-8 flex items-center justify-center">
                     {item.qty}
                   </span>
                   <button
-                    onClick={() => updateQty(item.key, item.qty + 1)}
-                    className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors"
+                    onClick={() => updateQty(item.id, item.qty + 1)}
+                    disabled={syncing}
+                    className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors disabled:opacity-50"
                   >+</button>
                 </div>
 
@@ -98,8 +111,9 @@ export default function CartPage() {
 
                 {/* Remove */}
                 <button
-                  onClick={() => removeItem(item.key)}
-                  className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-accent transition-all text-muted text-lg flex items-center justify-center"
+                  onClick={() => removeItem(item.id)}
+                  disabled={syncing}
+                  className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-accent transition-all text-muted text-lg flex items-center justify-center disabled:opacity-50"
                   title="Xoá khỏi giỏ"
                 >
                   🗑

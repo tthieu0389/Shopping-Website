@@ -19,7 +19,8 @@ export default function ProductDetailPage() {
   const { data: related } = useRelatedProducts(product?.id)
   const { data: reviews, loading: reviewsLoading, reload: reloadReviews } = useReviews(product?.id)
 
-  const addItem = useCartStore(s => s.addItem)
+  const addItem  = useCartStore(s => s.addItem)
+  const syncing  = useCartStore(s => s.syncing)
   const { isAuthenticated } = useAuthStore()
 
   const [qty, setQty]               = useState(1)
@@ -46,8 +47,14 @@ export default function ProductDetailPage() {
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : 0
 
-  const handleAdd = () => {
-    addItem(product, qty)
+  const handleAdd = async () => {
+    if (!isAuthenticated) { toast.error('Vui lòng đăng nhập để thêm vào giỏ'); return }
+    try {
+      await addItem(product, qty)
+      toast.success('Đã thêm vào giỏ hàng! 🛒')
+    } catch (err) {
+      toast.error(err.message || 'Không thể thêm vào giỏ hàng')
+    }
   }
 
   const handleSubmitReview = async (e) => {
@@ -181,15 +188,19 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleAdd}
-                disabled={product.is_available === false}
+                disabled={product.is_available === false || syncing}
                 className="py-4 bg-vnpt text-white rounded-full font-bold text-base hover:bg-vnpt-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🛒 Thêm vào giỏ
+                {syncing ? '⏳ Đang thêm...' : '🛒 Thêm vào giỏ'}
               </button>
               <Link
                 to="/checkout"
                 className="py-4 bg-accent text-white rounded-full font-bold text-base hover:bg-accent-dark transition-all text-center"
-                onClick={() => { if (product.is_available !== false) addItem(product, qty) }}
+                onClick={async (e) => {
+                  if (product.is_available === false) { e.preventDefault(); return }
+                  if (!isAuthenticated) { e.preventDefault(); toast.error('Vui lòng đăng nhập'); return }
+                  await addItem(product, qty)
+                }}
               >
                 ⚡ Mua ngay
               </Link>

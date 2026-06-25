@@ -14,6 +14,12 @@ const PAYMENT_METHODS = [
   { value: 'cod',   icon: '💵', name: 'Tiền mặt (COD)',         sub: 'Kiểm tra hàng trước khi thanh toán' },
 ]
 
+// Map frontend value → backend enum (cod | card | wallet)
+const toBackendPayment = (value) => {
+  if (value === 'momo' || value === 'vnpay') return 'wallet'
+  return value
+}
+
 const STEPS = ['Giỏ hàng', 'Thông tin', 'Thanh toán', 'Xác nhận']
 
 export default function CheckoutPage() {
@@ -55,7 +61,7 @@ export default function CheckoutPage() {
     setSubmitting(true)
     try {
       const payload = {
-        payment_method: data.payment_method,
+        payment_method: toBackendPayment(data.payment_method),
         note: data.note || undefined,
       }
 
@@ -274,7 +280,7 @@ export default function CheckoutPage() {
 
             <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
               {items.map(item => (
-                <div key={item.key} className="flex items-center gap-3">
+                <div key={item.id} className="flex items-center gap-3">
                   <div className="w-14 h-14 bg-cream rounded-lg border border-shade flex items-center justify-center flex-shrink-0 relative overflow-hidden">
                     {item.img ? (
                       <img src={item.img} alt={item.name} className="w-full h-full object-contain p-1" />
