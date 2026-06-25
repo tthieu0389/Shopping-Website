@@ -41,6 +41,15 @@ export default function CheckoutPage() {
 
   const selectedAddressId = watch('address_id')
 
+  const onInvalid = (formErrors) => {
+    // Form không hợp lệ (thiếu họ tên / SĐT / địa chỉ...) -> báo rõ cho người dùng
+    // và cuộn lên field lỗi đầu tiên, tránh tình trạng bấm nút mà "không thấy gì"
+    toast.error('Vui lòng kiểm tra lại thông tin đã nhập')
+    const firstErrorKey = Object.keys(formErrors)[0]
+    const el = document.querySelector(`[name="${firstErrorKey}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
   const onSubmit = async (data) => {
     if (items.length === 0) { toast.error('Giỏ hàng trống'); return }
     setSubmitting(true)
@@ -48,7 +57,6 @@ export default function CheckoutPage() {
       const payload = {
         payment_method: data.payment_method,
         note: data.note || undefined,
-        items: items.map(i => ({ product_id: i.product_id, quantity: i.qty })),
       }
 
       // Gắn địa chỉ
@@ -57,7 +65,7 @@ export default function CheckoutPage() {
       }
 
       await cartApi.checkout(payload)
-      clearCart()
+      await clearCart()
       toast.success('Đặt hàng thành công! 🎉')
       navigate('/checkout/success')
     } catch (err) {
@@ -115,7 +123,7 @@ export default function CheckoutPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
         <div className="max-w-[1100px] mx-auto px-10 py-8 grid grid-cols-[1fr_380px] gap-8 items-start">
 
           {/* ── LEFT COLUMN ─────────────────────────────────────────────── */}

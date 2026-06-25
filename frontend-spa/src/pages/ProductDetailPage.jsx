@@ -48,7 +48,6 @@ export default function ProductDetailPage() {
 
   const handleAdd = () => {
     addItem(product, qty)
-    toast.success(`Đã thêm ${product.name} vào giỏ!`)
   }
 
   const handleSubmitReview = async (e) => {

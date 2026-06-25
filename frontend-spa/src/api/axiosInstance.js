@@ -23,7 +23,7 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const status = error.response?.status
-    const message = error.response?.data?.message || 'Đã có lỗi xảy ra'
+    const message = error.response?.data?.error || error.response?.data?.message || 'Đã có lỗi xảy ra'
 
     if (status === 401) {
       localStorage.removeItem('vnpt_token')
