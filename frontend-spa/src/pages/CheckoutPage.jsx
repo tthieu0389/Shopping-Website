@@ -23,7 +23,7 @@ const toBackendPayment = (value) => {
 const STEPS = ['Giỏ hàng', 'Thông tin', 'Thanh toán', 'Xác nhận']
 
 export default function CheckoutPage() {
-  const { items: allItems, removeSelectedItems } = useCartStore()
+  const { items: allItems, removeSelectedItems, selectItemsForCheckout } = useCartStore()
 
   // Lọc chỉ những item user đã chọn từ CartPage
   const selectedIds = (() => {
@@ -78,6 +78,7 @@ export default function CheckoutPage() {
         payload.address_id = Number(selectedAddressId)
       }
 
+      await selectItemsForCheckout(items.map(i => i.id))
       await cartApi.checkout(payload)
       sessionStorage.removeItem('checkout_items')
       await removeSelectedItems(items.map(i => i.id))

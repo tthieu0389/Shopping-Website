@@ -25,12 +25,13 @@ export const categoriesApi = {
 
 // ── CART ─────────────────────────────────────────────────────────────────────
 export const cartApi = {
-  get:        ()              => api.get('/cart'),
-  addItem:    (data)          => api.post('/cart/items', data),
-  updateItem: (itemId, data)  => api.put(`/cart/items/${itemId}`, data),
-  removeItem: (itemId)        => api.delete(`/cart/items/${itemId}`),
-  clear:      ()              => api.delete('/cart/clear'),
-  checkout:   (data)          => api.post('/cart/checkout', data),
+  get:          ()              => api.get('/cart'),
+  addItem:      (data)          => api.post('/cart/items', data),
+  updateItem:   (itemId, data)  => api.put(`/cart/items/${itemId}`, data),
+  removeItem:   (itemId)        => api.delete(`/cart/items/${itemId}`),
+  clear:        ()              => api.delete('/cart/clear'),
+  toggleSelect: (itemId, data)  => api.patch(`/cart/toggle-select/${itemId}`, data),
+  checkout:     (data)          => api.post('/cart/checkout', data),
 }
 
 // ── ORDERS ───────────────────────────────────────────────────────────────────
