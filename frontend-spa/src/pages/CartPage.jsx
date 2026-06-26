@@ -204,7 +204,7 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Phí vận chuyển</span>
-                <span className="font-semibold text-success">Miễn phí</span>
+                <span className="text-muted italic text-xs">Tính khi thanh toán</span>
               </div>
             </div>
 

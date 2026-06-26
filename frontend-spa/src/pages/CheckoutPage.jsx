@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useUserAddresses } from '../hooks/index.js'
 import { formatPrice, toast } from '../utils/index.js'
-import { cartApi } from '../api/index.js'
+import { cartApi, ordersApi } from '../api/index.js'
 import useCartStore from '../store/cartStore.js'
 import useAuthStore from '../store/authStore.js'
 
@@ -52,8 +52,31 @@ export default function CheckoutPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [useExistingAddress, setUseExistingAddress] = useState(addresses.length > 0)
+  const [preview, setPreview] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const selectedAddressId = watch('address_id')
+
+  // Gọi API preview mỗi khi user chọn địa chỉ → lấy phí ship + discount thực từ backend
+  useEffect(() => {
+    if (!selectedAddressId || items.length === 0) {
+      setPreview(null)
+      return
+    }
+    setPreviewLoading(true)
+    ordersApi.preview({
+      items: items.map(i => ({ product_id: i.product_id ?? i.id, quantity: i.qty })),
+      address_id: Number(selectedAddressId),
+    })
+      .then(res => setPreview(res.data ?? res))
+      .catch(() => setPreview(null))
+      .finally(() => setPreviewLoading(false))
+  }, [selectedAddressId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Các giá trị hiển thị: ưu tiên số liệu từ preview (đã tính ship + discount)
+  const shippingFee    = preview?.shipping_fee     ?? null
+  const discountAmount = preview?.total_discount_amount ?? 0
+  const finalTotal     = preview?.total_final_amount ?? (selectedTotal + (shippingFee ?? 0))
 
   const onInvalid = (formErrors) => {
     // Form không hợp lệ (thiếu họ tên / SĐT / địa chỉ...) -> báo rõ cho người dùng
@@ -233,7 +256,7 @@ export default function CheckoutPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold text-body line-clamp-2">{item.name}</div>
                   </div>
-                  <div className="text-sm font-bold text-body flex-shrink-0">{formatPrice(item.price * item.qty)}</div>
+                  <div className="text-sm font-bold text-body flex-shrink-0 whitespace-nowrap">{formatPrice(item.price * item.qty)}</div>
                 </div>
               ))}
             </div>
@@ -245,23 +268,49 @@ export default function CheckoutPage() {
                 <span className="text-muted">Tạm tính</span>
                 <span>{formatPrice(selectedTotal)}</span>
               </div>
+
+              {discountAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted">Giảm giá</span>
+                  <span className="text-success font-semibold">-{formatPrice(discountAmount)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <span className="text-muted">Vận chuyển</span>
-                <span className="text-success">Miễn phí</span>
+                {previewLoading ? (
+                  <span className="text-muted italic">Đang tính...</span>
+                ) : shippingFee === null ? (
+                  <span className="text-muted italic">Chọn địa chỉ để tính</span>
+                ) : shippingFee === 0 ? (
+                  <span className="text-success font-semibold">Miễn phí</span>
+                ) : (
+                  <span className="font-semibold">{formatPrice(shippingFee)}</span>
+                )}
               </div>
+
+              {shippingFee !== null && shippingFee > 0 && (
+                <div className="text-xs text-muted bg-cream rounded-lg px-3 py-2">
+                  💡 Nhận hàng tại cửa hàng VNPT để được <span className="text-success font-semibold">miễn phí ship</span>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t-2 border-shade mb-5">
-              <span className="text-base font-bold">Tổng cộng</span>
-              <span className="text-xl font-bold text-accent font-display">{formatPrice(selectedTotal)}</span>
+              <span className="text-base font-bold flex-shrink-0">Tổng cộng</span>
+              {previewLoading ? (
+                <span className="text-xl font-bold text-muted font-display whitespace-nowrap">...</span>
+              ) : (
+                <span className="text-xl font-bold text-accent font-display whitespace-nowrap">{formatPrice(finalTotal)}</span>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || previewLoading || !selectedAddressId}
               className="w-full py-4 bg-accent text-white rounded-full font-bold text-base hover:bg-accent-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {submitting ? '⏳ Đang xử lý...' : '✓ Đặt hàng ngay'}
+              {submitting ? '⏳ Đang xử lý...' : !selectedAddressId ? 'Chọn địa chỉ để tiếp tục' : '✓ Đặt hàng ngay'}
             </button>
             <p className="text-center text-xs text-muted mt-3">🔒 Thanh toán SSL 256-bit an toàn</p>
           </div>
