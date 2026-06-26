@@ -1,4 +1,5 @@
-import { useProducts, useCountdown, usePagination } from '../hooks/index.js'
+import { useState } from 'react'
+import { useProducts, useCountdown } from '../hooks/index.js'
 import { FlashSaleCard, LoadingSpinner, EmptyState, CountdownTimer, Pagination } from '../components/common/index.jsx'
 import { Link } from 'react-router-dom'
 
@@ -6,8 +7,18 @@ const LIMIT = 8
 
 export default function FlashSalePage() {
   const { h, m, s } = useCountdown(6443)
-  const { page, totalPages, goTo, offset } = usePagination(0, LIMIT)
+  const [page, setPage] = useState(1)
+
+  const offset = (page - 1) * LIMIT
   const { data: products, total, loading } = useProducts({ limit: LIMIT, offset })
+
+  const totalPages = Math.ceil((total || 0) / LIMIT)
+
+  const goTo = (p) => {
+    const clamped = Math.min(Math.max(1, p), totalPages || 1)
+    setPage(clamped)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <div>
@@ -48,6 +59,11 @@ export default function FlashSalePage() {
                 Hiển thị <strong className="text-body">{products.length}</strong> /{' '}
                 <strong className="text-body">{total}</strong> sản phẩm
               </p>
+              {totalPages > 1 && (
+                <p className="text-sm text-muted">
+                  Trang <strong className="text-body">{page}</strong> / {totalPages}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-4 gap-4">
               {products.map(p => (
