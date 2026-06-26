@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useCountdown, useProducts } from '../hooks/index.js'
-import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner } from '../components/common/index.jsx'
+import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, FlashSaleCard } from '../components/common/index.jsx'
 
 const CATEGORIES = [
   { slug: 'dien-thoai',    icon: '📱', name: 'Điện thoại',     count: '248 sản phẩm' },
@@ -128,7 +128,7 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-4 gap-4">
               {flashProducts.slice(0, 4).map(p => (
-                <ProductCard key={p.id} product={p} showProgress />
+                <FlashSaleCard key={p.id} product={p} />
               ))}
               {flashProducts.length === 0 && (
                 <div className="col-span-4 text-center text-white/60 py-12 text-sm">

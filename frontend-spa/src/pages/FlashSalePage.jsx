@@ -1,5 +1,5 @@
 import { useProducts, useCountdown, usePagination } from '../hooks/index.js'
-import { ProductCard, LoadingSpinner, EmptyState, CountdownTimer, Pagination } from '../components/common/index.jsx'
+import { FlashSaleCard, LoadingSpinner, EmptyState, CountdownTimer, Pagination } from '../components/common/index.jsx'
 import { Link } from 'react-router-dom'
 
 const LIMIT = 8
@@ -51,7 +51,7 @@ export default function FlashSalePage() {
             </div>
             <div className="grid grid-cols-4 gap-4">
               {products.map(p => (
-                <ProductCard key={p.id} product={p} showProgress />
+                <FlashSaleCard key={p.id} product={p} />
               ))}
             </div>
             <Pagination page={page} totalPages={totalPages} goTo={goTo} />

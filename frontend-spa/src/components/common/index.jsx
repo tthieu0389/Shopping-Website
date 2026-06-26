@@ -7,10 +7,14 @@ import { toast } from '../../utils/index.js'
 // ── ProductCard ───────────────────────────────────────────────────────────────
 export function ProductCard({ product, showProgress = false }) {
   const addItem = useCartStore(s => s.addItem)
-  const discount = calcDiscount(product.price, product.oldPrice || product.original_price)
-  const pct = product.sold && product.stock
-    ? Math.min(100, Math.round(product.sold / product.stock * 100))
-    : null
+
+  const salePrice = product.price
+  const rawOld = product.oldPrice || product.original_price
+  const originalPrice = rawOld && rawOld > salePrice
+    ? rawOld
+    : Math.round(salePrice * (1 + (0.15 + (((product.id || 1) * 7) % 26) / 100)))
+  const discount = Math.round((1 - salePrice / originalPrice) * 100)
+
   const img = product.img || product.thumbnail || product.image_url || null
 
   const handleAdd = (e) => {
@@ -36,40 +40,106 @@ export function ProductCard({ product, showProgress = false }) {
         ) : (
           <div className="w-3/4 h-3/4 flex items-center justify-center bg-surface rounded-lg text-4xl">📦</div>
         )}
-        {discount > 0 && (
-          <span className="absolute top-2.5 left-2.5 bg-accent text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
-            -{discount}%
-          </span>
-        )}
       </div>
 
       <div className="p-3.5">
         {product.brand && (
           <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">{product.brand}</div>
         )}
-        <div className="text-sm font-semibold text-body leading-snug mb-2 min-h-[38px] line-clamp-2">{product.name}</div>
+        <div className="text-sm font-semibold text-body leading-snug mb-2.5 min-h-[38px] line-clamp-2">{product.name}</div>
 
-        <div className="flex items-center gap-2 flex-wrap mb-2.5">
-          <span className="text-lg font-bold text-accent font-display">{formatPrice(product.price)}</span>
-          {(product.oldPrice || product.original_price) && (
-            <span className="text-xs text-muted line-through">{formatPrice(product.oldPrice || product.original_price)}</span>
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+            <span className="text-xl font-black text-accent font-display">{formatPrice(salePrice)}</span>
+            {discount > 0 && (
+              <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">-{discount}%</span>
+            )}
+          </div>
+          {discount > 0 && (
+            <div className="text-xs text-muted line-through">{formatPrice(originalPrice)}</div>
           )}
         </div>
-
-        {showProgress && pct !== null && (
-          <>
-            <div className="h-1 bg-shade rounded-sm mb-1.5">
-              <div className="h-full bg-accent rounded-sm transition-all" style={{ width: `${pct}%` }} />
-            </div>
-            <div className="text-[11px] text-muted mb-2.5">Đã bán {product.sold}/{product.stock}</div>
-          </>
-        )}
 
         <button
           onClick={handleAdd}
           className="w-full py-2.5 bg-vnpt text-white rounded-full text-sm font-semibold hover:bg-vnpt-dark transition-colors"
         >
           Thêm vào giỏ
+        </button>
+      </div>
+    </Link>
+  )
+}
+
+// ── FlashSaleCard ─────────────────────────────────────────────────────────────
+export function FlashSaleCard({ product }) {
+  const addItem = useCartStore(s => s.addItem)
+
+  // Nếu không có original_price → giả lập giá gốc cao hơn 15–40%
+  const salePrice = product.price
+  const rawOld = product.oldPrice || product.original_price
+  const originalPrice = rawOld && rawOld > salePrice
+    ? rawOld
+    : Math.round(salePrice * (1 + (0.15 + (((product.id || 1) * 7) % 26) / 100)))
+  const discount = Math.round((1 - salePrice / originalPrice) * 100)
+
+  // Progress bar "Còn X suất"
+  const stock   = product.stock  || 10
+  const sold    = product.sold   || Math.max(1, Math.round(stock * (0.3 + (((product.id || 1) * 3) % 60) / 100)))
+  const remain  = Math.max(0, stock - sold)
+  const soldPct = Math.min(100, Math.round(sold / stock * 100))
+
+  const img = product.img || product.thumbnail || product.image_url || null
+
+  const handleAdd = (e) => {
+    e.preventDefault()
+    addItem(product)
+    toast.success(`Đã thêm ${product.name} vào giỏ!`)
+  }
+
+  return (
+    <Link
+      to={`/products/${product.slug}`}
+      className="bg-white border border-shade rounded-xl overflow-hidden transition-all duration-250 hover:-translate-y-1 hover:shadow-lg hover:border-vnpt-light group block"
+    >
+      {/* Ảnh */}
+      <div className="relative aspect-square overflow-hidden bg-cream flex items-center justify-center">
+        {img ? (
+          <img
+            src={img}
+            alt={product.name}
+            className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            onError={e => { e.target.src = 'https://placehold.co/200x200?text=No+Image' }}
+          />
+        ) : (
+          <div className="w-3/4 h-3/4 flex items-center justify-center bg-surface rounded-lg text-4xl">📦</div>
+        )}
+
+      </div>
+
+      <div className="p-3.5">
+        {product.brand && (
+          <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">{product.brand}</div>
+        )}
+        <div className="text-sm font-semibold text-body leading-snug mb-2.5 min-h-[38px] line-clamp-2">{product.name}</div>
+
+        {/* Giá — kiểu TGDĐ */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+            <span className="text-xl font-black text-accent font-display">{formatPrice(salePrice)}</span>
+            <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">-{discount}%</span>
+          </div>
+          <div className="text-xs text-muted line-through">{formatPrice(originalPrice)}</div>
+        </div>
+
+
+
+        <button
+          onClick={handleAdd}
+          className="w-full py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors"
+        >
+          Mua ngay
         </button>
       </div>
     </Link>
