@@ -1,7 +1,7 @@
 // ── FORMAT TIỀN VND ─────────────────────────────────────────────────────────
 export const formatPrice = (amount) => {
   if (amount == null) return '—'
-  return new Intl.NumberFormat('vi-VN').format(amount) + '₫'
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Math.round(amount)) + '₫'
 }
 
 // ── FORMAT NGÀY ──────────────────────────────────────────────────────────────
