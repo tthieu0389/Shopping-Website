@@ -69,9 +69,6 @@ export default function App() {
           <Route path="account/orders" element={
             <ProtectedRoute><AccountPage /></ProtectedRoute>
           } />
-          <Route path="account/wishlist" element={
-            <ProtectedRoute><AccountPage /></ProtectedRoute>
-          } />
           <Route path="account/addresses" element={
             <ProtectedRoute><AccountPage /></ProtectedRoute>
           } />
