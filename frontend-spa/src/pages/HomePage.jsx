@@ -5,11 +5,11 @@ import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, Fl
 import { formatPrice } from '../utils/index.js'
 
 const CATEGORIES = [
-  { slug: 'dien-thoai',    icon: '📱', name: 'Điện thoại',     count: '248 sản phẩm' },
-  { slug: 'sim-so',        icon: '📶', name: 'Sim số đẹp',     count: '5.200+ sim' },
-  { slug: 'goi-cuoc',      icon: '🌐', name: 'Gói cước 4G/5G', count: '32 gói cước' },
-  { slug: 'may-tinh-bang', icon: '💻', name: 'Máy tính bảng',  count: '86 sản phẩm' },
-  { slug: 'phu-kien',      icon: '🎧', name: 'Phụ kiện',       count: '340+ phụ kiện' },
+  { type: 'device',    icon: '📱', name: 'Điện thoại',     count: '248 sản phẩm' },
+  { type: 'sim',       icon: '📶', name: 'Sim số đẹp',     count: '5.200+ sim' },
+  { type: 'internet',  icon: '🌐', name: 'Gói cước 4G/5G', count: '32 gói cước' },
+  { type: 'tv',        icon: '📺', name: 'Máy tính bảng',  count: '86 sản phẩm' },
+  { type: 'accessory', icon: '🎧', name: 'Phụ kiện',       count: '340+ phụ kiện' },
 ]
 
 const SERVICES = [
@@ -209,10 +209,10 @@ export default function HomePage() {
         <div className="max-w-[1200px] mx-auto">
           <SectionHead label="Danh mục" title="Khám phá sản phẩm" sub="Từ sim số đẹp đến điện thoại cao cấp, tất cả đều có tại VNPT Shop" />
           <div className="grid grid-cols-5 gap-4">
-            {CATEGORIES.map(({ slug, icon, name, count }) => (
+            {CATEGORIES.map(({ type, icon, name, count }) => (
               <Link
-                key={slug}
-                to={`/products?product_type=${slug}`}
+                key={type}
+                to={`/products?product_type=${type}`}
                 className="bg-white rounded-xl p-6 text-center border border-shade hover:border-vnpt hover:-translate-y-0.5 hover:shadow-md transition-all duration-250"
               >
                 <div className="w-14 h-14 bg-vnpt-light rounded-[14px] flex items-center justify-center mx-auto mb-3 text-[26px]">{icon}</div>
