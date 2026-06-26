@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useUserAddresses } from '../hooks/index.js'
 import { formatPrice, toast } from '../utils/index.js'
-import { cartApi, ordersApi } from '../api/index.js'
+import { cartApi, ordersApi, storesApi } from '../api/index.js'
 import useCartStore from '../store/cartStore.js'
 import useAuthStore from '../store/authStore.js'
 
@@ -14,7 +14,6 @@ const PAYMENT_METHODS = [
   { value: 'cod',   icon: '💵', name: 'Tiền mặt (COD)',         sub: 'Kiểm tra hàng trước khi thanh toán' },
 ]
 
-// Map frontend value → backend enum (cod | card | wallet)
 const toBackendPayment = (value) => {
   if (value === 'momo' || value === 'vnpay') return 'wallet'
   return value
@@ -25,7 +24,6 @@ const STEPS = ['Giỏ hàng', 'Địa chỉ', 'Thanh toán', 'Xác nhận']
 export default function CheckoutPage() {
   const { items: allItems, removeSelectedItems, selectItemsForCheckout } = useCartStore()
 
-  // Lọc chỉ những item user đã chọn từ CartPage
   const selectedIds = (() => {
     try { return new Set(JSON.parse(sessionStorage.getItem('checkout_items') || '[]')) }
     catch { return new Set() }
@@ -36,71 +34,81 @@ export default function CheckoutPage() {
   const { data: addresses } = useUserAddresses()
   const navigate = useNavigate()
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  // 'delivery' | 'pickup'
+  const [deliveryMode, setDeliveryMode] = useState('delivery')
+  const [stores, setStores] = useState([])
+  const [storesLoading, setStoresLoading] = useState(false)
+  const [selectedStoreId, setSelectedStoreId] = useState(null)
+
+  const [submitting, setSubmitting] = useState(false)
+  const [preview, setPreview] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  const { register, handleSubmit, watch } = useForm({
     defaultValues: {
-      name:           user?.name || '',
-      phone:          '',
-      email:          user?.email || '',
-      city:           '',
-      district:       '',
-      address:        '',
       note:           '',
       payment_method: 'cod',
       address_id:     '',
     }
   })
 
-  const [submitting, setSubmitting] = useState(false)
-  const [useExistingAddress, setUseExistingAddress] = useState(addresses.length > 0)
-  const [preview, setPreview] = useState(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
-
   const selectedAddressId = watch('address_id')
 
-  // Gọi API preview mỗi khi user chọn địa chỉ → lấy phí ship + discount thực từ backend
+  // Load danh sách cửa hàng khi chọn tab pickup
   useEffect(() => {
-    if (!selectedAddressId || items.length === 0) {
-      setPreview(null)
-      return
-    }
+    if (deliveryMode !== 'pickup' || stores.length > 0) return
+    setStoresLoading(true)
+    storesApi.getAll()
+      .then(res => {
+        const list = Array.isArray(res) ? res : (res.data || [])
+        setStores(list)
+        if (list.length > 0) setSelectedStoreId(list[0].id)
+      })
+      .catch(() => {})
+      .finally(() => setStoresLoading(false))
+  }, [deliveryMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Gọi API preview khi địa chỉ hoặc store thay đổi
+  useEffect(() => {
+    const hasDelivery = deliveryMode === 'delivery' && selectedAddressId
+    const hasPickup   = deliveryMode === 'pickup'   && selectedStoreId
+    if (!hasDelivery && !hasPickup) { setPreview(null); return }
+
     setPreviewLoading(true)
-    ordersApi.preview({
+    const payload = {
       items: items.map(i => ({ product_id: i.product_id ?? i.id, quantity: i.qty })),
-      address_id: Number(selectedAddressId),
-    })
+      ...(hasDelivery ? { address_id: Number(selectedAddressId) } : { pickup_store_id: Number(selectedStoreId) }),
+    }
+    ordersApi.preview(payload)
       .then(res => setPreview(res.data ?? res))
       .catch(() => setPreview(null))
       .finally(() => setPreviewLoading(false))
-  }, [selectedAddressId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedAddressId, selectedStoreId, deliveryMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Các giá trị hiển thị: ưu tiên số liệu từ preview (đã tính ship + discount)
-  const shippingFee    = preview?.shipping_fee     ?? null
-  const discountAmount = preview?.total_discount_amount ?? 0
-  const finalTotal     = preview?.total_final_amount ?? (selectedTotal + (shippingFee ?? 0))
+  const shippingFee    = preview?.shipping_fee            ?? null
+  const discountAmount = preview?.total_discount_amount   ?? 0
+  const finalTotal     = preview?.total_final_amount      ?? (selectedTotal + (shippingFee ?? 0))
 
-  const onInvalid = (formErrors) => {
-    // Form không hợp lệ (thiếu họ tên / SĐT / địa chỉ...) -> báo rõ cho người dùng
-    // và cuộn lên field lỗi đầu tiên, tránh tình trạng bấm nút mà "không thấy gì"
-    toast.error('Vui lòng kiểm tra lại thông tin đã nhập')
-    const firstErrorKey = Object.keys(formErrors)[0]
-    const el = document.querySelector(`[name="${firstErrorKey}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
+  const canSubmit = deliveryMode === 'delivery' ? !!selectedAddressId : !!selectedStoreId
+
+  const onInvalid = () => toast.error('Vui lòng kiểm tra lại thông tin đã nhập')
 
   const onSubmit = async (data) => {
     if (items.length === 0) { toast.error('Giỏ hàng trống'); return }
+    if (!canSubmit) {
+      toast.error(deliveryMode === 'delivery' ? 'Vui lòng chọn địa chỉ giao hàng' : 'Vui lòng chọn cửa hàng nhận')
+      return
+    }
     setSubmitting(true)
     try {
       const payload = {
         payment_method: toBackendPayment(data.payment_method),
         note: data.note || undefined,
+        items: items.map(i => ({ product_id: i.product_id ?? i.id, quantity: i.qty })),
+        ...(deliveryMode === 'delivery'
+          ? { address_id: Number(selectedAddressId) }
+          : { pickup_store_id: Number(selectedStoreId) }),
       }
-
-      // Gắn địa chỉ
-      if (useExistingAddress && selectedAddressId) {
-        payload.address_id = Number(selectedAddressId)
-      }
-
       await selectItemsForCheckout(items.map(i => i.id))
       await cartApi.checkout(payload)
       sessionStorage.removeItem('checkout_items')
@@ -157,56 +165,142 @@ export default function CheckoutPage() {
           {/* ── LEFT COLUMN ─────────────────────────────────────────────── */}
           <div className="space-y-5">
 
-            {/* Địa chỉ (gộp thông tin liên hệ + giao hàng) */}
+            {/* Địa chỉ / Nhận tại cửa hàng */}
             <div className="bg-white border border-shade rounded-xl p-7">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3 text-base font-bold text-body">
                   <span className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold">1</span>
-                  Địa chỉ
+                  Nhận hàng
                 </div>
-                <a href="/account/addresses" className="text-xs text-vnpt font-semibold hover:underline">
-                  Quản lý địa chỉ →
-                </a>
+                {deliveryMode === 'delivery' && (
+                  <a href="/account/addresses" className="text-xs text-vnpt font-semibold hover:underline">
+                    Quản lý địa chỉ →
+                  </a>
+                )}
               </div>
 
-              {addresses.length > 0 ? (
-                <div className="space-y-2">
-                  {addresses.map(addr => (
-                    <label key={addr.id} className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${selectedAddressId == addr.id ? 'border-vnpt bg-vnpt-light' : 'border-shade hover:border-vnpt-light'}`}>
-                      <input type="radio" {...register('address_id')} value={addr.id} className="accent-vnpt mt-0.5" />
-                      <div className="text-sm flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-semibold text-body">{addr.receiver_name}</span>
-                          <span className="text-muted">·</span>
-                          <span className="text-muted">{addr.phone}</span>
-                          {addr.is_default && (
-                            <span className="ml-auto text-[11px] text-vnpt font-semibold bg-vnpt-light border border-vnpt/20 px-2 py-0.5 rounded-full">
-                              Mặc định
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-muted">{addr.address_line}, {addr.ward}, {addr.district}, {addr.province}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted">
-                  <div className="text-3xl mb-2">📍</div>
-                  <p className="text-sm mb-3">Bạn chưa có địa chỉ nào được lưu.</p>
-                  <a href="/account/addresses" className="inline-block px-5 py-2 border border-vnpt text-vnpt rounded-full text-sm font-semibold hover:bg-vnpt hover:text-white transition-colors">
-                    Thêm địa chỉ mới
-                  </a>
+              {/* Toggle tab */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryMode('delivery')}
+                  className={`flex flex-col items-center gap-1.5 py-4 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                    deliveryMode === 'delivery'
+                      ? 'border-vnpt bg-vnpt text-white shadow-md'
+                      : 'border-shade bg-white text-body hover:border-vnpt hover:bg-vnpt-light'
+                  }`}
+                >
+                  <span className="text-2xl">🚚</span>
+                  <span>Giao hàng tận nơi</span>
+                  {deliveryMode !== 'delivery' && (
+                    <span className="text-xs text-muted font-normal">15.000₫ – 25.000₫</span>
+                  )}
+                  {deliveryMode === 'delivery' && (
+                    <span className="text-xs text-white/80 font-normal">Nhận tại địa chỉ của bạn</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryMode('pickup')}
+                  className={`flex flex-col items-center gap-1.5 py-4 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                    deliveryMode === 'pickup'
+                      ? 'border-vnpt bg-vnpt text-white shadow-md'
+                      : 'border-shade bg-white text-body hover:border-vnpt hover:bg-vnpt-light'
+                  }`}
+                >
+                  <span className="text-2xl">🏪</span>
+                  <span>Nhận tại cửa hàng</span>
+                  {deliveryMode !== 'pickup' && (
+                    <span className="text-xs text-success font-semibold">Miễn phí ship</span>
+                  )}
+                  {deliveryMode === 'pickup' && (
+                    <span className="text-xs text-white/80 font-normal">Miễn phí vận chuyển</span>
+                  )}
+                </button>
+              </div>
+
+              {/* --- DELIVERY MODE --- */}
+              {deliveryMode === 'delivery' && (
+                <>
+                  {addresses.length > 0 ? (
+                    <div className="space-y-2">
+                      {addresses.map(addr => (
+                        <label key={addr.id} className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${selectedAddressId == addr.id ? 'border-vnpt bg-vnpt-light' : 'border-shade hover:border-vnpt-light'}`}>
+                          <input type="radio" {...register('address_id')} value={addr.id} className="accent-vnpt mt-0.5" />
+                          <div className="text-sm flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="font-semibold text-body">{addr.receiver_name}</span>
+                              <span className="text-muted">·</span>
+                              <span className="text-muted">{addr.phone}</span>
+                              {addr.is_default && (
+                                <span className="ml-auto text-[11px] text-vnpt font-semibold bg-vnpt-light border border-vnpt/20 px-2 py-0.5 rounded-full">
+                                  Mặc định
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-muted">{addr.address_line}, {addr.ward}, {addr.district}, {addr.province}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted">
+                      <div className="text-3xl mb-2">📍</div>
+                      <p className="text-sm mb-3">Bạn chưa có địa chỉ nào được lưu.</p>
+                      <a href="/account/addresses" className="inline-block px-5 py-2 border border-vnpt text-vnpt rounded-full text-sm font-semibold hover:bg-vnpt hover:text-white transition-colors">
+                        Thêm địa chỉ mới
+                      </a>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* --- PICKUP MODE --- */}
+              {deliveryMode === 'pickup' && (
+                <div>
+                  {/* Badge miễn phí ship */}
+
+                  {storesLoading ? (
+                    <div className="text-center py-8 text-muted text-sm">⏳ Đang tải danh sách cửa hàng...</div>
+                  ) : stores.length === 0 ? (
+                    <div className="text-center py-8 text-muted text-sm">Không tìm thấy cửa hàng nào.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {stores.map(store => (
+                        <label
+                          key={store.id}
+                          className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                            selectedStoreId === store.id ? 'border-vnpt bg-vnpt-light' : 'border-shade hover:border-vnpt-light'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="store_id"
+                            checked={selectedStoreId === store.id}
+                            onChange={() => setSelectedStoreId(store.id)}
+                            className="accent-vnpt mt-0.5"
+                          />
+                          <div className="text-sm flex-1">
+                            <div className="font-semibold text-body mb-0.5">{store.name}</div>
+                            <div className="text-muted">{store.address}, {store.province}</div>
+                            {store.phone && (
+                              <div className="text-muted mt-0.5">📞 {store.phone}</div>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Ghi chú đơn hàng */}
-              {(addresses.length > 0) && (
+              {/* Ghi chú */}
+              {(deliveryMode === 'delivery' ? addresses.length > 0 : stores.length > 0) && (
                 <div className="mt-4 pt-4 border-t border-shade">
                   <label className="text-sm font-semibold block mb-1.5">Ghi chú</label>
                   <input
                     {...register('note')}
-                    placeholder="Giao giờ hành chính, gọi trước 30 phút..."
+                    placeholder={deliveryMode === 'delivery' ? 'Giao giờ hành chính, gọi trước 30 phút...' : 'Thời gian dự kiến đến nhận...'}
                     className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
                   />
                 </div>
@@ -281,7 +375,9 @@ export default function CheckoutPage() {
                 {previewLoading ? (
                   <span className="text-muted italic">Đang tính...</span>
                 ) : shippingFee === null ? (
-                  <span className="text-muted italic">Chọn địa chỉ để tính</span>
+                  <span className="text-muted italic">
+                    {deliveryMode === 'delivery' ? 'Chọn địa chỉ để tính' : 'Chọn cửa hàng để tính'}
+                  </span>
                 ) : shippingFee === 0 ? (
                   <span className="text-success font-semibold">Miễn phí</span>
                 ) : (
@@ -307,10 +403,12 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={submitting || previewLoading || !selectedAddressId}
+              disabled={submitting || previewLoading || !canSubmit}
               className="w-full py-4 bg-accent text-white rounded-full font-bold text-base hover:bg-accent-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {submitting ? '⏳ Đang xử lý...' : !selectedAddressId ? 'Chọn địa chỉ để tiếp tục' : '✓ Đặt hàng ngay'}
+              {submitting ? '⏳ Đang xử lý...' : !canSubmit
+                ? (deliveryMode === 'delivery' ? 'Chọn địa chỉ để tiếp tục' : 'Chọn cửa hàng để tiếp tục')
+                : '✓ Đặt hàng ngay'}
             </button>
             <p className="text-center text-xs text-muted mt-3">🔒 Thanh toán SSL 256-bit an toàn</p>
           </div>
