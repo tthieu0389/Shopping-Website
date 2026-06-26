@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import { useCountdown, useProducts } from '../hooks/index.js'
 import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, FlashSaleCard } from '../components/common/index.jsx'
+import { formatPrice } from '../utils/index.js'
 
 const CATEGORIES = [
   { slug: 'dien-thoai',    icon: '📱', name: 'Điện thoại',     count: '248 sản phẩm' },
@@ -22,13 +24,135 @@ const REVIEWS = [
   { initials: 'PV', name: 'Phạm Thùy Vân',   date: '03/06/2024', rating: 4, text: 'Gói Internet cáp quang tốt, tốc độ ổn định. Kỹ thuật viên lắp đặt chuyên nghiệp. Rất hài lòng.' },
 ]
 
-const HERO_PRODUCT = {
-  name: 'iPhone 16 Pro Max 256GB Titan Đen',
-  brand: 'Apple',
-  price: '29.990.000₫',
-  oldPrice: '39.990.000₫',
-  discount: 25,
-  img: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-finish-select-202409-6-9inch-deserttitanium?wid=400&hei=400&fmt=jpeg',
+// ── HeroSlider ────────────────────────────────────────────────────────────────
+function HeroSlider() {
+  const { data: allProducts, loading } = useProducts({ limit: 50, product_type: 'device' })
+  const [current, setCurrent] = useState(0)
+  const timerRef = useRef(null)
+  const touchStartX = useRef(0)
+
+  // Lấy top 5 sản phẩm điện thoại giá cao nhất
+  const topProducts = [...allProducts]
+    .sort((a, b) => (b.price || 0) - (a.price || 0))
+    .slice(0, 5)
+
+  const goTo = (idx) => {
+    setCurrent(idx)
+    clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setCurrent(prev => (prev + 1) % Math.max(topProducts.length, 1))
+    }, 4000)
+  }
+
+  useEffect(() => {
+    if (topProducts.length === 0) return
+    timerRef.current = setInterval(() => {
+      setCurrent(prev => (prev + 1) % topProducts.length)
+    }, 4000)
+    return () => clearInterval(timerRef.current)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topProducts.length])
+
+  if (loading) {
+    return (
+      <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[20px] p-7 flex items-center justify-center" style={{ minHeight: 420 }}>
+        <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (topProducts.length === 0) return null
+
+  const p = topProducts[current]
+  const img = p.img || p.thumbnail || p.image_url || null
+  const salePrice = p.price
+  const rawOld = p.oldPrice || p.original_price
+  const originalPrice = rawOld && rawOld > salePrice
+    ? rawOld
+    : Math.round(salePrice * (1 + (0.15 + (((p.id || 1) * 7) % 26) / 100)))
+  const discount = Math.round((1 - salePrice / originalPrice) * 100)
+
+  return (
+    <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[20px] p-7 text-white select-none">
+      {/* Ảnh + arrows nằm ngoài ảnh */}
+      <div className="relative flex items-center gap-2 mb-4">
+        {/* Prev */}
+        <button
+          onClick={() => goTo((current - 1 + topProducts.length) % topProducts.length)}
+          className="flex-shrink-0 w-8 h-8 bg-white/15 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-base font-bold transition-all duration-200"
+        >‹</button>
+
+        {/* Ảnh sản phẩm — swipe support */}
+        <div
+          className="relative flex-1 aspect-square rounded-[14px] bg-white/8 overflow-hidden"
+          onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+          onTouchEnd={e => {
+            const diff = touchStartX.current - e.changedTouches[0].clientX
+            if (Math.abs(diff) > 40) {
+              diff > 0 ? goTo((current + 1) % topProducts.length) : goTo((current - 1 + topProducts.length) % topProducts.length)
+            }
+          }}
+        >
+          {topProducts.map((prod, i) => {
+            const pImg = prod.img || prod.thumbnail || prod.image_url
+            return (
+              <img
+                key={prod.id}
+                src={pImg || 'https://placehold.co/300x300?text=No+Image'}
+                alt={prod.name}
+                className="absolute inset-0 w-full h-full object-contain p-5 transition-all duration-500"
+                style={{ opacity: i === current ? 1 : 0, transform: i === current ? 'scale(1)' : 'scale(0.95)' }}
+                onError={e => { e.target.src = 'https://placehold.co/300x300?text=No+Image' }}
+              />
+            )
+          })}
+        </div>
+
+        {/* Next */}
+        <button
+          onClick={() => goTo((current + 1) % topProducts.length)}
+          className="flex-shrink-0 w-8 h-8 bg-white/15 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-base font-bold transition-all duration-200"
+        >›</button>
+      </div>
+
+      {/* Thông tin sản phẩm */}
+      <div className="min-h-[90px]">
+        <div className="text-[11px] text-white/60 font-semibold uppercase tracking-wider mb-1">{p.brand || 'VNPT Shop'}</div>
+        <div className="font-bold text-[16px] leading-snug mb-3 line-clamp-2">{p.name}</div>
+        <div className="flex items-center gap-2.5 mb-4">
+          <span className="text-[26px] font-bold text-blue-300 font-display">{formatPrice(salePrice)}</span>
+          {discount > 0 && (
+            <>
+              <span className="text-sm text-white/50 line-through">{formatPrice(originalPrice)}</span>
+              <span className="bg-accent text-white text-xs font-bold px-2.5 py-1 rounded-full">-{discount}%</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <Link
+        to={`/products/${p.slug}`}
+        className="block w-full py-3 bg-accent text-white rounded-full font-bold text-sm hover:bg-accent-dark transition-colors text-center mb-4"
+      >
+        🛒 Xem sản phẩm
+      </Link>
+
+      {/* Dot indicators */}
+      <div className="flex items-center justify-center gap-2">
+        {topProducts.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className={`rounded-full transition-all duration-300 ${
+              i === current
+                ? 'w-6 h-2 bg-white'
+                : 'w-2 h-2 bg-white/30 hover:bg-white/60'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function HomePage() {
@@ -54,10 +178,10 @@ export default function HomePage() {
               Mua sắm điện thoại, sim số đẹp, gói cước ưu đãi từ nhà mạng hàng đầu Việt Nam. Giao hàng trong 2 giờ tại nội thành.
             </p>
             <div className="flex gap-3 flex-wrap mb-9">
-              <Link to="/products" className="px-7 py-3.5 bg-accent text-white rounded-full text-sm font-bold hover:bg-accent-dark hover:-translate-y-0.5 transition-all shadow-md">
+              <Link to="/products?product_type=device" className="px-7 py-3.5 rounded-full text-sm font-bold hover:-translate-y-0.5 transition-all shadow-md" style={{ backgroundColor: '#E30613', color: '#ffffff' }}>
                 Mua ngay hôm nay
               </Link>
-              <Link to="/flash-sale" className="px-7 py-3.5 bg-white/12 text-white border border-white/30 rounded-full text-sm font-semibold hover:bg-white/20 transition-all">
+              <Link to="/flash-sale" className="px-7 py-3.5 rounded-full text-sm font-semibold transition-all" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}>
                 ⚡ Xem Flash Sale
               </Link>
             </div>
@@ -72,21 +196,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[20px] p-7 text-white">
-              <div className="w-full aspect-square rounded-[14px] bg-white/8 flex items-center justify-center mb-4 overflow-hidden">
-                <img src={HERO_PRODUCT.img} alt={HERO_PRODUCT.name} className="w-4/5 h-4/5 object-contain" />
-              </div>
-              <div className="text-[11px] text-white/60 font-semibold uppercase tracking-wider mb-1">{HERO_PRODUCT.brand}</div>
-              <div className="font-bold text-[17px] mb-3">{HERO_PRODUCT.name}</div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <span className="text-[28px] font-bold text-blue-300 font-display">{HERO_PRODUCT.price}</span>
-                <span className="text-sm text-white/50 line-through">{HERO_PRODUCT.oldPrice}</span>
-                <span className="bg-accent text-white text-xs font-bold px-2.5 py-1 rounded-full">-{HERO_PRODUCT.discount}%</span>
-              </div>
-              <Link to="/products" className="block w-full py-3 bg-accent text-white rounded-full font-bold text-sm hover:bg-accent-dark transition-colors text-center">
-                🛒 Xem sản phẩm
-              </Link>
-            </div>
+            <HeroSlider />
           </div>
         </div>
       </div>
