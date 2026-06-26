@@ -16,6 +16,7 @@ import LoginPage           from './pages/LoginPage.jsx'
 import RegisterPage        from './pages/RegisterPage.jsx'
 import AccountPage         from './pages/AccountPage.jsx'
 import BlogPage, { BlogDetail } from './pages/BlogPage.jsx'
+import OrderDetailPage        from './pages/OrderDetailPage.jsx'
 import ContactPage         from './pages/ContactPage.jsx'
 import NotFoundPage        from './pages/NotFoundPage.jsx'
 
@@ -54,6 +55,11 @@ export default function App() {
           } />
           <Route path="checkout/success" element={
             <ProtectedRoute><CheckoutSuccessPage /></ProtectedRoute>
+          } />
+
+          {/* Order detail */}
+          <Route path="account/orders/:id" element={
+            <ProtectedRoute><OrderDetailPage /></ProtectedRoute>
           } />
 
           {/* Account — tất cả sub-routes dùng chung AccountPage, tab được xác định theo path */}
