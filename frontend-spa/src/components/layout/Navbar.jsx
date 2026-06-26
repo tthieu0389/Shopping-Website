@@ -8,7 +8,7 @@ import { formatPrice } from '../../utils/index.js'
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
   const items = useCartStore(s => s.items)
-  const cartCount = items.reduce((s, i) => s + i.qty, 0)
+  const cartCount = items.length
   const navigate = useNavigate()
 
   const { query, setQuery, results, loading } = useSearch()
