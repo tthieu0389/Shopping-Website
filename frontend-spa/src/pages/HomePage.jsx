@@ -168,6 +168,13 @@ function RollingBanner({ products, loading, label, linkTo, linkLabel, gradient, 
 
   const p = products[idx] || null
   const disc = p?.promotionDiscount ?? null
+  const price = p?.price ?? 0
+  // Luôn có giá gốc: dùng promotion nếu có, không thì tạo giá gốc giả +18–28%
+  const fakeMarkup = p ? (1.18 + ((p.id || 1) * 3 % 10) / 100) : 1.2
+  const originalPrice = disc
+    ? Math.round(price / (1 - disc / 100))
+    : Math.round(price * fakeMarkup)
+  const displayDisc = disc ?? Math.round((1 - price / originalPrice) * 100)
 
   return (
     <div className="rounded-[20px] p-9 text-white flex flex-col justify-between min-h-[260px]" style={{ background: gradient }}>
@@ -179,15 +186,26 @@ function RollingBanner({ products, loading, label, linkTo, linkLabel, gradient, 
           <div className="font-display text-[28px] font-bold leading-snug opacity-60">Chưa có dữ liệu</div>
         ) : (
           <div key={p.id}>
-            <div className="flex items-start gap-2 mb-2">
-              <div className="font-display text-[28px] font-bold leading-snug line-clamp-2">{p.name}</div>
-              {disc && (
-                <span className="mt-1.5 flex-shrink-0 text-[11px] font-bold bg-white/25 px-2 py-0.5 rounded-full">SALE -{disc}%</span>
-              )}
-            </div>
-            <div className="font-display text-[22px] font-bold mb-3">
-              Giá từ {formatPrice(p.price)}<span className="text-sm font-normal opacity-70">/tháng</span>
-            </div>
+            {/* Tên sản phẩm */}
+            <div className="font-display text-[26px] font-bold leading-snug line-clamp-2 mb-4">{p.name}</div>
+
+            {/* Luôn hiển thị dạng sale: giá gốc gạch ngang + badge % + giá sale */}
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-display text-[15px] font-normal line-through opacity-55">
+                  {formatPrice(originalPrice)}
+                </span>
+                <span className="text-[11px] font-bold bg-white text-red-600 px-2.5 py-0.5 rounded-full leading-5">
+                  -{displayDisc}%
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="font-display text-[32px] font-bold leading-none">{formatPrice(price)}</span>
+                <span className="text-sm font-normal opacity-70">/tháng</span>
+              </div>
+            </>
+
+            {/* Dot indicators */}
             {products.length > 1 && (
               <div className="flex gap-1.5">
                 {products.map((_, i) => (
