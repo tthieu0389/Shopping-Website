@@ -22,28 +22,16 @@ const reviews = require("./data/21_reviews");
 
 exports.seed = async function (knex) {
   await knex.transaction(async (trx) => {
-    // ===== XÓA DỮ LIỆU CŨ (thứ tự ngược FK) =====
-    await trx("reviews").del();
-    await trx("favorites").del();
-    await trx("order_items").del();
-    await trx("orders").del();
-    await trx("cart_items").del();
-    await trx("carts").del();
-    await trx("inventory_logs").del();
-    await trx("inventory").del();
-    await trx("product_promotions").del();
-    await trx("product_images").del();
-    await trx("product_details").del();
-    await trx("products").del();
-    await trx("blogs").del();
-    await trx("contacts").del();
-    await trx("promotions").del();
-    await trx("categories").del();
-    await trx("stores").del();
-    await trx("user_payment_methods").del();
-    await trx("user_addresses").del();
-    await trx("user_profiles").del();
-    await trx("users").del();
+    // ===== XÓA DỮ LIỆU CŨ + RESET ID =====
+    await trx.raw(`
+      TRUNCATE TABLE
+        reviews, favorites, order_items, orders,
+        cart_items, carts, inventory_logs, inventory,
+        product_promotions, product_images, product_details, products,
+        blogs, contacts, promotions, categories, stores,
+        user_payment_methods, user_addresses, user_profiles, users
+      RESTART IDENTITY CASCADE
+    `);
 
     // ===== USERS CORE =====
     await users.seed(trx);
