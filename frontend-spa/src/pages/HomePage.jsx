@@ -260,6 +260,69 @@ function PromoBanners({ simProducts, simLoading, internetProducts, internetLoadi
   )
 }
 
+// ── NewsletterSection ─────────────────────────────────────────────────────────
+function NewsletterSection() {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [errMsg, setErrMsg] = useState('')
+
+  const handleSubmit = async () => {
+    const trimmed = email.trim()
+    if (!trimmed) { setErrMsg('Vui lòng nhập email.'); setStatus('error'); return }
+    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailReg.test(trimmed)) { setErrMsg('Email không hợp lệ.'); setStatus('error'); return }
+
+    setStatus('loading')
+    setErrMsg('')
+    try {
+      await api.post('/contacts', {
+        name: 'Newsletter',
+        email: trimmed,
+        message: 'Đăng ký nhận ưu đãi qua email.',
+      })
+      setStatus('success')
+      setEmail('')
+    } catch {
+      setErrMsg('Có lỗi xảy ra, vui lòng thử lại.')
+      setStatus('error')
+    }
+  }
+
+  const handleKey = (e) => { if (e.key === 'Enter') handleSubmit() }
+
+  return (
+    <div className="bg-vnpt-dark px-10 py-[72px] text-center">
+      <h2 className="font-display text-[32px] font-bold text-white mb-2.5">Nhận ưu đãi sớm nhất</h2>
+      <p className="text-white/70 mb-8 text-sm">Đăng ký email để nhận thông báo Flash Sale, tin tức công nghệ mới nhất</p>
+
+      <div className="flex max-w-[500px] mx-auto bg-white rounded-full overflow-hidden p-1 pl-5">
+        <input
+          type="email"
+          placeholder="Nhập địa chỉ email của bạn..."
+          className="flex-1 border-none outline-none text-sm font-body text-body bg-transparent"
+          value={email}
+          onChange={e => { setEmail(e.target.value); setStatus('idle') }}
+          onKeyDown={handleKey}
+          disabled={status === 'loading'}
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={status === 'loading'}
+          className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {status === 'loading' ? 'Đang gửi...' : 'Đăng ký ngay'}
+        </button>
+      </div>
+      {status === 'success' && (
+        <p className="text-success text-sm font-semibold mt-3">✅ Đăng ký thành công! Chúng tôi sẽ gửi ưu đãi đến email của bạn.</p>
+      )}
+      {status === 'error' && (
+        <p className="text-red-300 text-xs mt-3">{errMsg}</p>
+      )}
+    </div>
+  )
+}
+
 export default function HomePage() {
   const { h, m, s } = useCountdown(6443)
   const { data: flashProducts, loading: flashLoading } = useProducts({ limit: 8 })
@@ -425,16 +488,7 @@ export default function HomePage() {
       </section>
 
       {/* NEWSLETTER */}
-      <div className="bg-vnpt-dark px-10 py-[72px] text-center">
-        <h2 className="font-display text-[32px] font-bold text-white mb-2.5">Nhận ưu đãi sớm nhất</h2>
-        <p className="text-white/70 mb-8 text-sm">Đăng ký email để nhận thông báo Flash Sale, tin tức công nghệ mới nhất</p>
-        <div className="flex max-w-[500px] mx-auto bg-white rounded-full overflow-hidden p-1 pl-5">
-          <input type="email" placeholder="Nhập địa chỉ email của bạn..." className="flex-1 border-none outline-none text-sm font-body text-body bg-transparent" />
-          <button className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors flex-shrink-0">
-            Đăng ký ngay
-          </button>
-        </div>
-      </div>
+      <NewsletterSection />
     </div>
   )
 }
