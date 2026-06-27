@@ -17,4 +17,8 @@ module.exports = require("knex")({
     database: DB_NAME,
   },
   pool: { min: 0, max: 10 },
+  migrations: {
+    directory: "./src/database/migrations",
+    tableName: "knex_migrations",
+  },
 });

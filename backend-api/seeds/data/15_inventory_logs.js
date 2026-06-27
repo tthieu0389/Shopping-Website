@@ -11,7 +11,7 @@ exports.seed = async function (knex) {
   const actions = ["import", "export", "adjust"];
 
   const data = inventory.map((inv) => {
-    const change = faker.number.int({ min: -20, max: 50 });
+    const change = faker.number.int({ min: 1, max: 50 });
     const before = inv.quantity;
 
     return {

@@ -13,7 +13,13 @@ const {
 } = require("../schema/inventory.schema");
 
 //GET ALL INVENTORY
-router.get("/", pagination(), inventoryController.getAllInventory);
+router.get(
+  "/",
+  verifyToken(),
+  checkRole("admin"),
+  pagination(),
+  inventoryController.getAllInventory,
+);
 
 //GET LOW STOCK ITEMS
 router.get(
