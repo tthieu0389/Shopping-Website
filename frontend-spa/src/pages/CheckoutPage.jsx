@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useUserAddresses } from '../hooks/index.js'
@@ -19,7 +19,6 @@ const toBackendPayment = (value) => {
   return value
 }
 
-const STEPS = ['Giỏ hàng', 'Địa chỉ', 'Thanh toán', 'Xác nhận']
 
 export default function CheckoutPage() {
   const { items: allItems, removeSelectedItems, selectItemsForCheckout } = useCartStore()
@@ -43,6 +42,20 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [preview, setPreview] = useState(null)
   const [previewLoading, setPreviewLoading] = useState(false)
+  const [earlyDiscount, setEarlyDiscount] = useState(null) // discount tính sớm khi chưa chọn địa chỉ
+  const earlyDiscountFetched = useRef(false)
+
+  // Gọi preview ngay khi items sẵn sàng để lấy discount (không cần address)
+  useEffect(() => {
+    if (items.length === 0 || earlyDiscountFetched.current) return
+    earlyDiscountFetched.current = true
+    ordersApi.preview({ items: items.map(i => ({ product_id: i.product_id ?? i.id, quantity: i.qty })) })
+      .then(res => {
+        const data = res.data ?? res
+        setEarlyDiscount(data.total_discount_amount ?? 0)
+      })
+      .catch(() => {})
+  }, [items.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { register, handleSubmit, watch } = useForm({
     defaultValues: {
@@ -86,8 +99,8 @@ export default function CheckoutPage() {
   }, [selectedAddressId, selectedStoreId, deliveryMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const shippingFee    = preview?.shipping_fee            ?? null
-  const discountAmount = preview?.total_discount_amount   ?? 0
-  const finalTotal     = preview?.total_final_amount      ?? (selectedTotal + (shippingFee ?? 0))
+  const discountAmount = preview?.total_discount_amount   ?? earlyDiscount ?? 0
+  const finalTotal     = preview?.total_final_amount      ?? (selectedTotal - discountAmount + (shippingFee ?? 0))
 
   const canSubmit = deliveryMode === 'delivery' ? !!selectedAddressId : !!selectedStoreId
 
@@ -136,29 +149,6 @@ export default function CheckoutPage() {
 
   return (
     <div>
-      {/* Steps */}
-      <div className="max-w-[1100px] mx-auto px-10 mt-6 flex items-center">
-        {STEPS.map((label, i, arr) => (
-          <span key={label} className="flex items-center flex-1">
-            <span className="flex items-center gap-2">
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                i === 0 ? 'bg-success text-white'
-                : i === 1 ? 'bg-vnpt text-white'
-                : 'bg-shade text-muted'
-              }`}>
-                {i === 0 ? '✓' : i + 1}
-              </span>
-              <span className={`text-sm font-semibold ${
-                i === 1 ? 'text-vnpt' : i === 0 ? 'text-success' : 'text-muted'
-              }`}>{label}</span>
-            </span>
-            {i < arr.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-3 ${i === 0 ? 'bg-success' : 'bg-shade'}`} />
-            )}
-          </span>
-        ))}
-      </div>
-
       <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
         <div className="max-w-[1100px] mx-auto px-10 py-8 grid grid-cols-[1fr_380px] gap-8 items-start">
 
@@ -334,23 +324,35 @@ export default function CheckoutPage() {
               Đơn hàng ({items.reduce((s, i) => s + i.qty, 0)} sản phẩm)
             </div>
 
-            <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
+            <div className="space-y-3 mb-4 max-h-[320px] overflow-y-auto pr-1">
               {items.map(item => (
-                <div key={item.id} className="flex items-center gap-3">
-                  <div className="w-14 h-14 bg-cream rounded-lg border border-shade flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-                    {item.img ? (
-                      <img src={item.img} alt={item.name} className="w-full h-full object-contain p-1" />
-                    ) : (
-                      <span className="text-xl">📦</span>
-                    )}
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-muted text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <div key={item.id} className="flex items-start gap-3 py-2 border-b border-shade last:border-0">
+                  {/* Ảnh + badge số lượng */}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-16 h-16 bg-cream rounded-lg border border-shade flex items-center justify-center overflow-hidden">
+                      {item.img ? (
+                        <img src={item.img} alt={item.name} className="w-full h-full object-contain p-1.5" />
+                      ) : (
+                        <span className="text-2xl">📦</span>
+                      )}
+                    </div>
+                    <span className="absolute -top-2 -right-2 min-w-[20px] h-5 bg-vnpt text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white shadow-sm">
                       {item.qty}
                     </span>
                   </div>
+
+                  {/* Tên + đơn giá */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-body line-clamp-2">{item.name}</div>
+                    <div className="text-[13px] font-semibold text-body leading-snug mb-1">{item.name}</div>
+                    <div className="text-xs text-muted">
+                      {formatPrice(item.price)} × {item.qty}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-body flex-shrink-0 whitespace-nowrap">{formatPrice(item.price * item.qty)}</div>
+
+                  {/* Thành tiền */}
+                  <div className="text-[13px] font-bold text-body flex-shrink-0 whitespace-nowrap pt-0.5">
+                    {formatPrice(item.price * item.qty)}
+                  </div>
                 </div>
               ))}
             </div>
