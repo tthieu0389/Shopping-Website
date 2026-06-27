@@ -231,7 +231,8 @@ CREATE TABLE promotions (
 CREATE TABLE product_promotions (
     id SERIAL PRIMARY KEY,
     product_id INT REFERENCES products(id),
-    promotion_id INT REFERENCES promotions(id)
+    promotion_id INT REFERENCES promotions(id),
+    UNIQUE (product_id, promotion_id)
 );
 
 -- =========================

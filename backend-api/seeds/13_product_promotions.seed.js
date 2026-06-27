@@ -9,5 +9,8 @@ exports.seed = async function (knex) {
     promotion_id: faker.helpers.arrayElement(promotions).id,
   }));
 
-  await knex("product_promotions").insert(data);
+  await knex("product_promotions")
+    .insert(data)
+    .onConflict(["product_id", "promotion_id"])
+    .ignore();
 };
