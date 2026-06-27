@@ -123,12 +123,11 @@ exports.decreaseStock = async (
   amount,
   reference_id = null,
 ) => {
-  // Nếu không truyền trx, dùng knex mặc định
-  const queryRunner = trx || knex;
+  const db = trx || knex;
 
-  const inventory = await queryRunner("inventory")
+  const inventory = await db("inventory")
     .where({ product_id })
-    .forUpdate() // Dùng trx truyền vào để lock đúng dòng trong transaction cha
+    .forUpdate()
     .first();
 
   if (!inventory) throw new Error("Inventory not found");
@@ -137,13 +136,12 @@ exports.decreaseStock = async (
 
   const newQty = inventory.quantity - amount;
 
-  await queryRunner("inventory").where({ product_id }).update({
+  await db("inventory").where({ product_id }).update({
     quantity: newQty,
-    updated_at: knex.fn.now(),
+    updated_at: db.fn.now(), // Thống nhất dùng db
   });
 
-  // LOG EXPORT
-  await queryRunner("inventory_logs").insert({
+  await db("inventory_logs").insert({
     inventory_id: inventory.id,
     product_id,
     action: "export",
@@ -152,10 +150,10 @@ exports.decreaseStock = async (
     quantity_change: -amount,
     quantity_after: newQty,
     note: "Order export stock",
-    created_at: knex.fn.now(),
+    created_at: db.fn.now(), // Thống nhất dùng db
   });
 
-  await queryRunner("products")
+  await db("products")
     .where({ id: product_id })
     .update({ is_available: newQty > 0 });
 
@@ -169,9 +167,9 @@ exports.increaseStock = async (
   amount,
   reference_id = null,
 ) => {
-  const queryRunner = trx || knex;
+  const db = trx || knex;
 
-  const inventory = await queryRunner("inventory")
+  const inventory = await db("inventory")
     .where({ product_id })
     .forUpdate()
     .first();
@@ -181,13 +179,12 @@ exports.increaseStock = async (
 
   const newQty = inventory.quantity + amount;
 
-  await queryRunner("inventory").where({ product_id }).update({
+  await db("inventory").where({ product_id }).update({
     quantity: newQty,
-    updated_at: knex.fn.now(),
+    updated_at: db.fn.now(), // Thống nhất dùng db
   });
 
-  // LOG IMPORT
-  await queryRunner("inventory_logs").insert({
+  await db("inventory_logs").insert({
     inventory_id: inventory.id,
     product_id,
     action: "import",
@@ -196,10 +193,10 @@ exports.increaseStock = async (
     quantity_change: amount,
     quantity_after: newQty,
     note: "Stock increase",
-    created_at: knex.fn.now(),
+    created_at: db.fn.now(), // Thống nhất dùng db
   });
 
-  await queryRunner("products")
+  await db("products")
     .where({ id: product_id })
     .update({ is_available: newQty > 0 });
 

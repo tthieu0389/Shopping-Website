@@ -86,7 +86,6 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     countQuery = countQuery.where("is_featured", isFeatured);
   }
 
-  // Bộ lọc khoảng giá
   if (price_min !== undefined && price_min !== "") {
     query = query.where("price", ">=", Number(price_min));
     countQuery = countQuery.where("price", ">=", Number(price_min));
@@ -96,12 +95,15 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     countQuery = countQuery.where("price", "<=", Number(price_max));
   }
 
+  //Sử dụng whereRaw với toán tử @> để tận dụng GIN Index
   Object.keys(dynamicFilters).forEach((key) => {
     const val = dynamicFilters[key];
     if (val !== undefined && val !== "") {
-      const lookFor = `"${key}":"${val}"`;
-      query = query.where("attributes", "like", `%${lookFor}%`);
-      countQuery = countQuery.where("attributes", "like", `%${lookFor}%`);
+      const filterObj = { [key]: val };
+      query = query.whereRaw("attributes @> ?", [JSON.stringify(filterObj)]);
+      countQuery = countQuery.whereRaw("attributes @> ?", [
+        JSON.stringify(filterObj),
+      ]);
     }
   });
 
@@ -111,7 +113,6 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   const safeLimit = isNaN(Number(limit)) ? 20 : Number(limit);
   const safeOffset = isNaN(Number(offset)) ? 0 : Number(offset);
 
-  // Map các giá trị sort từ client sang câu lệnh sắp xếp tương ứng trong database
   const sortMapping = {
     newest: { column: "created_at", direction: "desc" },
     price_asc: { column: "price", direction: "asc" },
@@ -130,13 +131,11 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
 
 exports.getProductByIdOrSlug = async (idOrSlug) => {
   if (!idOrSlug) return null;
-
   if (!isNaN(idOrSlug)) {
     return await knex("products")
       .where({ id: Number(idOrSlug), is_deleted: false })
       .first();
   }
-
   return await knex("products")
     .where({ slug: idOrSlug, is_deleted: false })
     .first();
@@ -144,7 +143,6 @@ exports.getProductByIdOrSlug = async (idOrSlug) => {
 
 exports.getRelatedProducts = async (id) => {
   if (!id || isNaN(id)) return [];
-
   const product = await knex("products")
     .where({ id, is_deleted: false })
     .first();
@@ -176,7 +174,6 @@ exports.deleteProduct = async (id) => {
   const product = await knex("products")
     .where({ id, is_deleted: false })
     .first();
-
   if (!product) throw new Error("Product not found");
 
   const [deletedProduct] = await knex("products")

@@ -1,8 +1,9 @@
 const knex = require("../database/knex");
 const { _calculateOrderAmount } = require("./order.service");
 const orderItemService = require("./orderitem.service");
+const inventoryService = require("./inventory.service");
 
-// Lấy hoặc tạo giỏ hàng
+// Helper: Lấy hoặc tạo giỏ hàng
 const getOrCreateCart = async (user_id, trx = knex) => {
   if (!user_id) throw new Error("User ID is required");
   let cart = await trx("carts").where({ user_id }).first();
@@ -12,7 +13,7 @@ const getOrCreateCart = async (user_id, trx = knex) => {
   return cart;
 };
 
-// Thêm sản phẩm
+// Thêm sản phẩm vào giỏ
 exports.addToCart = async (user_id, product_id, quantity) => {
   return knex.transaction(async (trx) => {
     const product = await trx("products")
@@ -40,7 +41,7 @@ exports.addToCart = async (user_id, product_id, quantity) => {
   });
 };
 
-// Lấy giỏ hàng
+// Lấy danh sách sản phẩm trong giỏ
 exports.getCartItems = async (user_id) => {
   const cart = await getOrCreateCart(user_id);
   const rawItems = await knex("cart_items").where("cart_id", cart.id);
@@ -54,7 +55,7 @@ exports.getCartItems = async (user_id) => {
   return calculated;
 };
 
-// Preview chi phí (chỉ tính toán, không lưu đơn)
+// Xem trước chi phí (Preview)
 exports.previewCart = async (user_id, data) => {
   const cart = await getOrCreateCart(user_id);
   const selectedItems = await knex("cart_items").where({
@@ -71,23 +72,23 @@ exports.previewCart = async (user_id, data) => {
   );
 };
 
-// Update trạng thái chọn
+// Thay đổi trạng thái chọn sản phẩm
 exports.toggleSelectItem = async (item_id, is_selected) => {
   return knex("cart_items").where({ id: item_id }).update({ is_selected });
 };
 
-// Update số lượng
+// Cập nhật số lượng
 exports.updateItem = async (item_id, quantity) => {
   return knex("cart_items").where({ id: item_id }).update({ quantity });
 };
 
-// Xóa 1 món
+// Xóa sản phẩm khỏi giỏ
 exports.removeItem = async (item_id) => {
   if (!item_id) throw new Error("Item ID required");
   return knex("cart_items").where({ id: item_id }).del();
 };
 
-// Thanh toán thật
+// Xử lý thanh toán (Checkout)
 exports.checkout = async (user_id, data) => {
   return knex.transaction(async (trx) => {
     const cart = await trx("carts").where({ user_id }).first();
@@ -98,6 +99,7 @@ exports.checkout = async (user_id, data) => {
 
     if (selectedItems.length === 0) throw new Error("Chưa chọn sản phẩm");
 
+    // Tính toán số tiền
     const calcResult = await _calculateOrderAmount(
       selectedItems,
       data.address_id,
@@ -117,15 +119,20 @@ exports.checkout = async (user_id, data) => {
         shipping_address: calcResult.shipping_details?.shipping_address,
         address_id: data.address_id,
         pickup_store_id: data.pickup_store_id,
+        shipping_fee: calcResult.shipping_fee || 0,
       })
       .returning("*");
 
-    // Trừ kho & Insert chi tiết đơn
+    // Trừ kho & Tạo chi tiết đơn hàng
     for (const item of calcResult.items) {
-      await trx("inventory")
-        .where({ product_id: item.product_id })
-        .decrement("quantity", item.quantity);
+      await inventoryService.decreaseStock(
+        trx,
+        item.product_id,
+        item.quantity,
+        order.id,
+      );
 
+      // Tạo chi tiết đơn hàng
       await orderItemService.createOrderItem(trx, {
         order_id: order.id,
         product_id: item.product_id,
@@ -138,7 +145,7 @@ exports.checkout = async (user_id, data) => {
       });
     }
 
-    // Xóa giỏ hàng sau khi mua thành công
+    // Xóa sản phẩm đã thanh toán khỏi giỏ hàng
     await trx("cart_items")
       .where({ cart_id: cart.id, is_selected: true })
       .del();
