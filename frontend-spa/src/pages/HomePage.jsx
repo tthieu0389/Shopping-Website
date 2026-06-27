@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useCountdown, useProducts } from '../hooks/index.js'
 import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, FlashSaleCard } from '../components/common/index.jsx'
 import { formatPrice } from '../utils/index.js'
+import api from '../api/axiosInstance.js'
 
 const CATEGORIES = [
   { type: 'device',    icon: '📱', name: 'Điện thoại',     count: '248 sản phẩm' },
@@ -155,9 +156,109 @@ function HeroSlider() {
   )
 }
 
+// ── PromoBanners ──────────────────────────────────────────────────────────────
+function RollingBanner({ products, loading, label, linkTo, linkLabel, gradient, textColor }) {
+  const [idx, setIdx] = useState(0)
+
+  useEffect(() => {
+    if (products.length <= 1) return
+    const t = setInterval(() => setIdx(i => (i + 1) % products.length), 3500)
+    return () => clearInterval(t)
+  }, [products.length])
+
+  const p = products[idx] || null
+  const disc = p?.promotionDiscount ?? null
+
+  return (
+    <div className="rounded-[20px] p-9 text-white flex flex-col justify-between min-h-[260px]" style={{ background: gradient }}>
+      <div>
+        <div className="text-[11px] font-bold uppercase tracking-[2px] opacity-75 mb-3">{label}</div>
+        {loading ? (
+          <div className="text-white/50 text-sm">Đang tải...</div>
+        ) : !p ? (
+          <div className="font-display text-[28px] font-bold leading-snug opacity-60">Chưa có dữ liệu</div>
+        ) : (
+          <div key={p.id}>
+            <div className="flex items-start gap-2 mb-2">
+              <div className="font-display text-[28px] font-bold leading-snug line-clamp-2">{p.name}</div>
+              {disc && (
+                <span className="mt-1.5 flex-shrink-0 text-[11px] font-bold bg-white/25 px-2 py-0.5 rounded-full">SALE -{disc}%</span>
+              )}
+            </div>
+            <div className="font-display text-[22px] font-bold mb-3">
+              Giá từ {formatPrice(p.price)}<span className="text-sm font-normal opacity-70">/tháng</span>
+            </div>
+            {products.length > 1 && (
+              <div className="flex gap-1.5">
+                {products.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setIdx(i)}
+                    className={`rounded-full transition-all duration-300 ${i === idx ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/35 hover:bg-white/60'}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="mt-6">
+        <Link to={linkTo} className={`inline-block px-5 py-2.5 bg-white rounded-full text-sm font-bold hover:shadow-md transition-all ${textColor}`}>
+          {linkLabel}
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function PromoBanners({ simProducts, simLoading, internetProducts, internetLoading, promotionMap }) {
+  // Gắn discount vào từng sản phẩm để RollingBanner dùng
+  const simWithDisc = simProducts.map(p => ({ ...p, promotionDiscount: promotionMap[p.id] ?? null }))
+  const netWithDisc = internetProducts.map(p => ({ ...p, promotionDiscount: promotionMap[p.id] ?? null }))
+
+  return (
+    <div className="bg-cream px-10 py-10">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-5 items-stretch">
+        <RollingBanner
+          products={simWithDisc}
+          loading={simLoading}
+          label="Sim số đẹp"
+          linkTo="/products?product_type=sim"
+          linkLabel="Xem sim ngay →"
+          gradient="linear-gradient(135deg, #003087, #1a4fa8)"
+          textColor="text-vnpt!"
+        />
+        <RollingBanner
+          products={netWithDisc}
+          loading={internetLoading}
+          label="Ưu đãi cước"
+          linkTo="/products?product_type=internet"
+          linkLabel="Đăng ký ngay →"
+          gradient="linear-gradient(135deg, #9b0000, #E30613)"
+          textColor="text-accent!"
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const { h, m, s } = useCountdown(6443)
   const { data: flashProducts, loading: flashLoading } = useProducts({ limit: 8 })
+  const { data: simProducts, loading: simLoading } = useProducts({ product_type: 'sim', limit: 50 })
+  const { data: internetProducts, loading: internetLoading } = useProducts({ product_type: 'internet', limit: 50 })
+  const [promotionMap, setPromotionMap] = useState({}) // { product_id: discount_value }
+
+  useEffect(() => {
+    api.get('/product-promotions')
+      .then(res => {
+        const list = Array.isArray(res) ? res : (res.data || [])
+        const map = {}
+        list.forEach(p => { map[p.product_id] = p.discount_value })
+        setPromotionMap(map)
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <div>
@@ -186,7 +287,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="flex gap-8">
-              {[['2M+','Khách hàng tin dùng'],['500K+','Đơn hàng thành công'],['100%','Hàng chính hãng']].map(([n,l]) => (
+              {[['2M+','Khách hàng tin dùng'],['500K+','Đơn hàng thành công'],['99.9%','Hàng chính hãng']].map(([n,l]) => (
                 <div key={l}>
                   <div className="text-[28px] font-bold text-white font-display">{n}</div>
                   <div className="text-xs text-white/60 mt-0.5">{l}</div>
@@ -250,7 +351,7 @@ export default function HomePage() {
           )}
           {flashProducts.length > 0 && (
             <div className="text-center mt-8">
-              <Link to="/flash-sale" className="inline-block px-8 py-3 border-2 border-white/30 text-white rounded-full font-semibold hover:bg-white/10 transition-all">
+              <Link to="/flash-sale" className="inline-block px-8 py-3 border-2 border-white/60 text-white! rounded-full font-semibold hover:bg-white/10 hover:border-white transition-all">
                 Xem tất cả Flash Sale →
               </Link>
             </div>
@@ -259,26 +360,7 @@ export default function HomePage() {
       </section>
 
       {/* PROMO BANNERS */}
-      <div className="bg-cream px-10 py-10">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-5">
-          <div className="rounded-[20px] p-9 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #003087, #1a4fa8)' }}>
-            <div className="text-[11px] font-bold uppercase tracking-[2px] opacity-75 mb-2.5">Sim số đẹp</div>
-            <div className="font-display text-[28px] font-bold leading-snug mb-2.5">Sim phong thủy<br />Giá từ 200.000₫</div>
-            <div className="text-sm opacity-80 mb-6 leading-relaxed">Hàng ngàn đầu số đẹp, sim tứ quý, ngũ quý, thần tài</div>
-            <Link to="/products?product_type=sim" className="inline-block px-5 py-2.5 bg-white text-vnpt rounded-full text-sm font-bold hover:shadow-md transition-all">
-              Xem sim ngay →
-            </Link>
-          </div>
-          <div className="rounded-[20px] p-9 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #9b0000, #E30613)' }}>
-            <div className="text-[11px] font-bold uppercase tracking-[2px] opacity-75 mb-2.5">Ưu đãi cước</div>
-            <div className="font-display text-[28px] font-bold leading-snug mb-2.5">5G không giới hạn<br />Chỉ 99.000₫/tháng</div>
-            <div className="text-sm opacity-80 mb-6 leading-relaxed">Tốc độ đến 1Gbps, vùng phủ sóng toàn quốc</div>
-            <Link to="/products?product_type=internet" className="inline-block px-5 py-2.5 bg-white text-accent rounded-full text-sm font-bold hover:shadow-md transition-all">
-              Đăng ký ngay →
-            </Link>
-          </div>
-        </div>
-      </div>
+      <PromoBanners simProducts={simProducts} simLoading={simLoading} internetProducts={internetProducts} internetLoading={internetLoading} promotionMap={promotionMap} />
 
       {/* SERVICES */}
       <section className="py-16 px-10">

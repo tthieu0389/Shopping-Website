@@ -202,9 +202,9 @@ export function SectionHead({ label, title, sub }) {
 // ── TrustBand ─────────────────────────────────────────────────────────────────
 export function TrustBand() {
   const items = [
-    { icon: '🚚', title: 'Giao hàng nhanh 2H', sub: 'Miễn phí trong nội thành' },
+    { icon: '🚚', title: 'Giao hàng tận nơi', sub: 'Hỗ trợ toàn quốc' },
     { icon: '🛡️', title: 'Hàng chính hãng 100%', sub: 'Bảo hành theo hãng' },
-    { icon: '🔄', title: 'Đổi trả trong 7 ngày', sub: 'Không cần lý do' },
+    { icon: '🔄', title: 'Đổi trả trong 30 ngày', sub: 'Trường hợp lỗi từ nhà sản xuất' },
     { icon: '📞', title: 'Hỗ trợ 24/7', sub: '1800 1234 miễn phí' },
   ]
   return (
