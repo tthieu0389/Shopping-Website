@@ -1,7 +1,6 @@
 const { faker } = require("@faker-js/faker/locale/vi");
 
 exports.seed = async function (knex) {
-  // Lấy danh sách ID đơn hàng và sản phẩm hiện có
   const orders = await knex("orders").select("id");
   const products = await knex("products").select("id", "name", "price");
 
@@ -12,13 +11,11 @@ exports.seed = async function (knex) {
 
   const data = [];
 
-  // Tạo dữ liệu giả lập cho order_items
   for (const order of orders) {
     const product = faker.helpers.arrayElement(products);
     const quantity = faker.number.int({ min: 1, max: 3 });
     const unitPrice = Number(product.price);
 
-    // Giả lập discount (từ 0 đến 10% giá sản phẩm)
     const discountAmount = Math.floor(unitPrice * 0.1);
     const finalPrice = (unitPrice - discountAmount) * quantity;
 
@@ -26,9 +23,10 @@ exports.seed = async function (knex) {
       order_id: order.id,
       product_id: product.id,
       product_name: product.name,
-      product_price: unitPrice, // Giá gốc
+      base_price: unitPrice,
+      unit_price: unitPrice,
       quantity: quantity,
-      price: finalPrice, // Giá sau giảm (final_price)
+      final_price: finalPrice,
       discount_amount: discountAmount * quantity,
     });
   }
@@ -37,7 +35,10 @@ exports.seed = async function (knex) {
 
   for (const order of orders) {
     const items = await knex("order_items").where("order_id", order.id);
-    const total = items.reduce((sum, item) => sum + Number(item.price), 0);
+    const total = items.reduce(
+      (sum, item) => sum + Number(item.final_price),
+      0,
+    );
 
     await knex("orders").where("id", order.id).update({ total_amount: total });
   }
