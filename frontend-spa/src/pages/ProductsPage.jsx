@@ -58,10 +58,10 @@ export default function ProductsPage() {
   }
   const page = Number(searchParams.get('page')) || 1
 
-  // Build params cho API — khớp đúng tên param backend nhận
+  // Fetch toàn bộ để frontend tự sort + paginate — tránh hết hàng bị đẩy sang trang sau do backend limit/offset
   const apiParams = {
-    limit:  LIMIT,
-    offset: (page - 1) * LIMIT,
+    limit:  999,
+    offset: 0,
     ...(filters.search       && { search: filters.search }),
     ...(filters.category_id  && { category_id: filters.category_id }),
     ...(filters.product_type && { product_type: filters.product_type }),
@@ -70,8 +70,21 @@ export default function ProductsPage() {
     ...(filters.sort         && { sort: filters.sort }),
   }
 
-  const { data: products, total, loading, error } = useProducts(apiParams)
+  const { data: rawProducts, loading, error } = useProducts(apiParams)
+
+  // Sort: còn hàng lên trước, hết hàng xuống sau — trong mỗi nhóm giữ thứ tự sort backend
+  const isOOS = (p) =>
+    p.is_available === false || p.is_available === 0 || p.stock === 0 || p.stock_quantity === 0
+
+  const sortedProducts = [...rawProducts].sort((a, b) => {
+    const aOut = isOOS(a)
+    const bOut = isOOS(b)
+    return aOut === bOut ? 0 : aOut ? 1 : -1
+  })
+
+  const total = sortedProducts.length
   const totalPages = Math.ceil(total / LIMIT)
+  const products = sortedProducts.slice((page - 1) * LIMIT, page * LIMIT)
 
   const updateFilter = (key, value) => {
     updateFilters({ [key]: value })
