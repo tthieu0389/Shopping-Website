@@ -30,7 +30,8 @@ export default function CheckoutPage() {
   const items = selectedIds.size > 0 ? allItems.filter(i => selectedIds.has(i.id)) : allItems
   const selectedTotal = items.reduce((s, i) => s + i.price * i.qty, 0)
   const { user } = useAuthStore()
-  const { data: addresses } = useUserAddresses()
+  const { data: rawAddresses } = useUserAddresses()
+  const addresses = [...rawAddresses].sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
   const navigate = useNavigate()
 
   // 'delivery' | 'pickup'
@@ -57,7 +58,7 @@ export default function CheckoutPage() {
       .catch(() => {})
   }, [items.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { register, handleSubmit, watch } = useForm({
+  const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
       note:           '',
       payment_method: 'cod',
@@ -66,6 +67,16 @@ export default function CheckoutPage() {
   })
 
   const selectedAddressId = watch('address_id')
+
+
+  // Tự động chọn địa chỉ mặc định một lần duy nhất khi load xong, không ghi đè lựa chọn của user
+  const autoSelectedRef = useRef(false)
+  useEffect(() => {
+    if (addresses.length === 0 || autoSelectedRef.current) return
+    autoSelectedRef.current = true
+    const defaultAddr = addresses.find(a => a.is_default) ?? addresses[0]
+    setValue('address_id', String(defaultAddr.id))
+  }, [addresses]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load danh sách cửa hàng khi chọn tab pickup
   useEffect(() => {

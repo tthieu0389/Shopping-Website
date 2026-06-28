@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useOrders, useUserProfile, useUserAddresses } from '../hooks/index.js'
@@ -198,11 +198,95 @@ function OrdersTab() {
 // ── Tab: Địa chỉ ─────────────────────────────────────────────────────────────
 const EMPTY_ADDR = { receiver_name: '', phone: '', province: '', district: '', ward: '', address_line: '', is_default: false }
 
+const VN_DATA_URL = 'https://raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN/master/data.json'
+
+// Cache dữ liệu tỉnh/huyện/xã toàn quốc (chỉ fetch 1 lần)
+let _vnDataCache = null
+async function fetchVNData() {
+  if (_vnDataCache) return _vnDataCache
+  const res = await fetch(VN_DATA_URL)
+  _vnDataCache = await res.json()
+  return _vnDataCache
+}
+
+const selectCls = (disabled) =>
+  `w-full px-4 py-3 border rounded-lg text-sm outline-none transition-colors appearance-none bg-white
+   ${disabled ? 'border-shade text-muted cursor-not-allowed bg-surface' : 'border-shade focus:border-vnpt cursor-pointer hover:border-vnpt/60'}`
+
 function AddressForm({ initial = EMPTY_ADDR, onSave, onCancel, saving, title }) {
-  const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: initial })
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({ defaultValues: initial })
+
+  const [provinces, setProvinces]   = useState([])
+  const [districts, setDistricts]   = useState([])
+  const [wards, setWards]           = useState([])
+  const [vnData, setVnData]         = useState(null)
+  const [loadingGeo, setLoadingGeo] = useState(true)
+  const initializedRef              = useRef(false)
+
+  const selectedProvince = watch('province')
+  const selectedDistrict = watch('district')
+
+  // Load dữ liệu địa giới một lần
+  useEffect(() => {
+    fetchVNData().then(data => {
+      setVnData(data)
+      setProvinces(data.map(p => p.Name))
+      setLoadingGeo(false)
+    }).catch(() => setLoadingGeo(false))
+  }, [])
+
+  // Khi tỉnh thay đổi → cập nhật danh sách huyện
+  useEffect(() => {
+    if (!vnData || !selectedProvince) { setDistricts([]); setWards([]); return }
+    const found = vnData.find(p => p.Name === selectedProvince)
+    if (!found) { setDistricts([]); setWards([]); return }
+    setDistricts(found.Districts.map(d => d.Name))
+    setWards([])
+    // Chỉ reset khi user thay đổi, không reset lúc init
+    if (initializedRef.current) {
+      setValue('district', '')
+      setValue('ward', '')
+    }
+  }, [selectedProvince, vnData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Khi huyện thay đổi → cập nhật danh sách xã
+  useEffect(() => {
+    if (!vnData || !selectedProvince || !selectedDistrict) { setWards([]); return }
+    const foundP = vnData.find(p => p.Name === selectedProvince)
+    if (!foundP) { setWards([]); return }
+    const foundD = foundP.Districts.find(d => d.Name === selectedDistrict)
+    if (!foundD) { setWards([]); return }
+    setWards(foundD.Wards.map(w => w.Name))
+    if (initializedRef.current) setValue('ward', '')
+  }, [selectedDistrict, selectedProvince, vnData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sau khi data load & districts/wards sẵn sàng, khôi phục giá trị initial (khi edit)
+  useEffect(() => {
+    if (!vnData || initializedRef.current) return
+    if (initial.province && initial.district) {
+      // Trigger cascade bằng cách set province trước, districts sẽ được fill qua effect trên
+      // Sau đó set district & ward — đánh dấu initialized SAU khi set xong
+      const foundP = vnData.find(p => p.Name === initial.province)
+      if (foundP) {
+        const distList = foundP.Districts.map(d => d.Name)
+        setDistricts(distList)
+        const foundD = foundP.Districts.find(d => d.Name === initial.district)
+        if (foundD) setWards(foundD.Wards.map(w => w.Name))
+      }
+    }
+    initializedRef.current = true
+  }, [vnData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Đánh dấu initialized sau lần đầu tiên có districts (trường hợp tạo mới)
+  useEffect(() => {
+    if (!initializedRef.current && !initial.province) initializedRef.current = true
+  }, [initial.province])
+
   return (
     <form onSubmit={handleSubmit(onSave)} className="bg-white border-2 border-vnpt/30 rounded-xl p-6 space-y-4">
       <h3 className="font-bold text-body">{title}</h3>
+
+      {/* Họ tên + SĐT */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-semibold block mb-1.5">Họ tên người nhận *</label>
@@ -222,40 +306,73 @@ function AddressForm({ initial = EMPTY_ADDR, onSave, onCancel, saving, title }) 
           />
           {errors.phone && <p className="text-xs text-accent mt-1">{errors.phone.message}</p>}
         </div>
+      </div>
+
+      {/* Tỉnh → Huyện → Xã (cascade) */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Tỉnh / Thành phố */}
         <div>
           <label className="text-sm font-semibold block mb-1.5">Tỉnh / Thành phố *</label>
-          <input
-            {...register('province', { required: true })}
-            className="w-full px-4 py-3 border border-shade rounded-lg text-sm outline-none focus:border-vnpt transition-colors"
-            placeholder="TP. Hồ Chí Minh"
-          />
+          <div className="relative">
+            <select
+              {...register('province', { required: 'Chọn tỉnh/thành phố' })}
+              disabled={loadingGeo}
+              className={selectCls(loadingGeo)}
+            >
+              <option value="">{loadingGeo ? 'Đang tải...' : '-- Chọn tỉnh/TP --'}</option>
+              {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs">▼</span>
+          </div>
+          {errors.province && <p className="text-xs text-accent mt-1">{errors.province.message}</p>}
         </div>
+
+        {/* Quận / Huyện */}
         <div>
           <label className="text-sm font-semibold block mb-1.5">Quận / Huyện *</label>
-          <input
-            {...register('district', { required: true })}
-            className="w-full px-4 py-3 border border-shade rounded-lg text-sm outline-none focus:border-vnpt transition-colors"
-            placeholder="Quận 1"
-          />
+          <div className="relative">
+            <select
+              {...register('district', { required: 'Chọn quận/huyện' })}
+              disabled={!selectedProvince || districts.length === 0}
+              className={selectCls(!selectedProvince || districts.length === 0)}
+            >
+              <option value="">-- Chọn quận/huyện --</option>
+              {districts.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs">▼</span>
+          </div>
+          {errors.district && <p className="text-xs text-accent mt-1">{errors.district.message}</p>}
         </div>
+
+        {/* Phường / Xã */}
         <div>
           <label className="text-sm font-semibold block mb-1.5">Phường / Xã</label>
-          <input
-            {...register('ward')}
-            className="w-full px-4 py-3 border border-shade rounded-lg text-sm outline-none focus:border-vnpt transition-colors"
-            placeholder="Phường Bến Nghé"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold block mb-1.5">Địa chỉ cụ thể *</label>
-          <input
-            {...register('address_line', { required: true })}
-            className="w-full px-4 py-3 border border-shade rounded-lg text-sm outline-none focus:border-vnpt transition-colors"
-            placeholder="123 Lê Lợi"
-          />
+          <div className="relative">
+            <select
+              {...register('ward')}
+              disabled={!selectedDistrict || wards.length === 0}
+              className={selectCls(!selectedDistrict || wards.length === 0)}
+            >
+              <option value="">-- Chọn phường/xã --</option>
+              {wards.map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs">▼</span>
+          </div>
         </div>
       </div>
-      {/* Đặt mặc định — chỉ hiện khi chưa là mặc định */}
+
+      {/* Địa chỉ cụ thể */}
+      <div>
+        <label className="text-sm font-semibold block mb-1.5">Địa chỉ cụ thể *</label>
+        <input
+          {...register('address_line', { required: 'Vui lòng nhập địa chỉ cụ thể' })}
+          className="w-full px-4 py-3 border border-shade rounded-lg text-sm outline-none focus:border-vnpt transition-colors"
+          placeholder="Số nhà, tên đường..."
+        />
+        {errors.address_line && <p className="text-xs text-accent mt-1">{errors.address_line.message}</p>}
+      </div>
+
+      {/* Đặt mặc định */}
       {!initial.is_default && (
         <label className="flex items-center gap-3 cursor-pointer select-none w-fit group">
           <div className="relative">
@@ -272,6 +389,7 @@ function AddressForm({ initial = EMPTY_ADDR, onSave, onCancel, saving, title }) 
           Đây là địa chỉ mặc định
         </div>
       )}
+
       <div className="flex gap-3 pt-1">
         <button
           type="submit"
