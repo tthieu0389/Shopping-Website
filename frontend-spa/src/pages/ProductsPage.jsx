@@ -127,7 +127,7 @@ export default function ProductsPage() {
           {/* Danh mục */}
           <div className="bg-white border border-shade rounded-xl p-5">
             <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Danh mục</div>
-            <div className="space-y-1">
+            <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
               <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
                 <input type="radio" name="category" checked={!filters.category_id} onChange={() => updateFilter('category_id', '')} className="accent-vnpt w-4 h-4" />
                 <span className="text-sm text-body flex-1">Tất cả danh mục</span>

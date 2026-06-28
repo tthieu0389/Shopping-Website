@@ -324,9 +324,9 @@ export default function CheckoutPage() {
               Đơn hàng ({items.reduce((s, i) => s + i.qty, 0)} sản phẩm)
             </div>
 
-            <div className="space-y-3 mb-4 max-h-[320px] overflow-y-auto pr-1">
+            <div className="space-y-1 mb-4 max-h-[320px] overflow-y-auto pr-3">
               {items.map(item => (
-                <div key={item.id} className="flex items-start gap-3 py-2 border-b border-shade last:border-0">
+                <div key={item.id} className="flex items-start gap-3 py-3 border-b border-shade last:border-0">
                   {/* Ảnh + badge số lượng */}
                   <div className="relative flex-shrink-0">
                     <div className="w-16 h-16 bg-cream rounded-lg border border-shade flex items-center justify-center overflow-hidden">
