@@ -67,15 +67,15 @@ CREATE TABLE products (
     slug VARCHAR(200) UNIQUE NOT NULL,
     description TEXT,
     price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
-    stock INT DEFAULT 0, 
+    stock INT DEFAULT 0,
     product_type VARCHAR(20),
     category_id INT REFERENCES categories(id) ON DELETE SET NULL,
-    brand VARCHAR(100) DEFAULT 'VNPT', 
-    model VARCHAR(100),                
-    attributes JSONB DEFAULT '{}', 
-    is_available BOOLEAN DEFAULT TRUE,  
-    is_featured BOOLEAN DEFAULT FALSE,   
-    is_deleted BOOLEAN DEFAULT FALSE,   
+    brand VARCHAR(100) DEFAULT 'VNPT',
+    model VARCHAR(100),
+    attributes JSONB DEFAULT '{}',
+    is_available BOOLEAN DEFAULT TRUE,
+    is_featured BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -97,8 +97,6 @@ CREATE TABLE product_details (
 CREATE INDEX idx_products_category_type ON products(category_id, product_type) WHERE is_deleted = FALSE;
 CREATE INDEX idx_products_brand_model ON products(brand, model) WHERE is_deleted = FALSE;
 CREATE INDEX idx_products_price ON products(price) WHERE is_deleted = FALSE;
-
--- GIN Index: Giúp database quét xuyên thấu vào sâu bên trong nội dung JSONB attributes cực nhanh
 CREATE INDEX idx_products_attributes ON products USING gin (attributes);
 
 -- =========================
@@ -119,6 +117,18 @@ CREATE TABLE cart_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(cart_id, product_id)
+);
+
+-- =========================
+-- STORE (tạo trước orders vì orders reference stores)
+-- =========================
+CREATE TABLE stores (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    province VARCHAR(100),
+    address TEXT,
+    phone VARCHAR(20),
+    is_deleted BOOLEAN DEFAULT FALSE
 );
 
 -- =========================
@@ -152,22 +162,6 @@ CREATE TABLE order_items (
     discount_amount NUMERIC(12,2) DEFAULT 0,
     final_price NUMERIC(12,2) NOT NULL
 );
-
--- =========================
--- STORE
--- =========================
-CREATE TABLE stores (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
-    province VARCHAR(100),
-    address TEXT,
-    phone VARCHAR(20),
-    is_deleted BOOLEAN DEFAULT FALSE
-);
-
-ALTER TABLE orders
-ADD CONSTRAINT fk_orders_store
-FOREIGN KEY (pickup_store_id) REFERENCES stores(id);
 
 -- =========================
 -- INVENTORY
@@ -243,7 +237,7 @@ CREATE TABLE reviews (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
     product_id INT REFERENCES products(id),
-    rating INT,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -253,5 +247,6 @@ CREATE TABLE favorites (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
     product_id INT REFERENCES products(id),
-    is_deleted BOOLEAN DEFAULT FALSE
+    is_deleted BOOLEAN DEFAULT FALSE,
+    UNIQUE (user_id, product_id)
 );

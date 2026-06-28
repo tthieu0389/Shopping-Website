@@ -1,33 +1,38 @@
-const users = require("./01_users.seed");
-const profiles = require("./02_user_profiles.seed");
-const addresses = require("./03_user_addresses.seed");
-const payments = require("./04_user_payment_methods.seed");
-
-const stores = require("./05_stores.seed");
-const categories = require("./06_categories.seed");
-const promotions = require("./07_promotions.seed");
-const blogs = require("./08_blogs.seed");
-const contacts = require("./09_contacts.seed");
-
-const products = require("./10_products.seed");
-const productDetails = require("./11_product_details.seed");
-const productImages = require("./12_product_images.seed");
-const productPromotions = require("./13_product_promotions.seed");
-
-const inventory = require("./14_inventory.seed");
-const inventoryLogs = require("./15_inventory_logs.seed");
-
-const carts = require("./16_carts.seed");
-const cartItems = require("./17_cart_items.seed");
-
-const orders = require("./18_orders.seed");
-const orderItems = require("./19_order_items.seed");
-
-const favorites = require("./20_favorites.seed");
-const reviews = require("./21_reviews.seed");
+const users = require("./data/01_users");
+const profiles = require("./data/02_user_profiles");
+const addresses = require("./data/03_user_addresses");
+const payments = require("./data/04_user_payment_methods");
+const stores = require("./data/05_stores");
+const categories = require("./data/06_categories");
+const promotions = require("./data/07_promotions");
+const blogs = require("./data/08_blogs");
+const contacts = require("./data/09_contacts");
+const products = require("./data/10_products");
+const productDetails = require("./data/11_product_details");
+const productImages = require("./data/12_product_images");
+const productPromotions = require("./data/13_product_promotions");
+const inventory = require("./data/14_inventory");
+const inventoryLogs = require("./data/15_inventory_logs");
+const carts = require("./data/16_carts");
+const cartItems = require("./data/17_cart_items");
+const orders = require("./data/18_orders");
+const orderItems = require("./data/19_order_items");
+const favorites = require("./data/20_favorites");
+const reviews = require("./data/21_reviews");
 
 exports.seed = async function (knex) {
   await knex.transaction(async (trx) => {
+    // ===== XÓA DỮ LIỆU CŨ + RESET ID =====
+    await trx.raw(`
+      TRUNCATE TABLE
+        reviews, favorites, order_items, orders,
+        cart_items, carts, inventory_logs, inventory,
+        product_promotions, product_images, product_details, products,
+        blogs, contacts, promotions, categories, stores,
+        user_payment_methods, user_addresses, user_profiles, users
+      RESTART IDENTITY CASCADE
+    `);
+
     // ===== USERS CORE =====
     await users.seed(trx);
     await profiles.seed(trx);

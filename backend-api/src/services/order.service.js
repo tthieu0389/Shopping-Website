@@ -163,7 +163,7 @@ exports.createOrder = async (userId, data) => {
     // Luu don hang vao DB
     const [order] = await trx("orders")
       .insert({
-        order_code: `ORD-${Date.now()}-${userId}`,
+        order_code: `ORD-${Date.now()}-${userId}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
         user_id: userId,
         address_id: data.address_id || null,
         pickup_store_id: data.pickup_store_id || null,
@@ -356,17 +356,22 @@ exports.updateOrder = async (id, data) => {
 
 // Xoa vinh vien don hang khoi DB
 exports.deleteOrder = async (id) => {
-  if (!id || isNaN(id)) return null;
-  return knex("orders").where("id", id).del();
-};
+  return knex.transaction(async (trx) => {
+    const order = await trx("orders").where("id", id).first();
+    if (!order) {
+      const err = new Error("Order not found");
+      err.statusCode = 404;
+      throw err;
+    }
 
-// Lay chi tiet mot don hang kem danh sach mat hang
-exports.getOrderById = async (orderId) => {
-  if (!orderId || isNaN(orderId)) return null;
+    if (order.status !== "cancelled") {
+      const err = new Error(
+        "Chỉ có thể xóa đơn hàng đã hủy. Vui lòng hủy đơn trước.",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
 
-  const order = await knex("orders").where("id", orderId).first();
-  if (!order) return null;
-
-  const items = await orderItemService.getOrderItemsByOrderId(orderId);
-  return { ...order, items };
+    return await trx("orders").where("id", id).del();
+  });
 };

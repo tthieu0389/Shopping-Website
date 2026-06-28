@@ -1,10 +1,8 @@
 require("dotenv").config();
-
 /**
  * @type { import("knex").Knex.Config }
  */
 const { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME } = process.env;
-
 module.exports = {
   client: "pg",
   connection: {
@@ -15,6 +13,10 @@ module.exports = {
     database: DB_NAME,
   },
   pool: { min: 0, max: 10 },
+  migrations: {
+    directory: "./src/database/migrations",
+    tableName: "knex_migrations",
+  },
   seeds: {
     directory: "./seeds",
   },

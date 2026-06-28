@@ -1900,7 +1900,8 @@
     "/api/inventory": {
       "get": {
         "tags": ["Inventory"],
-        "summary": "Lấy danh sách tồn kho",
+        "summary": "Lấy danh sách tồn kho (Admin only)",
+        "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "$ref": "#/components/parameters/PageParam" },
           { "$ref": "#/components/parameters/LimitParam" }
@@ -1928,7 +1929,9 @@
                 }
               }
             }
-          }
+          },
+          "401": { "description": "Chưa đăng nhập" },
+          "403": { "description": "Không có quyền admin" }
         }
       },
       "post": {
