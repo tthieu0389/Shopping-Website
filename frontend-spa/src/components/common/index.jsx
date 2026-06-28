@@ -266,34 +266,75 @@ export function StarRating({ value = 0, max = 5, onChange }) {
 // ── Pagination ────────────────────────────────────────────────────────────────
 export function Pagination({ page, totalPages, goTo }) {
   if (totalPages <= 1) return null
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+
+  // Tạo danh sách trang với ellipsis: 1 … 4 5 6 … 55
+  const getPages = () => {
+    const delta = 4 // số trang hiển thị mỗi bên trang hiện tại
+    const range = []
+    const rangeWithDots = []
+
+    const left = Math.max(2, page - delta)
+    const right = Math.min(totalPages - 1, page + delta)
+
+    // Luôn có trang 1
+    range.push(1)
+    for (let i = left; i <= right; i++) range.push(i)
+    // Luôn có trang cuối
+    if (totalPages > 1) range.push(totalPages)
+
+    // Thêm dấu ... vào giữa
+    let prev = null
+    for (const p of range) {
+      if (prev !== null) {
+        if (p - prev === 2) {
+          rangeWithDots.push(prev + 1) // chỉ 1 trang ở giữa, hiện luôn
+        } else if (p - prev > 2) {
+          rangeWithDots.push('...')
+        }
+      }
+      rangeWithDots.push(p)
+      prev = p
+    }
+
+    return rangeWithDots
+  }
+
+  const btnBase = 'w-9 h-9 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center'
 
   return (
-    <div className="flex items-center justify-center gap-2 py-8">
+    <div className="flex items-center justify-center gap-1.5 py-8">
       <button
         onClick={() => goTo(page - 1)}
         disabled={page <= 1}
-        className="px-3 py-2 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 h-9 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         ‹
       </button>
-      {pages.map(p => (
-        <button
-          key={p}
-          onClick={() => goTo(p)}
-          className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
-            p === page
-              ? 'bg-vnpt text-white'
-              : 'border border-shade text-muted hover:border-vnpt hover:text-vnpt'
-          }`}
-        >
-          {p}
-        </button>
-      ))}
+
+      {getPages().map((p, i) =>
+        p === '...' ? (
+          <span key={`dots-${i}`} className="w-9 h-9 flex items-center justify-center text-sm text-muted select-none">
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => goTo(p)}
+            className={`${btnBase} ${
+              p === page
+                ? 'bg-vnpt text-white'
+                : 'border border-shade text-muted hover:border-vnpt hover:text-vnpt'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
       <button
         onClick={() => goTo(page + 1)}
         disabled={page >= totalPages}
-        className="px-3 py-2 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 h-9 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         ›
       </button>

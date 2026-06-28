@@ -102,7 +102,7 @@ export default function ProductsPage() {
     <div>
       <Breadcrumb items={[{ to: '/', label: 'Trang chủ' }, { label: 'Sản phẩm' }]} />
 
-      <div className="max-w-[1200px] mx-auto px-10 py-8 grid grid-cols-[260px_1fr] gap-7 items-start">
+      <div className="max-w-[1200px] mx-auto px-10 py-8 grid grid-cols-[260px_minmax(0,1fr)] gap-7 items-start">
 
         {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
         <aside className="sticky top-24 self-start space-y-4">
@@ -236,35 +236,33 @@ export default function ProductsPage() {
             </select>
           </div>
 
-          {/* Active filter tags */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {filters.search && (
-                <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
-                  Tìm: {filters.search}
-                  <button onClick={() => updateFilter('search', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
-                </span>
-              )}
-              {filters.category_id && selectedCategory && (
-                <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
-                  {selectedCategory.name}
-                  <button onClick={() => updateFilter('category_id', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
-                </span>
-              )}
-              {filters.product_type && (
-                <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
-                  {PRODUCT_TYPES.find(t => t.value === filters.product_type)?.label}
-                  <button onClick={() => updateFilter('product_type', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
-                </span>
-              )}
-              {(filters.price_min || filters.price_max) && (
-                <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
-                  {filters.price_min ? formatPrice(filters.price_min) : '0'} - {filters.price_max ? formatPrice(filters.price_max) : '∞'}
-                  <button onClick={() => updateFilters({ price_min: '', price_max: '' })} className="ml-1 hover:text-vnpt-dark">✕</button>
-                </span>
-              )}
-            </div>
-          )}
+          {/* Active filter tags — luôn render để tránh layout shift */}
+          <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">
+            {filters.search && (
+              <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
+                Tìm: {filters.search}
+                <button onClick={() => updateFilter('search', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
+              </span>
+            )}
+            {filters.category_id && selectedCategory && (
+              <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
+                {selectedCategory.name}
+                <button onClick={() => updateFilter('category_id', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
+              </span>
+            )}
+            {filters.product_type && (
+              <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
+                {PRODUCT_TYPES.find(t => t.value === filters.product_type)?.label}
+                <button onClick={() => updateFilter('product_type', '')} className="ml-1 hover:text-vnpt-dark">✕</button>
+              </span>
+            )}
+            {(filters.price_min || filters.price_max) && (
+              <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
+                {filters.price_min ? formatPrice(filters.price_min) : '0'} - {filters.price_max ? formatPrice(filters.price_max) : '∞'}
+                <button onClick={() => updateFilters({ price_min: '', price_max: '' })} className="ml-1 hover:text-vnpt-dark">✕</button>
+              </span>
+            )}
+          </div>
 
           {/* Content */}
           {loading ? (
