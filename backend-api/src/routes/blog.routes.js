@@ -5,6 +5,7 @@ const blogController = require("../controller/blog.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/checkRole");
 const validate = require("../middlewares/validate");
+const pagination = require("../middlewares/pagination");
 
 const { createBlogSchema, updateBlogSchema } = require("../schema/blog.schema");
 
@@ -18,7 +19,7 @@ router.post(
 );
 
 // GET ALL BLOGS (public)
-router.get("/", blogController.getAll);
+router.get("/", pagination(), blogController.getAll);
 
 // GET BLOG BY SLUG
 router.get("/slug/:slug", blogController.getBySlug);
