@@ -13,14 +13,12 @@ export default function CartPage() {
 
   useEffect(() => { fetchCart() }, [])
 
-  // Khi items load xong, mặc định chọn tất cả
-  useEffect(() => {
-    if (items.length > 0) {
-      setSelectedIds(new Set(items.map(i => i.id)))
-    }
-  }, [items.length])
+  const isOutOfStock = (item) =>
+    item.stock === 0 || item.is_available === false || item.is_available === 0
 
   const toggleItem = (id) => {
+    const item = items.find(i => i.id === id)
+    if (item && isOutOfStock(item)) return
     setSelectedIds(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
@@ -28,9 +26,12 @@ export default function CartPage() {
     })
   }
 
-  const allChecked = items.length > 0 && items.every(i => selectedIds.has(i.id))
+  const [showOos, setShowOos] = useState(false)
+  const availableItems = items.filter(i => !isOutOfStock(i))
+  const oosItems       = items.filter(i =>  isOutOfStock(i))
+  const allChecked = availableItems.length > 0 && availableItems.every(i => selectedIds.has(i.id))
   const toggleAll = () => {
-    setSelectedIds(allChecked ? new Set() : new Set(items.map(i => i.id)))
+    setSelectedIds(allChecked ? new Set() : new Set(availableItems.map(i => i.id)))
   }
 
   const selectedItems = items.filter(i => selectedIds.has(i.id))
@@ -82,11 +83,11 @@ export default function CartPage() {
         </h1>
 
         <div className="grid grid-cols-[1fr_360px] gap-7 items-start">
-
-          {/* ── CART ITEMS ──────────────────────────────────────────────── */}
+          <div>
+            {/* ── CART ITEMS ──────────────────────────────────────────────── */}
           <div className="bg-white border border-shade rounded-xl overflow-hidden">
             {/* Header */}
-            <div className="hidden md:grid grid-cols-[32px_2fr_1fr_1fr_1fr_40px] px-5 py-3.5 bg-cream text-xs font-bold text-muted uppercase tracking-wider border-b border-shade items-center gap-2">
+            <div className="hidden md:grid grid-cols-[32px_1fr_auto_40px] px-5 py-3.5 bg-cream text-xs font-bold text-muted uppercase tracking-wider border-b border-shade items-center gap-4">
               <input
                 type="checkbox"
                 checked={allChecked}
@@ -95,20 +96,23 @@ export default function CartPage() {
                 title="Chọn tất cả"
               />
               <span>Sản phẩm</span>
-              <span>Đơn giá</span>
               <span>Số lượng</span>
-              <span>Thành tiền</span>
               <span />
             </div>
 
-            {items.map(item => {
+            {/* Chỉ render item còn hàng */}
+            {availableItems.map(item => {
               const checked = selectedIds.has(item.id)
+              const salePrice = item.price
+              const originalPrice = item.originalPrice && item.originalPrice > salePrice
+                ? item.originalPrice
+                : Math.round(salePrice * (1.18 + ((item.product_id || 1) * 7 % 26) / 100))
+              const discount = Math.round((1 - salePrice / originalPrice) * 100)
               return (
                 <div
                   key={item.id}
-                  className={`grid grid-cols-[32px_2fr_1fr_1fr_1fr_40px] px-5 py-4 border-b border-shade last:border-none items-center gap-2 transition-colors ${checked ? '' : 'opacity-50'}`}
+                  className="grid grid-cols-[32px_1fr_auto_40px] px-5 py-4 border-b border-shade last:border-none items-center gap-4"
                 >
-                  {/* Checkbox */}
                   <input
                     type="checkbox"
                     checked={checked}
@@ -116,80 +120,110 @@ export default function CartPage() {
                     className="accent-vnpt w-4 h-4 cursor-pointer"
                   />
 
-                  {/* Product */}
+                  {/* Sản phẩm + giá */}
                   <div className="flex items-center gap-3.5">
                     <div className="w-[70px] h-[70px] rounded-lg bg-cream border border-shade flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {item.img ? (
-                        <img
-                          src={item.img}
-                          alt={item.name}
-                          className="w-full h-full object-contain p-2"
-                          onError={e => { e.target.src = 'https://placehold.co/70x70?text=📦' }}
-                        />
-                      ) : (
-                        <span className="text-2xl">📦</span>
-                      )}
+                        <img src={item.img} alt={item.name} className="w-full h-full object-contain p-2"
+                          onError={e => { e.target.src = 'https://placehold.co/70x70?text=📦' }} />
+                      ) : <span className="text-2xl">📦</span>}
                     </div>
                     <div>
-                      <Link
-                        to={`/products/${item.product_id}`}
-                        className="text-sm font-semibold text-body hover:text-vnpt transition-colors line-clamp-2"
-                      >
+                      <Link to={`/products/${item.product_id}`}
+                        className="text-sm font-semibold text-body hover:text-vnpt transition-colors line-clamp-2">
                         {item.name}
                       </Link>
                       {item.brand && <div className="text-xs text-muted mt-0.5">{item.brand}</div>}
+                      {/* Giá sale gọn dưới tên */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="text-sm font-bold text-accent">{formatPrice(salePrice)}</span>
+                        <span className="text-[10px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">-{discount}%</span>
+                        <span className="text-xs text-muted line-through">{formatPrice(originalPrice)}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Unit price */}
-                  <div className="text-sm font-semibold text-body">{formatPrice(item.price)}</div>
-
-                  {/* Quantity */}
+                  {/* Số lượng */}
                   <div className="flex items-center border border-shade rounded-lg overflow-hidden w-fit">
-                    <button
-                      onClick={() => updateQty(item.id, item.qty - 1)}
-                      disabled={syncing}
-                      className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors disabled:opacity-50"
-                    >−</button>
-                    <span className="w-10 text-center text-sm font-bold border-x border-shade h-8 flex items-center justify-center">
-                      {item.qty}
-                    </span>
-                    <button
-                      onClick={() => updateQty(item.id, item.qty + 1)}
-                      disabled={syncing}
-                      className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors disabled:opacity-50"
-                    >+</button>
+                    <button onClick={() => updateQty(item.id, item.qty - 1)} disabled={syncing}
+                      className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors disabled:opacity-50">−</button>
+                    <span className="w-10 text-center text-sm font-bold border-x border-shade h-8 flex items-center justify-center">{item.qty}</span>
+                    <button onClick={() => updateQty(item.id, item.qty + 1)} disabled={syncing}
+                      className="w-8 h-8 bg-cream text-base hover:bg-vnpt-light transition-colors disabled:opacity-50">+</button>
                   </div>
 
-                  {/* Subtotal */}
-                  <div className="text-base font-bold text-accent">{formatPrice(item.price * item.qty)}</div>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => {
-                      removeItem(item.id)
-                      setSelectedIds(prev => { const n = new Set(prev); n.delete(item.id); return n })
-                    }}
+                  <button onClick={() => { removeItem(item.id); setSelectedIds(prev => { const n = new Set(prev); n.delete(item.id); return n }) }}
                     disabled={syncing}
                     className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-accent transition-all text-muted text-lg flex items-center justify-center disabled:opacity-50"
-                    title="Xoá khỏi giỏ"
-                  >
-                    🗑
-                  </button>
+                    title="Xoá khỏi giỏ">🗑</button>
                 </div>
               )
             })}
 
-            {/* Footer */}
+          {/* Footer */}
             <div className="flex justify-between items-center px-5 py-4 bg-cream">
               <Link to="/products" className="text-sm text-vnpt font-semibold hover:underline">
                 ← Tiếp tục mua hàng
               </Link>
               <span className="text-xs text-muted">
-                Đã chọn {selectedItems.length}/{items.length} sản phẩm
+                Đã chọn {selectedItems.length}/{availableItems.length} sản phẩm
               </span>
             </div>
           </div>
+
+          {/* ── SẢN PHẨM HẾT HÀNG — trong cột trái, bên dưới cart ─────── */}
+          {oosItems.length > 0 && (
+            <div className="mt-4 border border-dashed border-shade rounded-xl overflow-hidden bg-white">
+              <button
+                onClick={() => setShowOos(v => !v)}
+                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-cream transition-colors"
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-muted">
+                  <span>⚠</span>
+                  <span>{oosItems.length} sản phẩm tạm hết hàng</span>
+                </div>
+                <span className="text-xs text-vnpt font-semibold">
+                  {showOos ? 'Thu gọn ▲' : 'Xem thêm ▼'}
+                </span>
+              </button>
+              {showOos && (
+                <div className="border-t border-dashed border-shade">
+                  {oosItems.map(item => (
+                    <div key={item.id}
+                      className="grid grid-cols-[32px_1fr_auto_40px] px-5 py-4 border-b border-shade last:border-none items-center gap-4 opacity-50">
+                      <input type="checkbox" disabled className="w-4 h-4 cursor-not-allowed" />
+                      <div className="flex items-center gap-3.5">
+                        <div className="relative w-[70px] h-[70px] rounded-lg bg-cream border border-shade flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {item.img
+                            ? <img src={item.img} alt={item.name} className="w-full h-full object-contain p-2"
+                                onError={e => { e.target.src = 'https://placehold.co/70x70?text=📦' }} />
+                            : <span className="text-2xl">📦</span>}
+                          <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+                            <span className="text-[9px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">Hết hàng</span>
+                          </div>
+                        </div>
+                        <div>
+                          <Link to={`/products/${item.product_id}`}
+                            className="text-sm font-semibold text-body hover:text-vnpt transition-colors line-clamp-2">
+                            {item.name}
+                          </Link>
+                          {item.brand && <div className="text-xs text-muted mt-0.5">{item.brand}</div>}
+                          <div className="text-xs text-muted line-through mt-1">{formatPrice(item.price)}</div>
+                          <div className="text-[11px] font-semibold text-accent mt-0.5">Tạm hết hàng</div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted">× {item.qty}</div>
+                      <button onClick={() => removeItem(item.id)} disabled={syncing}
+                        className="w-8 h-8 rounded-lg hover:bg-red-50 hover:text-accent transition-all text-muted text-lg flex items-center justify-center disabled:opacity-50"
+                        title="Xoá khỏi giỏ">🗑</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          </div>{/* end cột trái */}
 
           {/* ── ORDER SUMMARY ────────────────────────────────────────────── */}
           <div className="bg-white border border-shade rounded-xl p-6 sticky top-24">
@@ -229,6 +263,7 @@ export default function CartPage() {
             <p className="text-center text-xs text-muted mt-3">🔒 Thanh toán SSL 256-bit an toàn</p>
           </div>
         </div>
+
       </div>
     </div>
   )
