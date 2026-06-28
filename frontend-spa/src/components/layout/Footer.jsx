@@ -10,7 +10,7 @@ export default function Footer() {
             <div className="flex items-center gap-2.5 mb-3">
               <div className="w-9 h-9 bg-vnpt rounded-lg flex items-center justify-center">
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png"
+                  src="https://upload.wikimedia.org/wikipedia/vi/6/65/VNPT_Logo.svg"
                   alt="VNPT"
                   className="w-6 brightness-0 invert"
                 />

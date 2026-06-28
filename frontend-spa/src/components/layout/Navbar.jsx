@@ -47,9 +47,9 @@ export default function Navbar() {
   const navLinks = [
     { to: '/',                              label: 'Trang chủ' },
     { to: '/products?product_type=device',  label: 'Điện thoại' },
-    { to: '/products?product_type=sim',     label: 'Sim' },
+    { to: '/products?product_type=sim',     label: 'Sim số' },
     { to: '/products?product_type=internet',label: 'Dịch vụ' },
-    { to: '/flash-sale',                    label: 'Flash Sale' },
+    { to: '/flash-sale',                    label: '🔥 Flash Sale' },
     { to: '/blog',                          label: 'Tin tức' },
   ]
 
@@ -69,15 +69,15 @@ export default function Navbar() {
         <div className="max-w-[1200px] mx-auto flex items-center gap-5 h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 font-extrabold text-xl text-vnpt flex-shrink-0">
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <div className="w-9 h-9 bg-vnpt rounded-lg flex items-center justify-center">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png"
+                src="https://upload.wikimedia.org/wikipedia/vi/6/65/VNPT_Logo.svg"
                 alt="VNPT"
                 className="w-6 brightness-0 invert"
               />
             </div>
-            VNPT Shop
+            <span className="font-extrabold text-lg text-vnpt">VNPT Shop</span>
           </Link>
 
           {/* Nav links */}
