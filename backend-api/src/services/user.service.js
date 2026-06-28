@@ -16,11 +16,18 @@ exports.createUser = async (data) => {
 };
 
 exports.getAllUsers = async ({ limit, offset }) => {
-  return await knex("users")
+  const [{ count }] = await knex("users")
+    .where({ is_deleted: false })
+    .count("* as count");
+
+  const data = await knex("users")
     .where({ is_deleted: false })
     .select("id", "name", "email", "role")
+    .orderBy("id", "desc")
     .limit(limit)
     .offset(offset);
+
+  return { data, total: Number(count) };
 };
 
 exports.updateUser = async (id, data) => {
