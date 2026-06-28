@@ -6,11 +6,11 @@ import { formatPrice } from '../utils/index.js'
 import api from '../api/axiosInstance.js'
 
 const CATEGORIES = [
-  { type: 'device',    icon: '📱', name: 'Điện thoại',     count: '248 sản phẩm' },
-  { type: 'sim',       icon: '📶', name: 'Sim số đẹp',     count: '5.200+ sim' },
-  { type: 'internet',  icon: '🌐', name: 'Gói cước 4G/5G', count: '32 gói cước' },
-  { type: 'tv',        icon: '📺', name: 'Máy tính bảng',  count: '86 sản phẩm' },
-  { type: 'accessory', icon: '🎧', name: 'Phụ kiện',       count: '340+ phụ kiện' },
+  { type: 'device',    icon: '📱', name: 'Điện thoại',     suffix: 'sản phẩm' },
+  { type: 'sim',       icon: '📶', name: 'Sim số đẹp',     suffix: 'sim' },
+  { type: 'internet',  icon: '🌐', name: 'Gói cước 4G/5G', suffix: 'gói cước' },
+  { type: 'tv',        icon: '📺', name: 'Máy tính bảng',  suffix: 'sản phẩm' },
+  { type: 'accessory', icon: '🎧', name: 'Phụ kiện',       suffix: 'phụ kiện' },
 ]
 
 const SERVICES = [
@@ -328,7 +328,8 @@ export default function HomePage() {
   const { data: flashProducts, loading: flashLoading } = useProducts({ limit: 8 })
   const { data: simProducts, loading: simLoading } = useProducts({ product_type: 'sim', limit: 50 })
   const { data: internetProducts, loading: internetLoading } = useProducts({ product_type: 'internet', limit: 50 })
-  const [promotionMap, setPromotionMap] = useState({}) // { product_id: discount_value }
+  const [promotionMap, setPromotionMap] = useState({})
+  const [categoryCounts, setCategoryCounts] = useState({})
 
   useEffect(() => {
     api.get('/product-promotions')
@@ -339,6 +340,21 @@ export default function HomePage() {
         setPromotionMap(map)
       })
       .catch(() => {})
+  }, [])
+
+  // Fetch số lượng thực tế cho từng danh mục
+  useEffect(() => {
+    Promise.all(
+      CATEGORIES.map(({ type }) =>
+        api.get('/products', { params: { product_type: type, limit: 1 } })
+          .then(res => ({ type, total: res.total ?? 0 }))
+          .catch(() => ({ type, total: 0 }))
+      )
+    ).then(results => {
+      const map = {}
+      results.forEach(({ type, total }) => { map[type] = total })
+      setCategoryCounts(map)
+    })
   }, [])
 
   return (
@@ -391,17 +407,22 @@ export default function HomePage() {
         <div className="max-w-[1200px] mx-auto">
           <SectionHead label="Danh mục" title="Khám phá sản phẩm" sub="Từ sim số đẹp đến điện thoại cao cấp, tất cả đều có tại VNPT Shop" />
           <div className="grid grid-cols-5 gap-4">
-            {CATEGORIES.map(({ type, icon, name, count }) => (
-              <Link
-                key={type}
-                to={`/products?product_type=${type}`}
-                className="bg-white rounded-xl p-6 text-center border border-shade hover:border-vnpt hover:-translate-y-0.5 hover:shadow-md transition-all duration-250"
-              >
-                <div className="w-14 h-14 bg-vnpt-light rounded-[14px] flex items-center justify-center mx-auto mb-3 text-[26px]">{icon}</div>
-                <div className="text-sm font-semibold text-body mb-1">{name}</div>
-                <div className="text-xs text-muted">{count}</div>
-              </Link>
-            ))}
+            {CATEGORIES.map(({ type, icon, name, suffix }) => {
+              const count = categoryCounts[type]
+              return (
+                <Link
+                  key={type}
+                  to={`/products?product_type=${type}`}
+                  className="bg-white rounded-xl p-6 text-center border border-shade hover:border-vnpt hover:-translate-y-0.5 hover:shadow-md transition-all duration-250"
+                >
+                  <div className="w-14 h-14 bg-vnpt-light rounded-[14px] flex items-center justify-center mx-auto mb-3 text-[26px]">{icon}</div>
+                  <div className="text-sm font-semibold text-body mb-1">{name}</div>
+                  <div className="text-xs text-muted">
+                    {count === undefined ? '...' : `${count} ${suffix}`}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </div>
       </section>
