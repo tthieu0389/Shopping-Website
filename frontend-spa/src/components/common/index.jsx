@@ -17,23 +17,40 @@ export function ProductCard({ product, showProgress = false }) {
 
   const img = product.img || product.thumbnail || product.image_url || null
 
+  // Hết hàng: is_available = false HOẶC stock_quantity = 0
+  const stockQty = product.stock_quantity ?? product.stock ?? null
+  const isOutOfStock = product.is_available === false || product.is_available === 0 || stockQty === 0
+
   const handleAdd = (e) => {
     e.preventDefault()
+    if (isOutOfStock) return
     addItem(product)
-    toast.success(`Đã thêm ${product.name} vào giỏ!`)
+      .then(() => toast.success(`Đã thêm ${product.name} vào giỏ!`))
+      .catch(err => toast.error(err?.message || 'Không thể thêm vào giỏ'))
   }
 
   return (
     <Link
       to={`/products/${product.slug}`}
-      className="bg-white border border-shade rounded-xl overflow-hidden transition-all duration-250 hover:-translate-y-1 hover:shadow-lg hover:border-vnpt-light group block"
+      className={`bg-white border rounded-xl overflow-hidden transition-all duration-250 group block relative
+        ${isOutOfStock
+          ? 'border-shade opacity-60 cursor-pointer'
+          : 'border-shade hover:-translate-y-1 hover:shadow-lg hover:border-vnpt-light'
+        }`}
     >
+      {/* Badge hết hàng */}
+      {isOutOfStock && (
+        <div className="absolute top-2 left-2 z-10 bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+          Hết hàng
+        </div>
+      )}
+
       <div className="relative aspect-square overflow-hidden bg-cream flex items-center justify-center">
         {img ? (
           <img
             src={img}
             alt={product.name}
-            className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-105"
+            className={`w-3/4 h-3/4 object-contain transition-transform duration-300 ${isOutOfStock ? '' : 'group-hover:scale-105'}`}
             loading="lazy"
             onError={e => { e.target.src = 'https://placehold.co/200x200?text=No+Image' }}
           />
@@ -50,21 +67,30 @@ export function ProductCard({ product, showProgress = false }) {
 
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className="text-xl font-black text-accent font-display">{formatPrice(salePrice)}</span>
-            {discount > 0 && (
+            <span className={`text-xl font-black font-display ${isOutOfStock ? 'text-muted' : 'text-accent'}`}>{formatPrice(salePrice)}</span>
+            {discount > 0 && !isOutOfStock && (
               <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">-{discount}%</span>
             )}
           </div>
-          {discount > 0 && (
+          {discount > 0 && !isOutOfStock && (
             <div className="text-xs text-muted line-through">{formatPrice(originalPrice)}</div>
+          )}
+          {/* Hiện số lượng còn lại nếu sắp hết (1–5) */}
+          {!isOutOfStock && stockQty !== null && stockQty <= 5 && (
+            <div className="text-xs text-warning font-semibold mt-0.5">Còn {stockQty} sản phẩm</div>
           )}
         </div>
 
         <button
           onClick={handleAdd}
-          className="w-full py-2.5 bg-vnpt text-white rounded-full text-sm font-semibold hover:bg-vnpt-dark transition-colors"
+          disabled={isOutOfStock}
+          className={`w-full py-2.5 rounded-full text-sm font-semibold transition-colors
+            ${isOutOfStock
+              ? 'bg-shade text-muted cursor-not-allowed'
+              : 'bg-vnpt text-white hover:bg-vnpt-dark'
+            }`}
         >
-          Thêm vào giỏ
+          {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}
         </button>
       </div>
     </Link>

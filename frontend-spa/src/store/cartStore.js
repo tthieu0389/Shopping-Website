@@ -69,6 +69,11 @@ const useCartStore = create((set, get) => ({
     try {
       await cartApi.addItem({ product_id: product.id, quantity: qty })
       await get().fetchCart()
+    } catch (err) {
+      // Lấy message từ backend (vd: "Chỉ còn X sản phẩm trong kho")
+      const msg = err?.response?.data?.message || err?.message || 'Không thể thêm vào giỏ'
+      const error = new Error(msg)
+      throw error
     } finally {
       set({ syncing: false })
     }
