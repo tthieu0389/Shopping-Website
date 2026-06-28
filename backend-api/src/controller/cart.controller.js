@@ -24,7 +24,11 @@ exports.addToCart = async (req, res, next) => {
 // Cập nhật số lượng
 exports.updateItem = async (req, res, next) => {
   try {
-    const item = await cartService.updateItem(req.params.id, req.body.quantity);
+    const item = await cartService.updateItem(
+      req.params.id,
+      req.user.id, // ← thêm user_id
+      req.body.quantity,
+    );
     if (!item) return res.status(404).json({ message: "Cart item not found" });
     res.json({ data: item });
   } catch (err) {
@@ -35,7 +39,10 @@ exports.updateItem = async (req, res, next) => {
 // Xóa 1 món
 exports.removeItem = async (req, res, next) => {
   try {
-    const ok = await cartService.removeItem(req.params.id);
+    const ok = await cartService.removeItem(
+      req.params.id,
+      req.user.id, // ← thêm user_id
+    );
     if (!ok) return res.status(404).json({ message: "Cart item not found" });
     res.json({ message: "Item removed" });
   } catch (err) {
@@ -81,6 +88,7 @@ exports.toggleSelectItem = async (req, res, next) => {
   try {
     const item = await cartService.toggleSelectItem(
       req.params.id,
+      req.user.id,
       req.body.is_selected,
     );
     if (!item) return res.status(404).json({ message: "Cart item not found" });

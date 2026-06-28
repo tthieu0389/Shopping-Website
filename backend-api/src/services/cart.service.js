@@ -4,7 +4,7 @@ const orderItemService = require("./orderitem.service");
 const inventoryService = require("./inventory.service");
 const generateOrderCode = require("../utils/generateOrderCode");
 
-// Helper Lấy hoặc tạo giỏ hàng
+// Helper lấy hoặc tạo giỏ hàng
 const getOrCreateCart = async (user_id, trx = knex) => {
   if (!user_id) throw new Error("User ID is required");
   let cart = await trx("carts").where({ user_id }).first();
@@ -12,6 +12,22 @@ const getOrCreateCart = async (user_id, trx = knex) => {
     [cart] = await trx("carts").insert({ user_id }).returning("*");
   }
   return cart;
+};
+
+// Helper kiểm tra ownership của cart_item
+const assertCartItemOwnership = async (item_id, user_id, trx = knex) => {
+  const item = await trx("cart_items as ci")
+    .join("carts as c", "ci.cart_id", "c.id")
+    .where({ "ci.id": item_id, "c.user_id": user_id })
+    .select("ci.*")
+    .first();
+
+  if (!item) {
+    const err = new Error("Cart item not found");
+    err.statusCode = 404;
+    throw err;
+  }
+  return item;
 };
 
 // Thêm sản phẩm vào giỏ
@@ -22,7 +38,6 @@ exports.addToCart = async (user_id, product_id, quantity) => {
       .first();
     if (!product) throw new Error("Product not found");
 
-    // FIX: Check tồn kho trước khi thêm vào giỏ
     const inventory = await trx("inventory").where({ product_id }).first();
 
     if (!inventory || inventory.quantity <= 0) {
@@ -92,21 +107,17 @@ exports.previewCart = async (user_id, data) => {
   );
 };
 
-// Thay đổi trạng thái chọn sản phẩm
-exports.toggleSelectItem = async (item_id, is_selected) => {
+// Thay đổi trạng thái chọn sản phẩm — FIX: thêm ownership check
+exports.toggleSelectItem = async (item_id, user_id, is_selected) => {
+  await assertCartItemOwnership(item_id, user_id);
   return knex("cart_items").where({ id: item_id }).update({ is_selected });
 };
 
-// Cập nhật số lượng
-exports.updateItem = async (item_id, quantity) => {
-  // FIX: Check tồn kho trước khi cập nhật số lượng
+// Cập nhật số lượng — FIX: thêm ownership check
+exports.updateItem = async (item_id, user_id, quantity) => {
   return knex.transaction(async (trx) => {
-    const cartItem = await trx("cart_items").where({ id: item_id }).first();
-    if (!cartItem) {
-      const err = new Error("Cart item not found");
-      err.statusCode = 404;
-      throw err;
-    }
+    // Ownership check kết hợp lấy cart item
+    const cartItem = await assertCartItemOwnership(item_id, user_id, trx);
 
     if (quantity <= 0) {
       const err = new Error("Số lượng phải lớn hơn 0");
@@ -137,9 +148,11 @@ exports.updateItem = async (item_id, quantity) => {
   });
 };
 
-// Xóa sản phẩm khỏi giỏ
-exports.removeItem = async (item_id) => {
+// Xóa sản phẩm khỏi giỏ — FIX: thêm ownership check
+exports.removeItem = async (item_id, user_id) => {
   if (!item_id) throw new Error("Item ID required");
+  // Verify ownership trước khi xóa
+  await assertCartItemOwnership(item_id, user_id);
   return knex("cart_items").where({ id: item_id }).del();
 };
 
@@ -161,7 +174,6 @@ exports.checkout = async (user_id, data) => {
 
     if (selectedItems.length === 0) throw new Error("Chưa chọn sản phẩm");
 
-    // _calculateOrderAmount đã có forUpdate lock + check tồn kho bên trong
     const calcResult = await _calculateOrderAmount(
       selectedItems,
       data.address_id,

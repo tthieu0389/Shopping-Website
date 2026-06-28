@@ -4,7 +4,6 @@ exports.createPaymentMethod = async (data) => {
   const [payment] = await knex("user_payment_methods")
     .insert(data)
     .returning("*");
-
   return payment;
 };
 
@@ -14,20 +13,34 @@ exports.getPaymentsByUserId = async (userId) => {
     .select("*");
 };
 
-exports.updatePaymentMethod = async (id, data) => {
+exports.updatePaymentMethod = async (id, userId, data) => {
   const [payment] = await knex("user_payment_methods")
-    .where("id", id)
+    .where({ id, user_id: userId, is_deleted: false })
     .update(data)
     .returning("*");
 
+  if (!payment) {
+    const err = new Error(
+      "Phương thức thanh toán không tồn tại hoặc không có quyền sửa",
+    );
+    err.statusCode = 404;
+    throw err;
+  }
   return payment;
 };
 
-exports.deletePaymentMethod = async (id) => {
+exports.deletePaymentMethod = async (id, userId) => {
   const [payment] = await knex("user_payment_methods")
-    .where({ id })
+    .where({ id, user_id: userId, is_deleted: false })
     .update({ is_deleted: true })
     .returning("*");
 
+  if (!payment) {
+    const err = new Error(
+      "Phương thức thanh toán không tồn tại hoặc không có quyền xóa",
+    );
+    err.statusCode = 404;
+    throw err;
+  }
   return payment;
 };
