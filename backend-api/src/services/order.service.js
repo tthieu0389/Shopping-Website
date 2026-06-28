@@ -37,6 +37,28 @@ const calculateOrderAmount = async (
       throw err;
     }
 
+    // Lock row tồn kho và kiểm tra số lượng trước khi xử lý
+    const inventory = await trx("inventory")
+      .where({ product_id: item.product_id })
+      .forUpdate()
+      .first();
+
+    if (!inventory) {
+      const err = new Error(
+        `Không tìm thấy thông tin tồn kho cho sản phẩm "${product.name}"`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (inventory.quantity < item.quantity) {
+      const err = new Error(
+        `Sản phẩm "${product.name}" không đủ số lượng (còn ${inventory.quantity}, cần ${item.quantity})`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
     const unitPrice = Number(product.price);
     const basePrice = unitPrice * item.quantity;
     let discountAmount = 0;
@@ -165,6 +187,7 @@ exports.createOrder = async (userId, data) => {
       throw err;
     }
 
+    // calculateOrderAmount đã có forUpdate lock + check tồn kho bên trong
     const calcResult = await calculateOrderAmount(
       data.items,
       data.address_id,
