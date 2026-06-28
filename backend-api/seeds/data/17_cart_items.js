@@ -11,6 +11,7 @@ exports.seed = async function (knex) {
       cart_id: cart.id,
       product_id: p.id,
       quantity: faker.number.int({ min: 1, max: 5 }),
+      is_selected: false,
     }));
   });
 

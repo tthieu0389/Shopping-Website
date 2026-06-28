@@ -88,6 +88,13 @@ exports.removeItem = async (item_id) => {
   return knex("cart_items").where({ id: item_id }).del();
 };
 
+// Xóa toàn bộ giỏ hàng
+exports.clearCart = async (user_id) => {
+  const cart = await knex("carts").where({ user_id }).first();
+  if (!cart) return;
+  return knex("cart_items").where({ cart_id: cart.id }).del();
+};
+
 // Xử lý thanh toán (Checkout)
 exports.checkout = async (user_id, data) => {
   return knex.transaction(async (trx) => {
@@ -105,6 +112,7 @@ exports.checkout = async (user_id, data) => {
       data.address_id,
       data.pickup_store_id,
       trx,
+      user_id,
     );
 
     // Tạo đơn hàng
@@ -114,12 +122,14 @@ exports.checkout = async (user_id, data) => {
         user_id,
         total_amount: calcResult.total_final_amount,
         status: "pending",
-        receiver_name: calcResult.shipping_details?.receiver_name,
-        receiver_phone: calcResult.shipping_details?.receiver_phone,
-        shipping_address: calcResult.shipping_details?.shipping_address,
-        address_id: data.address_id,
-        pickup_store_id: data.pickup_store_id,
+        receiver_name: calcResult.shipping_details?.receiver_name || null,
+        receiver_phone: calcResult.shipping_details?.receiver_phone || null,
+        shipping_address: calcResult.shipping_details?.shipping_address || null,
+        address_id: data.address_id || null,
+        pickup_store_id: data.pickup_store_id || null,
         shipping_fee: calcResult.shipping_fee || 0,
+        payment_method: data.payment_method || "cod",
+        note: data.note || null,
       })
       .returning("*");
 
