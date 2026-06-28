@@ -63,7 +63,14 @@ export function ProductCard({ product, showProgress = false }) {
         {product.brand && (
           <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">{product.brand}</div>
         )}
-        <div className="text-sm font-semibold text-body leading-snug mb-2.5 min-h-[38px] line-clamp-2">{product.name}</div>
+        <div className="text-sm font-semibold text-body leading-snug line-clamp-2">{product.name}</div>
+
+        {/* Còn X sản phẩm — nằm giữa tên và giá, không đẩy nút */}
+        <div className="h-5 mb-1.5 mt-1">
+          {!isOutOfStock && stockQty !== null && stockQty <= 5 && (
+            <span className="text-xs text-warning font-semibold">Còn {stockQty} sản phẩm</span>
+          )}
+        </div>
 
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
@@ -74,10 +81,6 @@ export function ProductCard({ product, showProgress = false }) {
           </div>
           {discount > 0 && !isOutOfStock && (
             <div className="text-xs text-muted line-through">{formatPrice(originalPrice)}</div>
-          )}
-          {/* Hiện số lượng còn lại nếu sắp hết (1–5) */}
-          {!isOutOfStock && stockQty !== null && stockQty <= 5 && (
-            <div className="text-xs text-warning font-semibold mt-0.5">Còn {stockQty} sản phẩm</div>
           )}
         </div>
 
