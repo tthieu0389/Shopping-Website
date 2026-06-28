@@ -5,7 +5,7 @@ exports.seed = async function (knex) {
 
   const brands = ["VNPT", "Huawei", "Nokia", "Cisco", "iGate"];
 
-  const data = Array.from({ length: 20 }, () => {
+  const data = Array.from({ length: 200 }, () => {
     const name = faker.commerce.productName();
 
     return {
