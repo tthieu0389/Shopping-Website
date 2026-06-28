@@ -227,11 +227,50 @@ export default function CartPage() {
 
           {/* ── ORDER SUMMARY ────────────────────────────────────────────── */}
           <div className="bg-white border border-shade rounded-xl p-6 sticky top-24">
-            <div className="text-base font-bold text-body mb-5 pb-4 border-b border-shade">
+            <div className="text-base font-bold text-body mb-4 pb-4 border-b border-shade">
               Tóm tắt đơn hàng
             </div>
 
-            <div className="space-y-3 text-sm mb-5">
+            {/* Danh sách sản phẩm đã chọn */}
+            {selectedItems.length > 0 && (
+              <div className="space-y-1 mb-4 max-h-[320px] overflow-y-auto pr-3">
+                {selectedItems.map(item => (
+                  <div key={item.id} className="flex items-start gap-3 py-3 border-b border-shade last:border-0">
+                    {/* Ảnh + badge số lượng */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-16 h-16 bg-cream rounded-lg border border-shade flex items-center justify-center overflow-hidden">
+                        {item.img ? (
+                          <img src={item.img} alt={item.name} className="w-full h-full object-contain p-1.5"
+                            onError={e => { e.target.src = 'https://placehold.co/64x64?text=📦' }} />
+                        ) : (
+                          <span className="text-2xl">📦</span>
+                        )}
+                      </div>
+                      <span className="absolute -top-2 -right-2 min-w-[20px] h-5 bg-vnpt text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white shadow-sm">
+                        {item.qty}
+                      </span>
+                    </div>
+
+                    {/* Tên + đơn giá */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-body leading-snug mb-1">{item.name}</div>
+                      <div className="text-xs text-muted">
+                        {formatPrice(item.price)} × {item.qty}
+                      </div>
+                    </div>
+
+                    {/* Thành tiền */}
+                    <div className="text-[13px] font-bold text-body flex-shrink-0 whitespace-nowrap pt-0.5">
+                      {formatPrice(item.price * item.qty)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <hr className="border-shade mb-4" />
+
+            <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-muted">Tạm tính ({selectedCount} sản phẩm)</span>
                 <span className="font-semibold">{formatPrice(selectedTotal)}</span>
