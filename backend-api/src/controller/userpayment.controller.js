@@ -3,7 +3,6 @@ const userPaymentService = require("../services/userpayment.service");
 // Create a new payment method
 exports.createPaymentMethod = async (req, res, next) => {
   try {
-    // Keep your original body data and append userId from token if not provided
     const data = {
       ...req.body,
       user_id: req.body.user_id || req.user.id,

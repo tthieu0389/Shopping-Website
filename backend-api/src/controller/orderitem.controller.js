@@ -1,5 +1,5 @@
-const service = require("../services/orderitem.service");
-const knex = require("../database/knex");
+const orderItemService = require("../services/orderitem.service");
+const orderService = require("../services/order.service");
 
 // GET ITEMS BY ORDER ID (ONLY)
 exports.getByOrderId = async (req, res, next) => {
@@ -12,8 +12,8 @@ exports.getByOrderId = async (req, res, next) => {
       });
     }
 
-    // check order exists + ownership
-    const order = await knex("orders").where({ id: orderId }).first();
+    // Dùng orderService.getOrderById thay vì query knex trực tiếp
+    const order = await orderService.getOrderById(orderId);
 
     if (!order) {
       return res.status(404).json({
@@ -27,7 +27,7 @@ exports.getByOrderId = async (req, res, next) => {
       });
     }
 
-    const items = await service.getOrderItemsByOrderId(orderId);
+    const items = await orderItemService.getOrderItemsByOrderId(orderId);
 
     res.json({
       data: items,

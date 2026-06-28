@@ -22,7 +22,7 @@ exports.updateCategory = async (req, res, next) => {
   try {
     const updated = await categoryService.updateCategory(
       req.params.id,
-      req.body
+      req.body,
     );
     res.json({ message: "Category updated", data: updated });
   } catch (err) {

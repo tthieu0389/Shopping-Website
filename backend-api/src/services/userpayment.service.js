@@ -10,7 +10,7 @@ exports.createPaymentMethod = async (data) => {
 
 exports.getPaymentsByUserId = async (userId) => {
   return await knex("user_payment_methods")
-    .where("user_id", userId)
+    .where({ user_id: userId, is_deleted: false })
     .select("*");
 };
 
@@ -24,5 +24,10 @@ exports.updatePaymentMethod = async (id, data) => {
 };
 
 exports.deletePaymentMethod = async (id) => {
-  return await knex("user_payment_methods").where("id", id).del();
+  const [payment] = await knex("user_payment_methods")
+    .where({ id })
+    .update({ is_deleted: true })
+    .returning("*");
+
+  return payment;
 };

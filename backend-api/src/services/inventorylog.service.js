@@ -1,8 +1,7 @@
 const knex = require("../database/knex");
 
-//GET ALL LOGS
 exports.getAllInventoryLogs = async ({ limit, offset }) => {
-  return await knex("inventory_logs as l")
+  const data = await knex("inventory_logs as l")
     .leftJoin("products as p", "l.product_id", "p.id")
     .select(
       "l.id",
@@ -21,9 +20,13 @@ exports.getAllInventoryLogs = async ({ limit, offset }) => {
     .orderBy("l.id", "desc")
     .limit(limit)
     .offset(offset);
+
+  const [{ count }] = await knex("inventory_logs").count("* as count");
+
+  return { data, total: Number(count) };
 };
 
-//GET BY INVENTORY ID
+// GET BY INVENTORY ID
 exports.getLogsByInventoryId = async (inventory_id) => {
   return await knex("inventory_logs as l")
     .leftJoin("products as p", "l.product_id", "p.id")
@@ -32,7 +35,7 @@ exports.getLogsByInventoryId = async (inventory_id) => {
     .orderBy("l.id", "desc");
 };
 
-//GET BY PRODUCT ID
+// GET BY PRODUCT ID
 exports.getLogsByProductId = async (product_id) => {
   return await knex("inventory_logs as l")
     .where("l.product_id", product_id)

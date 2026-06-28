@@ -1,6 +1,6 @@
 const inventoryLogService = require("../services/inventorylog.service");
 
-//GET ALL LOGS
+// GET ALL LOGS
 exports.getAllInventoryLogs = async (req, res, next) => {
   try {
     const { page, limit, offset } = req.pagination || {
@@ -9,18 +9,18 @@ exports.getAllInventoryLogs = async (req, res, next) => {
       offset: 0,
     };
 
-    const logs = await inventoryLogService.getAllInventoryLogs({
+    const result = await inventoryLogService.getAllInventoryLogs({
       limit,
       offset,
     });
 
-    res.json({ data: logs, page, limit });
+    res.json({ data: result.data, total: result.total, page, limit });
   } catch (err) {
     next(err);
   }
 };
 
-//GET BY INVENTORY ID
+// GET BY INVENTORY ID
 exports.getLogsByInventoryId = async (req, res, next) => {
   try {
     const logs = await inventoryLogService.getLogsByInventoryId(
@@ -33,7 +33,7 @@ exports.getLogsByInventoryId = async (req, res, next) => {
   }
 };
 
-//GET BY PRODUCT ID
+// GET BY PRODUCT ID
 exports.getLogsByProductId = async (req, res, next) => {
   try {
     const logs = await inventoryLogService.getLogsByProductId(

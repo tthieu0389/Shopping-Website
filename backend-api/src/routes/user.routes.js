@@ -21,7 +21,7 @@ router.get(
   verifyToken(),
   checkRole("admin"),
   pagination(),
-  userController.getAllUsers
+  userController.getAllUsers,
 );
 
 // Tạo người dùng mới
@@ -30,7 +30,7 @@ router.post(
   verifyToken(),
   checkRole("admin"),
   validate(createUserSchema, { fieldLabels: userFieldLabels }),
-  userController.createUser
+  userController.createUser,
 );
 
 // Cập nhật thông tin người dùng
@@ -39,7 +39,7 @@ router.put(
   verifyToken(),
   checkRole("admin"),
   validate(updateUserSchema, { fieldLabels: userFieldLabels }),
-  userController.updateUser
+  userController.updateUser,
 );
 
 // Xóa người dùng
@@ -47,7 +47,7 @@ router.delete(
   "/:id",
   verifyToken(),
   checkRole("admin"),
-  userController.deleteUser
+  userController.deleteUser,
 );
 
 module.exports = router;

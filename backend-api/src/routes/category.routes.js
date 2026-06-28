@@ -15,20 +15,20 @@ router.post(
   verifyToken(),
   checkRole("admin"),
   validate(createCategorySchema),
-  categoryController.createCategory
+  categoryController.createCategory,
 );
 router.put(
   "/:id",
   verifyToken(),
   checkRole("admin"),
   validate(updateCategorySchema),
-  categoryController.updateCategory
+  categoryController.updateCategory,
 );
 router.delete(
   "/:id",
   verifyToken(),
   checkRole("admin"),
-  categoryController.deleteCategory
+  categoryController.deleteCategory,
 );
 
 module.exports = router;

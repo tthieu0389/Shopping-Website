@@ -7,10 +7,7 @@ exports.seed = async function (knex) {
     return Array.from({ length: 3 }, (_, index) => {
       return {
         product_id: p.id,
-        image_url: faker.image.url({
-          width: 600,
-          height: 600,
-        }),
+        image_url: `https://picsum.photos/seed/product_${p.id}_${index}/600/600`,
 
         // ảnh đầu tiên làm thumbnail
         is_thumbnail: index === 0,

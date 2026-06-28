@@ -75,7 +75,6 @@ exports.updateOrder = async (req, res, next) => {
       });
     }
 
-    // Service da tu dong throw loi 404 neu khong tim thay order
     const order = await orderService.updateOrder(orderId, {
       status: req.body.status,
       note: req.body.note,
@@ -94,7 +93,11 @@ exports.updateOrder = async (req, res, next) => {
 exports.cancelOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;
-    const result = await orderService.cancelOrder(orderId);
+    const result = await orderService.cancelOrder(
+      orderId,
+      req.user.id,
+      req.user.role,
+    );
 
     res.json({
       message: "Order cancelled successfully",
@@ -118,7 +121,6 @@ exports.deleteOrder = async (req, res, next) => {
   }
 };
 
-// GET ORDER BY ID
 exports.getOrderById = async (req, res, next) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
@@ -127,6 +129,11 @@ exports.getOrderById = async (req, res, next) => {
       return res.status(404).json({
         message: "Order not found",
       });
+    }
+
+    //user thường chỉ xem được đơn của mình
+    if (req.user.role !== "admin" && order.user_id !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     res.json({

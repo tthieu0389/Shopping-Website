@@ -29,6 +29,11 @@ router.put(
   controller.updateStore,
 );
 
-router.delete("/:id", verifyToken(), checkRole("admin"), controller.deleteStore);
+router.delete(
+  "/:id",
+  verifyToken(),
+  checkRole("admin"),
+  controller.deleteStore,
+);
 
 module.exports = router;

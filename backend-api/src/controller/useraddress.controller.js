@@ -3,7 +3,6 @@ const userAddressService = require("../services/useraddress.service");
 // Create a new user address
 exports.createAddress = async (req, res, next) => {
   try {
-    // Keep your original body data and append userId from token if not provided
     const data = {
       ...req.body,
       user_id: req.body.user_id || req.user.id,

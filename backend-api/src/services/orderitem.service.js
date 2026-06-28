@@ -50,15 +50,3 @@ exports.createOrderItem = async (trx, data) => {
 
   return item;
 };
-
-// Xóa sản phẩm khỏi đơn hàng
-exports.deleteOrderItem = async (trx, id) => {
-  const item = await trx("order_items").where("id", id).first();
-  if (!item) return false;
-
-  await trx("order_items").where("id", id).del();
-
-  await recalculateOrderTotal(trx, item.order_id);
-
-  return true;
-};

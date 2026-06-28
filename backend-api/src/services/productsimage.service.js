@@ -1,11 +1,5 @@
 const knex = require("../database/knex");
 
-exports.createProductImage = async (data) => {
-  const [img] = await knex("product_images").insert(data).returning("*");
-
-  return img;
-};
-
 exports.createManyProductImages = async (images) => {
   return await knex("product_images").insert(images).returning("*");
 };
@@ -23,12 +17,12 @@ exports.deleteImage = async (id) => {
 
 exports.setThumbnail = async (id, product_id) => {
   return await knex.transaction(async (trx) => {
-    // reset all thumbnails of product
+    // Reset tất cả thumbnail của product
     await trx("product_images")
       .where({ product_id })
       .update({ is_thumbnail: false });
 
-    // set new thumbnail
+    // Set thumbnail mới
     const [img] = await trx("product_images")
       .where({ id })
       .update({ is_thumbnail: true })

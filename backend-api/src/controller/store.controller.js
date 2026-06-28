@@ -3,13 +3,7 @@ const storeService = require("../services/store.service");
 // Create a new store
 exports.createStore = async (req, res, next) => {
   try {
-    // Keep original body data and append userId from token if not provided
-    const data = {
-      ...req.body,
-      user_id: req.body.user_id || req.user.id,
-    };
-
-    const store = await storeService.createStore(data);
+    const store = await storeService.createStore(req.body);
     res.status(201).json({ data: store });
   } catch (err) {
     next(err);

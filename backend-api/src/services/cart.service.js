@@ -2,6 +2,7 @@ const knex = require("../database/knex");
 const { _calculateOrderAmount } = require("./order.service");
 const orderItemService = require("./orderitem.service");
 const inventoryService = require("./inventory.service");
+const generateOrderCode = require("../utils/generateOrderCode");
 
 // Helper: Lấy hoặc tạo giỏ hàng
 const getOrCreateCart = async (user_id, trx = knex) => {
@@ -106,7 +107,6 @@ exports.checkout = async (user_id, data) => {
 
     if (selectedItems.length === 0) throw new Error("Chưa chọn sản phẩm");
 
-    // Tính toán số tiền
     const calcResult = await _calculateOrderAmount(
       selectedItems,
       data.address_id,
@@ -115,10 +115,10 @@ exports.checkout = async (user_id, data) => {
       user_id,
     );
 
-    // Tạo đơn hàng
+    // FIX #9: Dùng generateOrderCode chung thay vì inline string khác format
     const [order] = await trx("orders")
       .insert({
-        order_code: `ORD-${Date.now()}-${user_id}`,
+        order_code: generateOrderCode(user_id),
         user_id,
         total_amount: calcResult.total_final_amount,
         status: "pending",
@@ -133,7 +133,6 @@ exports.checkout = async (user_id, data) => {
       })
       .returning("*");
 
-    // Trừ kho & Tạo chi tiết đơn hàng
     for (const item of calcResult.items) {
       await inventoryService.decreaseStock(
         trx,
@@ -142,7 +141,6 @@ exports.checkout = async (user_id, data) => {
         order.id,
       );
 
-      // Tạo chi tiết đơn hàng
       await orderItemService.createOrderItem(trx, {
         order_id: order.id,
         product_id: item.product_id,
@@ -155,7 +153,6 @@ exports.checkout = async (user_id, data) => {
       });
     }
 
-    // Xóa sản phẩm đã thanh toán khỏi giỏ hàng
     await trx("cart_items")
       .where({ cart_id: cart.id, is_selected: true })
       .del();
