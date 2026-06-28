@@ -196,7 +196,7 @@ function OrdersTab() {
 }
 
 // ── Tab: Địa chỉ ─────────────────────────────────────────────────────────────
-const EMPTY_ADDR = { receiver_name: '', phone: '', province: '', district: '', ward: '', address_line: '' }
+const EMPTY_ADDR = { receiver_name: '', phone: '', province: '', district: '', ward: '', address_line: '', is_default: false }
 
 function AddressForm({ initial = EMPTY_ADDR, onSave, onCancel, saving, title }) {
   const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: initial })
@@ -255,6 +255,23 @@ function AddressForm({ initial = EMPTY_ADDR, onSave, onCancel, saving, title }) 
           />
         </div>
       </div>
+      {/* Đặt mặc định — chỉ hiện khi chưa là mặc định */}
+      {!initial.is_default && (
+        <label className="flex items-center gap-3 cursor-pointer select-none w-fit group">
+          <div className="relative">
+            <input type="checkbox" {...register('is_default')} className="sr-only peer" />
+            <div className="w-10 h-5 bg-shade rounded-full peer-checked:bg-vnpt transition-colors duration-200" />
+            <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-5" />
+          </div>
+          <span className="text-sm font-semibold text-body group-hover:text-vnpt transition-colors">Đặt làm địa chỉ mặc định</span>
+        </label>
+      )}
+      {initial.is_default && (
+        <div className="flex items-center gap-2 text-sm text-vnpt font-semibold">
+          <span className="w-4 h-4 rounded-full bg-vnpt flex items-center justify-center text-white text-[10px]">✓</span>
+          Đây là địa chỉ mặc định
+        </div>
+      )}
       <div className="flex gap-3 pt-1">
         <button
           type="submit"
@@ -277,16 +294,24 @@ function AddressForm({ initial = EMPTY_ADDR, onSave, onCancel, saving, title }) 
 
 function AddressesTab() {
   const { data: addresses, loading, reload } = useUserAddresses()
-  const [showAdd, setShowAdd]     = useState(false)
-  const [editingId, setEditingId] = useState(null)   // id của card đang mở form sửa
-  const [saving, setSaving]       = useState(false)
+  const [showAdd, setShowAdd]       = useState(false)
+  const [editingId, setEditingId]   = useState(null)
+  const [saving, setSaving]         = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+  const [settingDefaultId, setSettingDefaultId] = useState(null)
+
+  // Địa chỉ mặc định luôn lên đầu
+  const sortedAddresses = [...addresses].sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
 
   // ── Thêm mới ──────────────────────────────────────────────────────────────
   const handleAdd = async (data) => {
     setSaving(true)
     try {
-      await userApi.addAddress(data)
+      const { is_default, ...rest } = data
+      const newAddr = await userApi.addAddress(rest)
+      if (is_default && newAddr?.data?.id) {
+        await userApi.setDefaultAddress(newAddr.data.id)
+      }
       toast.success('Đã thêm địa chỉ mới')
       setShowAdd(false)
       reload()
@@ -299,13 +324,27 @@ function AddressesTab() {
   const handleUpdate = async (id, data) => {
     setSaving(true)
     try {
-      await userApi.updateAddress(id, data)
+      const { is_default, ...rest } = data
+      await userApi.updateAddress(id, rest)
+      if (is_default) await userApi.setDefaultAddress(id)
       toast.success('Đã cập nhật địa chỉ')
       setEditingId(null)
       reload()
     } catch (err) {
       toast.error(err?.message || 'Cập nhật thất bại')
     } finally { setSaving(false) }
+  }
+
+  // ── Đặt mặc định ──────────────────────────────────────────────────────────
+  const handleSetDefault = async (id) => {
+    setSettingDefaultId(id)
+    try {
+      await userApi.setDefaultAddress(id)
+      toast.success('Đã đặt địa chỉ mặc định')
+      reload()
+    } catch (err) {
+      toast.error(err?.message || 'Thất bại')
+    } finally { setSettingDefaultId(null) }
   }
 
   // ── Xoá ───────────────────────────────────────────────────────────────────
@@ -329,14 +368,14 @@ function AddressesTab() {
         <EmptyState icon="📍" title="Chưa có địa chỉ nào" desc="Thêm địa chỉ để thanh toán nhanh hơn" />
       )}
 
-      {addresses.map(addr => (
+      {sortedAddresses.map(addr => (
         <div key={addr.id} className="space-y-2">
-          {/* ── Card luôn hiển thị, không bị thay thế ── */}
+          {/* ── Card ── */}
           <div className={`bg-white border rounded-xl p-5 flex items-start justify-between gap-4 transition-colors ${
             editingId === addr.id ? 'border-vnpt/40 bg-vnpt-light/30' : 'border-shade hover:border-vnpt/30'
           }`}>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-sm font-bold text-body">{addr.receiver_name}</span>
                 <span className="text-sm text-muted">· {addr.phone}</span>
                 {addr.is_default && (
@@ -347,7 +386,7 @@ function AddressesTab() {
                 {[addr.address_line, addr.ward, addr.district, addr.province].filter(Boolean).join(', ')}
               </p>
             </div>
-            <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <button
                 onClick={() => { setEditingId(editingId === addr.id ? null : addr.id); setShowAdd(false) }}
                 className={`text-sm font-semibold hover:underline ${editingId === addr.id ? 'text-muted' : 'text-vnpt'}`}
@@ -364,7 +403,7 @@ function AddressesTab() {
             </div>
           </div>
 
-          {/* ── Form sửa hiện bên dưới card, card không di chuyển ── */}
+          {/* ── Form sửa ── */}
           {editingId === addr.id && (
             <AddressForm
               title="Sửa địa chỉ"
@@ -375,6 +414,7 @@ function AddressesTab() {
                 district:      addr.district,
                 ward:          addr.ward || '',
                 address_line:  addr.address_line,
+                is_default:    !!addr.is_default,
               }}
               saving={saving}
               onSave={(data) => handleUpdate(addr.id, data)}
