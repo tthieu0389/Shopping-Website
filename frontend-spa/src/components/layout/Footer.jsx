@@ -27,11 +27,11 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Sản phẩm</h4>
             <ul className="space-y-2.5">
               {[
-                ['/products',                      'Điện thoại'],
-                ['/products?category=may-tinh-bang','Máy tính bảng'],
-                ['/products?category=sim-so',       'Sim số đẹp'],
-                ['/products?category=phu-kien',     'Phụ kiện'],
-                ['/flash-sale',                     '🔥 Flash Sale'],
+                ['/products?product_type=device',    'Điện thoại'],
+                ['/products?product_type=tv',        'Máy tính bảng'],
+                ['/products?product_type=sim',       'Sim số đẹp'],
+                ['/products?product_type=accessory', 'Phụ kiện'],
+                ['/flash-sale',                      '🔥 Flash Sale'],
               ].map(([to, label]) => (
                 <li key={to}>
                   <Link to={to} className="text-sm text-white/50 hover:text-white transition-colors">{label}</Link>
@@ -44,9 +44,15 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Dịch vụ</h4>
             <ul className="space-y-2.5">
-              {['Internet cáp quang', 'Truyền hình MyTV', 'VNPT Cloud', 'Điện thoại cố định', 'Doanh nghiệp'].map(s => (
-                <li key={s}>
-                  <span className="text-sm text-white/50">{s}</span>
+              {[
+                ['/products?product_type=internet', 'Internet cáp quang'],
+                ['/products?product_type=tv',       'Truyền hình MyTV'],
+                ['/products?product_type=internet', 'VNPT Cloud'],
+                ['/contact',                        'Điện thoại cố định'],
+                ['/contact',                        'Doanh nghiệp'],
+              ].map(([to, label]) => (
+                <li key={label}>
+                  <Link to={to} className="text-sm text-white/50 hover:text-white transition-colors">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -57,11 +63,11 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Hỗ trợ</h4>
             <ul className="space-y-2.5">
               {[
-                ['/contact',       'Liên hệ'],
-                ['/account/orders','Theo dõi đơn hàng'],
-                ['#',              'Chính sách đổi trả'],
-                ['#',              'Bảo hành'],
-                ['#',              'Hotline: 1800 1234'],
+                ['/contact',          'Liên hệ'],
+                ['/account/orders',   'Theo dõi đơn hàng'],
+                ['/blog',             'Tin tức & Blog'],
+                ['/account',          'Tài khoản của tôi'],
+                ['/contact',          'Hotline: 1800 1234'],
               ].map(([to, label]) => (
                 <li key={label}>
                   <Link to={to} className="text-sm text-white/50 hover:text-white transition-colors">{label}</Link>
@@ -71,13 +77,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/8 pt-5 flex items-center justify-between">
+        <div className="border-t border-white/8 pt-5">
           <p className="text-xs text-white/30">© 2024 VNPT Shop. Bảo lưu mọi quyền. | ĐKKD: 0100686209</p>
-          <div className="flex gap-2">
-            {['MOMO', 'VNPAY', 'VISA', 'COD'].map(p => (
-              <span key={p} className="bg-white/8 border border-white/10 rounded px-2.5 py-1 text-[11px] font-semibold text-white/50">{p}</span>
-            ))}
-          </div>
         </div>
       </div>
     </footer>
