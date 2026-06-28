@@ -65,6 +65,19 @@ const useCartStore = create((set, get) => ({
 
   // ── Thêm sản phẩm ────────────────────────────────────────────────────────
   addItem: async (product, qty = 1) => {
+    // Kiểm tra stock phía client: tính cả số lượng đã có trong giỏ
+    const stock = product.stock ?? null
+    if (stock !== null) {
+      const existing = get().items.find(i => i.product_id === product.id)
+      const currentQty = existing?.qty ?? 0
+      if (currentQty + qty > stock) {
+        const remaining = Math.max(0, stock - currentQty)
+        const msg = remaining === 0
+          ? `Bạn đã thêm tối đa số lượng trong kho (${stock} sản phẩm)`
+          : `Chỉ có thể thêm ${remaining} sản phẩm nữa (kho còn ${stock}, giỏ đã có ${currentQty})`
+        throw new Error(msg)
+      }
+    }
     set({ syncing: true })
     try {
       await cartApi.addItem({ product_id: product.id, quantity: qty })
@@ -72,8 +85,7 @@ const useCartStore = create((set, get) => ({
     } catch (err) {
       // Lấy message từ backend (vd: "Chỉ còn X sản phẩm trong kho")
       const msg = err?.response?.data?.message || err?.message || 'Không thể thêm vào giỏ'
-      const error = new Error(msg)
-      throw error
+      throw new Error(msg)
     } finally {
       set({ syncing: false })
     }
@@ -83,6 +95,13 @@ const useCartStore = create((set, get) => ({
   // cartItemId = item.id (cart_item id từ DB, không phải product_id)
   updateQty: async (cartItemId, qty) => {
     if (qty < 1) { get().removeItem(cartItemId); return }
+    // Kiểm tra stock phía client trước khi gọi API
+    const item = get().items.find(i => i.id === cartItemId)
+    if (item?.stock != null && qty > item.stock) {
+      const { toast } = await import('../utils/index.js')
+      toast.error(`Chỉ còn ${item.stock} sản phẩm trong kho`)
+      return
+    }
     // Optimistic update
     set({ items: get().items.map(i => i.id === cartItemId ? { ...i, qty } : i) })
     set({ syncing: true })

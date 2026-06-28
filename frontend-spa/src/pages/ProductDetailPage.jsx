@@ -19,6 +19,7 @@ export default function ProductDetailPage() {
   const { data: related } = useRelatedProducts(product?.id)
   const { data: reviews, loading: reviewsLoading, reload: reloadReviews } = useReviews(product?.id)
 
+  const cartItems = useCartStore(s => s.items)
   const addItem  = useCartStore(s => s.addItem)
   const syncing  = useCartStore(s => s.syncing)
   const { isAuthenticated } = useAuthStore()
@@ -49,6 +50,23 @@ export default function ProductDetailPage() {
 
   const handleAdd = async () => {
     if (!isAuthenticated) { toast.error('Vui lòng đăng nhập để thêm vào giỏ'); return }
+    const stock = product.stock ?? null
+    if (product.is_available === false || (stock !== null && stock === 0)) {
+      toast.error('Sản phẩm hiện đã hết hàng')
+      return
+    }
+    if (stock !== null) {
+      const inCart = cartItems.find(i => i.product_id === product.id)?.qty ?? 0
+      const remaining = stock - inCart
+      if (qty > remaining) {
+        if (remaining <= 0) {
+          toast.error(`Bạn đã thêm tối đa số lượng trong kho (${stock} sản phẩm)`)
+        } else {
+          toast.error(`Chỉ có thể thêm ${remaining} sản phẩm nữa (kho còn ${stock}, giỏ đã có ${inCart})`)
+        }
+        return
+      }
+    }
     try {
       await addItem(product, qty)
       toast.success('Đã thêm vào giỏ hàng! 🛒')
@@ -161,28 +179,57 @@ export default function ProductDetailPage() {
 
             {/* Stock status */}
             <div className="mb-4">
-              {product.is_available !== false ? (
-                <span className="text-sm text-success font-semibold">✓ Còn hàng</span>
+              {product.is_available !== false && product.stock > 0 ? (
+                <span className="text-sm text-success font-semibold">
+                  ✓ Còn hàng
+                  {product.stock <= 10 && (
+                    <span className="ml-2 text-warning font-semibold">
+                      (còn {product.stock} sản phẩm)
+                    </span>
+                  )}
+                </span>
               ) : (
                 <span className="text-sm text-accent font-semibold">✕ Hết hàng</span>
               )}
             </div>
 
             {/* Quantity */}
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-sm font-semibold text-body">Số lượng:</span>
-              <div className="flex items-center border border-shade rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setQty(q => Math.max(1, q - 1))}
-                  className="w-9 h-9 bg-cream text-lg hover:bg-vnpt-light transition-colors"
-                >−</button>
-                <span className="w-12 text-center text-sm font-bold border-x border-shade h-9 flex items-center justify-center">{qty}</span>
-                <button
-                  onClick={() => setQty(q => q + 1)}
-                  className="w-9 h-9 bg-cream text-lg hover:bg-vnpt-light transition-colors"
-                >+</button>
-              </div>
-            </div>
+            {(() => {
+              const stock = product.stock ?? null
+              const inCart = cartItems.find(i => i.product_id === product.id)?.qty ?? 0
+              const remaining = stock !== null ? Math.max(0, stock - inCart) : 999
+              return (
+                <div className="flex items-center gap-4 mb-6">
+                  <span className="text-sm font-semibold text-body">Số lượng:</span>
+                  <div className="flex items-center border border-shade rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setQty(q => Math.max(1, q - 1))}
+                      disabled={qty <= 1}
+                      className="w-9 h-9 bg-cream text-lg hover:bg-vnpt-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >−</button>
+                    <span className="w-12 text-center text-sm font-bold border-x border-shade h-9 flex items-center justify-center">{qty}</span>
+                    <button
+                      onClick={() => setQty(q => Math.min(remaining, q + 1))}
+                      disabled={qty >= remaining || remaining === 0}
+                      className="w-9 h-9 bg-cream text-lg hover:bg-vnpt-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={qty >= remaining
+                        ? (inCart > 0 ? `Giỏ đã có ${inCart}, kho còn ${stock}` : `Tối đa ${stock} sản phẩm`)
+                        : ''}
+                    >+</button>
+                  </div>
+                  {stock !== null && remaining <= 10 && remaining > 0 && (
+                    <span className="text-xs text-warning font-medium">
+                      {inCart > 0
+                        ? `Còn thêm được ${remaining} SP (giỏ đã có ${inCart})`
+                        : `Còn ${remaining} SP trong kho`}
+                    </span>
+                  )}
+                  {remaining === 0 && inCart > 0 && (
+                    <span className="text-xs text-accent font-medium">Đã đạt giới hạn tồn kho</span>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Actions */}
             <div className="grid grid-cols-2 gap-3">
