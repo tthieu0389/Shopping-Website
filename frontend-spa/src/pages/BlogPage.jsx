@@ -1,17 +1,33 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useBlogs } from '../hooks/index.js'
-import { Breadcrumb, LoadingSpinner, EmptyState } from '../components/common/index.jsx'
+import { Breadcrumb, LoadingSpinner, EmptyState, Pagination } from '../components/common/index.jsx'
 import { formatDate, truncate } from '../utils/index.js'
 import { blogsApi } from '../api/index.js'
-import { useEffect } from 'react'
+
+const LIMIT = 9
 
 // ── Blog List ─────────────────────────────────────────────────────────────────
 function BlogList() {
-  const { data: blogs, loading } = useBlogs()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = Number(searchParams.get('page')) || 1
+
+  const { data: blogs, total, loading } = useBlogs({
+    limit:  LIMIT,
+    offset: (page - 1) * LIMIT,
+  })
+
+  const totalPages = Math.ceil(total / LIMIT)
+
+  const goToPage = (p) => {
+    if (p === 1) setSearchParams({})
+    else setSearchParams({ page: p })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <div>
+      {/* Hero */}
       <div
         className="text-center py-14 px-10"
         style={{ background: 'linear-gradient(135deg, #00205f, #003087)' }}
@@ -23,37 +39,53 @@ function BlogList() {
       </div>
 
       <div className="max-w-[1200px] mx-auto px-10 py-10">
+        {/* Toolbar */}
+        {!loading && total > 0 && (
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-muted">
+              Hiển thị <strong className="text-body">{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)}</strong> / <strong className="text-body">{total}</strong> bài viết
+            </p>
+            {totalPages > 1 && (
+              <p className="text-sm text-muted">Trang {page} / {totalPages}</p>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <LoadingSpinner />
         ) : blogs.length === 0 ? (
           <EmptyState icon="📰" title="Chưa có bài viết nào" desc="Hãy quay lại sau!" />
         ) : (
-          <div className="grid grid-cols-3 gap-6">
-            {blogs.map(blog => (
-              <Link
-                key={blog.id}
-                to={`/blog/${blog.slug}`}
-                className="bg-white border border-shade rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 group"
-              >
-                {/* Thumbnail placeholder */}
-                <div className="aspect-video bg-gradient-to-br from-vnpt-light to-vnpt/20 flex items-center justify-center">
-                  <span className="text-5xl">📰</span>
-                </div>
-                <div className="p-5">
-                  <h2 className="text-base font-bold text-body mb-2 line-clamp-2 group-hover:text-vnpt transition-colors">
-                    {blog.title}
-                  </h2>
-                  <p className="text-sm text-muted leading-relaxed mb-4 line-clamp-3">
-                    {truncate(blog.content, 120)}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted">
-                    <span>{formatDate(blog.created_at)}</span>
-                    <span className="text-vnpt font-semibold">Đọc thêm →</span>
+          <>
+            <div className="grid grid-cols-3 gap-6">
+              {blogs.map(blog => (
+                <Link
+                  key={blog.id}
+                  to={`/blog/${blog.slug}`}
+                  className="bg-white border border-shade rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 group"
+                >
+                  {/* Thumbnail */}
+                  <div className="aspect-video bg-gradient-to-br from-vnpt-light to-vnpt/20 flex items-center justify-center">
+                    <span className="text-5xl">📰</span>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  <div className="p-5">
+                    <h2 className="text-base font-bold text-body mb-2 line-clamp-2 group-hover:text-vnpt transition-colors">
+                      {blog.title}
+                    </h2>
+                    <p className="text-sm text-muted leading-relaxed mb-4 line-clamp-3">
+                      {truncate(blog.content, 120)}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-muted">
+                      <span>{formatDate(blog.created_at)}</span>
+                      <span className="text-vnpt font-semibold">Đọc thêm →</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <Pagination page={page} totalPages={totalPages} goTo={goToPage} />
+          </>
         )}
       </div>
     </div>
@@ -69,16 +101,10 @@ function BlogDetail() {
 
   useEffect(() => {
     blogsApi.getBySlug(slug)
-      .then(res => {
-        setBlog(res.data || null)
-        setLoading(false) // Update loading to false inside the effect
-      })
-      .catch(() => {
-        setError('Không tìm thấy bài viết')
-        setLoading(false) // Update loading to false inside the effect
-      })
+      .then(res => { setBlog(res.data || null); setLoading(false) })
+      .catch(() => { setError('Không tìm thấy bài viết'); setLoading(false) })
   }, [slug])
-  
+
   if (loading) return <LoadingSpinner />
   if (error || !blog) return (
     <EmptyState
