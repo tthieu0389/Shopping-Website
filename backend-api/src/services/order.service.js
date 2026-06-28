@@ -310,10 +310,10 @@ exports.getOrdersByUser = async ({
 };
 
 exports.getOrderById = async (id) => {
-  if (!id || isNaN(id)) return null;
-  return knex("orders")
-    .where({ id: Number(id) })
-    .first();
+  const order = await knex("orders").where({ id }).first();
+  if (!order) return null;
+  order.items = await knex("order_items").where({ order_id: id });
+  return order;
 };
 
 // Cap nhat trang thai hoac ghi chu don hang (Check logic chuyen trang thai)

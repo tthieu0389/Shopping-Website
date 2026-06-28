@@ -133,15 +133,21 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
 };
 
 exports.getProductByIdOrSlug = async (idOrSlug) => {
-  if (!idOrSlug) return null;
-  if (!isNaN(idOrSlug)) {
-    return await knex("products")
-      .where({ id: Number(idOrSlug), is_deleted: false })
-      .first();
-  }
-  return await knex("products")
-    .where({ slug: idOrSlug, is_deleted: false })
+  const product = await knex("products")
+    .where(
+      !isNaN(idOrSlug)
+        ? { id: Number(idOrSlug), is_deleted: false }
+        : { slug: idOrSlug, is_deleted: false },
+    )
     .first();
+  if (!product) return null;
+  product.images = await knex("product_images").where({
+    product_id: product.id,
+  });
+  product.details = await knex("product_details").where({
+    product_id: product.id,
+  });
+  return product;
 };
 
 exports.getRelatedProducts = async (id) => {

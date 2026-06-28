@@ -3,7 +3,7 @@ const categoryService = require("../services/category.service");
 exports.getAllCategories = async (req, res, next) => {
   try {
     const categories = await categoryService.getAllCategories();
-    res.json(categories);
+    res.json({ data: categories });
   } catch (err) {
     next(err);
   }
