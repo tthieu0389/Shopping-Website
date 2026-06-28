@@ -9,6 +9,7 @@ const calculateOrderAmount = async (
   addressId = null,
   pickupStoreId = null,
   trx = knex,
+  userId = null,
 ) => {
   let totalBaseAmount = 0;
   let totalDiscountAmount = 0;
@@ -97,6 +98,20 @@ const calculateOrderAmount = async (
       err.statusCode = 404;
       throw err;
     }
+
+    // Lay ten va phone user lam dai dien nguoi nhan khi tu den lay hang
+    if (userId) {
+      const user = await trx("users").where({ id: userId }).first();
+      const profile = await trx("user_profiles")
+        .where({ user_id: userId })
+        .first();
+      shippingDetails = {
+        receiver_name: user?.name || null,
+        receiver_phone: profile?.phone || null,
+        shipping_address: store.address,
+      };
+    }
+
     shippingFee = 0;
   }
 
@@ -158,6 +173,7 @@ exports.createOrder = async (userId, data) => {
       data.address_id,
       data.pickup_store_id,
       trx,
+      userId,
     );
 
     // Luu don hang vao DB

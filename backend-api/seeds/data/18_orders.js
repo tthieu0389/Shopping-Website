@@ -1,12 +1,16 @@
 const { faker } = require("@faker-js/faker/locale/vi");
 
 exports.seed = async function (knex) {
-  const users = await knex("users").select("id");
-  const stores = await knex("stores").select("id", "province");
+  const users = await knex("users").select("id", "name");
+  const profiles = await knex("user_profiles").select("user_id", "phone");
+  const stores = await knex("stores").select("id", "province", "address");
   const addresses = await knex("user_addresses").select(
     "id",
     "user_id",
     "province",
+    "receiver_name",
+    "phone",
+    "address_line",
   );
 
   if (addresses.length === 0 || stores.length === 0) {
@@ -40,14 +44,20 @@ exports.seed = async function (knex) {
 
     const orderAmount = faker.number.int({ min: 100000, max: 2000000 });
 
+    const pickupStore = pickupStoreId
+      ? stores.find((s) => s.id === pickupStoreId)
+      : null;
+    const userProfile = profiles.find((p) => p.user_id === user.id);
     data.push({
       order_code: `ORD-${Date.now()}-${i}-${user.id}`,
       user_id: user.id,
       address_id: address ? address.id : null,
       pickup_store_id: pickupStoreId,
-      receiver_name: address ? address.receiver_name : faker.person.fullName(),
-      receiver_phone: address ? address.phone : faker.phone.number(),
-      shipping_address: address ? address.address_line : "Nhận tại cửa hàng",
+      receiver_name: address ? address.receiver_name : user.name,
+      receiver_phone: address ? address.phone : userProfile?.phone || null,
+      shipping_address: address
+        ? address.address_line
+        : pickupStore?.address || null,
       shipping_fee: shippingFee,
       total_amount: orderAmount + shippingFee, // Tổng tiền = Giá hàng + phí ship
       payment_method: faker.helpers.arrayElement(["cod", "bank_transfer"]),
