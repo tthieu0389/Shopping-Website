@@ -39,6 +39,13 @@ router.get(
   userAddressController.getAddressesByUserId,
 );
 
+// Set default address
+router.put(
+  "/:id/default",
+  verifyToken(),
+  userAddressController.setDefaultAddress,
+);
+
 // Update address
 router.put(
   "/:id",

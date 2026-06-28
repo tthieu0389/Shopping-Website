@@ -122,6 +122,9 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   const currentSort = sortMapping[sort] || sortMapping.newest;
 
   const data = await query
+    .orderByRaw(
+      "CASE WHEN stock = 0 OR is_available = false THEN 1 ELSE 0 END ASC",
+    )
     .orderBy(currentSort.column, currentSort.direction)
     .limit(safeLimit)
     .offset(safeOffset);

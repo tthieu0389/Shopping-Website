@@ -22,3 +22,18 @@ exports.updateAddress = async (id, data) => {
 exports.deleteAddress = async (id) => {
   return await knex("user_addresses").where("id", id).del();
 };
+
+exports.setDefaultAddress = async (userId, addressId) => {
+  return await knex.transaction(async (trx) => {
+    await trx("user_addresses")
+      .where({ user_id: userId, is_deleted: false })
+      .update({ is_default: false });
+
+    const [address] = await trx("user_addresses")
+      .where({ id: addressId, user_id: userId })
+      .update({ is_default: true })
+      .returning("*");
+
+    return address;
+  });
+};

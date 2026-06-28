@@ -51,3 +51,23 @@ exports.deleteAddress = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.setDefaultAddress = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const addressId = parseInt(req.params.id);
+
+    const address = await userAddressService.setDefaultAddress(
+      userId,
+      addressId,
+    );
+
+    if (!address) {
+      return res.status(404).json({ message: "Địa chỉ không tồn tại" });
+    }
+
+    res.json({ message: "Đặt địa chỉ mặc định thành công", data: address });
+  } catch (err) {
+    next(err);
+  }
+};
