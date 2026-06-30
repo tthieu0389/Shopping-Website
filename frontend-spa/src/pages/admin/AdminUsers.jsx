@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminUsersApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Select, FilterTabs, AdminPagination } from './ui.jsx'
-import { toast, formatDate, getInitials } from '../../utils/index.js'
+import { toast, formatDate, getInitials, debounce } from '../../utils/index.js'
 
 const LIMIT = 10
 const emptyForm = { name: '', email: '', password: '', role: 'user' }
@@ -10,6 +10,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // null | 'add' | user
@@ -18,12 +19,14 @@ export default function AdminUsers() {
 
   const load = () => {
     setLoading(true)
-    adminUsersApi.getAll({ page, limit: LIMIT })
+    adminUsersApi.getAll({ page, limit: LIMIT, ...(search ? { q: search } : {}) })
       .then(res => { setUsers(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [page])
+  useEffect(() => { load() }, [page, search])
+
+  const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
 
   const filtered = roleFilter === 'all' ? users : users.filter(u => u.role === roleFilter)
 
@@ -54,12 +57,20 @@ export default function AdminUsers() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center flex-wrap gap-3">
-        <FilterTabs options={[['all', 'Tất cả'], ['user', 'Khách hàng'], ['admin', 'Quản trị viên']]} value={roleFilter} onChange={setRoleFilter} />
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <input
+            defaultValue={search}
+            onChange={e => handleSearchChange(e.target.value)}
+            placeholder="🔍  Tìm theo tên hoặc email..."
+            className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
+          />
+          <FilterTabs options={[['all', 'Tất cả'], ['user', 'Khách hàng'], ['admin', 'Quản trị viên']]} value={roleFilter} onChange={setRoleFilter} />
+        </div>
         <Btn onClick={openAdd}>➕ Thêm tài khoản</Btn>
       </div>
 
       <Card>
-        <Table headers={['Tài khoản', 'Email', 'Vai trò', 'Ngày tạo', '']} loading={loading} empty={!loading && 'Không có tài khoản nào'}>
+        <Table headers={['Tài khoản', 'Email', 'Vai trò', 'Ngày tạo', '']} loading={loading} empty={!loading && (search ? 'Không tìm thấy tài khoản nào phù hợp' : 'Không có tài khoản nào')}>
           {filtered.map((u, i) => (
             <TR key={u.id} striped={i % 2 !== 0}>
               <TD>

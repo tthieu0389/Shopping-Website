@@ -12,7 +12,7 @@ const ADMIN_MENU = [
   { to: '/admin/categories', icon: '🗂️', label: 'Danh mục' },
   { to: '/admin/inventory',  icon: '🏭', label: 'Kho hàng' },
   { section: 'Người dùng' },
-  { to: '/admin/users',      icon: '👤', label: 'Khách hàng' },
+  { to: '/admin/users',      icon: '👤', label: 'Người dùng' },
   { section: 'Nội dung' },
   { to: '/admin/blogs',      icon: '📰', label: 'Tin tức' },
   { to: '/admin/contacts',   icon: '💬', label: 'Liên hệ' },
