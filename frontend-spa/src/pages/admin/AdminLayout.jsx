@@ -1,0 +1,129 @@
+import { NavLink, Outlet, Link, Navigate } from 'react-router-dom'
+import useAuthStore from '../../store/authStore.js'
+import { getInitials } from '../../utils/index.js'
+
+const ADMIN_MENU = [
+  { section: 'Tổng quan' },
+  { to: '/admin',            icon: '▦',  label: 'Dashboard', end: true },
+  { section: 'Bán hàng' },
+  { to: '/admin/orders',     icon: '📦', label: 'Đơn hàng' },
+  { section: 'Sản phẩm' },
+  { to: '/admin/products',   icon: '🛍️', label: 'Sản phẩm' },
+  { to: '/admin/categories', icon: '🗂️', label: 'Danh mục' },
+  { to: '/admin/inventory',  icon: '🏭', label: 'Kho hàng' },
+  { section: 'Người dùng' },
+  { to: '/admin/users',      icon: '👤', label: 'Khách hàng' },
+  { section: 'Nội dung' },
+  { to: '/admin/contacts',   icon: '💬', label: 'Liên hệ' },
+]
+
+const PAGE_TITLES = {
+  '/admin': 'Dashboard',
+  '/admin/orders': 'Quản lý đơn hàng',
+  '/admin/products': 'Sản phẩm',
+  '/admin/categories': 'Danh mục',
+  '/admin/inventory': 'Kho hàng',
+  '/admin/users': 'Khách hàng',
+  '/admin/contacts': 'Liên hệ',
+}
+
+function AdminSidebar() {
+  return (
+    <aside className="w-[230px] bg-vnpt-dark flex flex-col flex-shrink-0 min-h-screen">
+      {/* Logo — quay lại trang chủ */}
+      <Link to="/" className="block px-5 pt-[22px] pb-[18px] border-b border-white/10 hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-canvas rounded-[9px] flex items-center justify-center text-lg flex-shrink-0">🔷</div>
+          <div>
+            <div className="text-white font-extrabold text-base font-display tracking-tight">VNPT Shop</div>
+            <div className="text-white/45 text-[11px] font-medium tracking-wide">ADMIN PANEL</div>
+          </div>
+        </div>
+      </Link>
+
+      <nav className="flex-1 px-2 py-2.5 overflow-y-auto">
+        {ADMIN_MENU.map((item, idx) => {
+          if (item.section) {
+            return (
+              <div key={idx} className="px-3 pt-3.5 pb-1.5 text-[10px] font-bold tracking-wider text-white/35 uppercase">
+                {item.section}
+              </div>
+            )
+          }
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-[13px] mb-0.5 transition-all
+                ${isActive ? 'bg-white/[0.13] text-white font-bold' : 'text-white/60 hover:bg-white/[0.07] hover:text-white'}`
+              }
+            >
+              <span className="text-[15px] w-5 text-center">{item.icon}</span>
+              <span className="flex-1">{item.label}</span>
+            </NavLink>
+          )
+        })}
+      </nav>
+
+      {/* Quay về trang chủ + profile */}
+      <div className="border-t border-white/10">
+        <Link to="/" className="flex items-center gap-2.5 px-4 py-3 text-white/65 hover:text-white hover:bg-white/5 transition-colors text-[13px] font-semibold border-b border-white/10">
+          <span>🏠</span> Về trang chủ
+        </Link>
+        <ProfileBlock />
+      </div>
+    </aside>
+  )
+}
+
+function ProfileBlock() {
+  const { user, logout } = useAuthStore()
+  return (
+    <div className="px-4 py-3.5 flex items-center gap-2.5">
+      <div className="w-[34px] h-[34px] rounded-full bg-accent flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0">
+        {getInitials(user?.name || 'Admin')}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-white text-[13px] font-bold truncate">{user?.name || 'Quản trị viên'}</div>
+        <div className="text-white/40 text-[11px]">Quản trị viên</div>
+      </div>
+      <button onClick={logout} title="Đăng xuất" className="text-white/30 hover:text-white text-lg cursor-pointer">⏏</button>
+    </div>
+  )
+}
+
+function TopBar() {
+  const path = window.location.pathname
+  const title = PAGE_TITLES[path] || 'Admin'
+  return (
+    <div className="bg-canvas border-b border-shade px-7 h-[58px] flex items-center justify-between sticky top-0 z-50">
+      <div className="flex items-center gap-2">
+        <span className="text-muted text-[13px]">Admin</span>
+        <span className="text-shade">›</span>
+        <span className="text-[15px] font-bold text-body">{title}</span>
+      </div>
+      <Link to="/" className="text-xs font-semibold text-vnpt hover:underline">← Xem trang chủ</Link>
+    </div>
+  )
+}
+
+export default function AdminLayout() {
+  const { isAuthenticated, user } = useAuthStore()
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (user?.role !== 'admin') return <Navigate to="/" replace />
+
+  return (
+    <div className="flex min-h-screen font-body bg-cream text-body">
+      <AdminSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopBar />
+        <main className="flex-1 p-7 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}

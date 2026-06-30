@@ -12,15 +12,47 @@ export const productsApi = {
   getBySlug:  (slug)   => api.get(`/products/${slug}`),
   getById:    (id)     => api.get(`/products/${id}`),
   getRelated: (id)     => api.get(`/products/${id}/related`),
+  // Admin
+  create: (data)     => api.post('/products', data),
+  update: (id, data) => api.put(`/products/${id}`, data),
+  remove: (id)        => api.delete(`/products/${id}`),
 }
 
 // ── CATEGORIES ───────────────────────────────────────────────────────────────
-// Backend: res.json(categories) → trả thẳng array, không wrap { data }
-// Wrapper normalise về { data: [] } để hooks dùng res.data nhất quán
+// Backend: res.json({ data: [...] })
 export const categoriesApi = {
   getAll: () => api.get('/categories').then(res => ({
     data: Array.isArray(res) ? res : (res.data || [])
   })),
+  // Admin
+  create: (data)     => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  remove: (id)        => api.delete(`/categories/${id}`),
+}
+
+// ── INVENTORY (ADMIN) ──────────────────────────────────────────────────────
+export const inventoryApi = {
+  getAll:     (params) => api.get('/inventory', { params }),
+  getLowStock:()        => api.get('/inventory/low-stock'),
+  getByProduct: (productId) => api.get(`/inventory/product/${productId}`),
+  create: (data)     => api.post('/inventory', data),
+  update: (id, data) => api.put(`/inventory/${id}`, data),
+  remove: (id)        => api.delete(`/inventory/${id}`),
+}
+
+// ── INVENTORY LOGS (ADMIN) ─────────────────────────────────────────────────
+export const inventoryLogApi = {
+  getAll:          (params) => api.get('/inventory-logs', { params }),
+  getByInventory:  (inventoryId) => api.get(`/inventory-logs/inventory/${inventoryId}`),
+  getByProduct:    (productId)   => api.get(`/inventory-logs/product/${productId}`),
+}
+
+// ── USERS (ADMIN) ───────────────────────────────────────────────────────────
+export const adminUsersApi = {
+  getAll: (params)   => api.get('/users', { params }),
+  create: (data)      => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  remove: (id)         => api.delete(`/users/${id}`),
 }
 
 // ── CART ─────────────────────────────────────────────────────────────────────
@@ -41,6 +73,9 @@ export const ordersApi = {
   getAll:  (params) => api.get('/orders', { params }),
   getById: (id)     => api.get(`/orders/${id}`),
   cancel:  (id)     => api.post(`/orders/${id}/cancel`),
+  // Admin
+  update: (id, data) => api.put(`/orders/${id}`, data),
+  remove: (id)        => api.delete(`/orders/${id}`),
 }
 
 // ── FAVORITES ────────────────────────────────────────────────────────────────
@@ -77,6 +112,9 @@ export const userApi = {
 // ── CONTACT ──────────────────────────────────────────────────────────────────
 export const contactApi = {
   send: (data) => api.post('/contacts', data),
+  // Admin
+  getAll: () => api.get('/contacts'),
+  remove: (id) => api.delete(`/contacts/${id}`),
 }
 
 // ── STORES ───────────────────────────────────────────────────────────────────

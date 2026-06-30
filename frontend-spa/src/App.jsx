@@ -19,6 +19,14 @@ import BlogPage, { BlogDetail } from './pages/BlogPage.jsx'
 import OrderDetailPage        from './pages/OrderDetailPage.jsx'
 import ContactPage         from './pages/ContactPage.jsx'
 import NotFoundPage        from './pages/NotFoundPage.jsx'
+import AdminLayout      from './pages/admin/AdminLayout.jsx'
+import AdminDashboard   from './pages/admin/AdminDashboard.jsx'
+import AdminOrders      from './pages/admin/AdminOrders.jsx'
+import AdminProducts    from './pages/admin/AdminProducts.jsx'
+import AdminCategories  from './pages/admin/AdminCategories.jsx'
+import AdminInventory   from './pages/admin/AdminInventory.jsx'
+import AdminUsers       from './pages/admin/AdminUsers.jsx'
+import AdminContacts    from './pages/admin/AdminContacts.jsx'
 
 export default function App() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -37,6 +45,17 @@ export default function App() {
         {/* Auth — no layout */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Admin — own layout, role check inside AdminLayout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index                element={<AdminDashboard />} />
+          <Route path="orders"        element={<AdminOrders />} />
+          <Route path="products"      element={<AdminProducts />} />
+          <Route path="categories"    element={<AdminCategories />} />
+          <Route path="inventory"     element={<AdminInventory />} />
+          <Route path="users"         element={<AdminUsers />} />
+          <Route path="contacts"      element={<AdminContacts />} />
+        </Route>
 
         {/* Main layout */}
         <Route element={<Layout />}>

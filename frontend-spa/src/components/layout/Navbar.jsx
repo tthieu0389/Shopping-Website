@@ -173,7 +173,10 @@ export default function Navbar() {
                   {user?.name?.split(' ').pop()}
                 </button>
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-shade rounded-xl shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                  <Link to="/account"           className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream rounded-t-xl">👤 Tài khoản</Link>
+                  {user?.role === 'admin' && (
+                    <Link to="/admin" className="flex items-center gap-2 px-4 py-3 text-sm font-bold text-vnpt hover:bg-vnpt-light rounded-t-xl">🛠️ Trang quản trị</Link>
+                  )}
+                  <Link to="/account"           className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream">👤 Tài khoản</Link>
                   <Link to="/account/orders"    className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream">📦 Đơn hàng</Link>
                   <Link to="/account/addresses" className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream">📍 Địa chỉ</Link>
                   <hr className="border-shade" />
