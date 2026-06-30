@@ -1,11 +1,10 @@
 const knex = require("../database/knex");
 
 // CREATE INVENTORY
-exports.createInventory = async ({
-  product_id,
-  quantity = 0,
-  min_quantity = 5,
-}) => {
+exports.createInventory = async (
+  { product_id, quantity = 0, min_quantity = 5 },
+  created_by = null,
+) => {
   return await knex.transaction(async (trx) => {
     const product = await trx("products")
       .where({ id: product_id })
@@ -37,6 +36,7 @@ exports.createInventory = async ({
       quantity_change: quantity,
       quantity_after: quantity,
       note: "Initial stock",
+      created_by,
       created_at: trx.fn.now(),
     });
 
@@ -74,7 +74,7 @@ exports.getAllInventory = async ({ limit, offset }) => {
 };
 
 // UPDATE INVENTORY (ADJUST)
-exports.updateInventory = async (id, data) => {
+exports.updateInventory = async (id, data, created_by = null) => {
   return await knex.transaction(async (trx) => {
     const old = await trx("inventory").where({ id }).forUpdate().first();
     if (!old) return null;
@@ -102,6 +102,7 @@ exports.updateInventory = async (id, data) => {
         quantity_change: data.quantity - old.quantity,
         quantity_after: data.quantity,
         note: "Manual adjustment",
+        created_by,
         created_at: trx.fn.now(),
       });
     }
@@ -204,7 +205,7 @@ exports.increaseStock = async (
 };
 
 // DELETE INVENTORY (SOFT DELETE)
-exports.deleteInventory = async (id) => {
+exports.deleteInventory = async (id, created_by = null) => {
   return await knex.transaction(async (trx) => {
     const inventory = await trx("inventory").where({ id }).forUpdate().first();
 
@@ -219,6 +220,7 @@ exports.deleteInventory = async (id) => {
       quantity_change: -inventory.quantity,
       quantity_after: 0,
       note: "Soft delete inventory",
+      created_by,
       created_at: trx.fn.now(),
     });
 

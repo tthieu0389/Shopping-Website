@@ -3,7 +3,10 @@ const inventoryService = require("../services/inventory.service");
 // CREATE INVENTORY
 exports.createInventory = async (req, res, next) => {
   try {
-    const result = await inventoryService.createInventory(req.body);
+    const result = await inventoryService.createInventory(
+      req.body,
+      req.user?.id,
+    );
     res.status(201).json({
       message: "Inventory created",
       data: result,
@@ -39,6 +42,7 @@ exports.updateInventory = async (req, res, next) => {
     const result = await inventoryService.updateInventory(
       req.params.id,
       req.body,
+      req.user?.id,
     );
     if (!result) {
       return res.status(404).json({ message: "Inventory not found" });
@@ -55,7 +59,10 @@ exports.updateInventory = async (req, res, next) => {
 // DELETE
 exports.deleteInventory = async (req, res, next) => {
   try {
-    const result = await inventoryService.deleteInventory(req.params.id);
+    const result = await inventoryService.deleteInventory(
+      req.params.id,
+      req.user?.id,
+    );
     if (!result) {
       return res.status(404).json({ message: "Inventory not found" });
     }
