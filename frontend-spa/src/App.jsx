@@ -27,6 +27,7 @@ import AdminCategories  from './pages/admin/AdminCategories.jsx'
 import AdminInventory   from './pages/admin/AdminInventory.jsx'
 import AdminUsers       from './pages/admin/AdminUsers.jsx'
 import AdminContacts    from './pages/admin/AdminContacts.jsx'
+import AdminBlogs       from './pages/admin/AdminBlogs.jsx'
 
 export default function App() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="inventory"     element={<AdminInventory />} />
           <Route path="users"         element={<AdminUsers />} />
           <Route path="contacts"      element={<AdminContacts />} />
+          <Route path="blogs"         element={<AdminBlogs />} />
         </Route>
 
         {/* Main layout */}

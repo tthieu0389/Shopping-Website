@@ -1,4 +1,4 @@
-import { NavLink, Outlet, Link, Navigate } from 'react-router-dom'
+import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import { getInitials } from '../../utils/index.js'
 
@@ -14,6 +14,7 @@ const ADMIN_MENU = [
   { section: 'Người dùng' },
   { to: '/admin/users',      icon: '👤', label: 'Khách hàng' },
   { section: 'Nội dung' },
+  { to: '/admin/blogs',      icon: '📰', label: 'Tin tức' },
   { to: '/admin/contacts',   icon: '💬', label: 'Liên hệ' },
 ]
 
@@ -24,6 +25,7 @@ const PAGE_TITLES = {
   '/admin/categories': 'Danh mục',
   '/admin/inventory': 'Kho hàng',
   '/admin/users': 'Khách hàng',
+  '/admin/blogs': 'Tin tức',
   '/admin/contacts': 'Liên hệ',
 }
 
@@ -92,8 +94,8 @@ function ProfileBlock() {
 }
 
 function TopBar() {
-  const path = window.location.pathname
-  const title = PAGE_TITLES[path] || 'Admin'
+  const { pathname } = useLocation()
+  const title = PAGE_TITLES[pathname] || 'Admin'
   return (
     <div className="bg-canvas border-b border-shade px-7 h-[58px] flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-2">

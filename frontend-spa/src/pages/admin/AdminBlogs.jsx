@@ -1,0 +1,190 @@
+import { useEffect, useState } from 'react'
+import { blogsApi, blogImagesApi } from '../../api/index.js'
+import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Textarea } from './ui.jsx'
+import { toast, formatDate, debounce, resolveImageUrl } from '../../utils/index.js'
+
+const LIMIT = 10
+const emptyForm = { title: '', slug: '', content: '', thumbnail_url: '' }
+
+// Tạo slug từ tiêu đề (bỏ dấu tiếng Việt, khoảng trắng -> gạch ngang)
+function slugify(str = '') {
+  return str
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+export default function AdminBlogs() {
+  const [blogs, setBlogs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [modal, setModal] = useState(null) // null | 'add' | blog
+  const [form, setForm] = useState(emptyForm)
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    // Backend /blogs hiện trả về toàn bộ danh sách (chưa hỗ trợ phân trang
+    // thật sự ở BE cho admin), nên phân trang + tìm kiếm được xử lý ở client.
+    blogsApi.getAll()
+      .then(res => setBlogs(res.data || []))
+      .catch(err => toast.error(err.message || 'Không thể tải danh sách tin tức'))
+      .finally(() => setLoading(false))
+  }
+  useEffect(() => { load() }, [])
+
+  const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
+
+  const filtered = search.trim()
+    ? blogs.filter(b =>
+        (b.title || '').toLowerCase().includes(search.trim().toLowerCase()) ||
+        (b.slug || '').toLowerCase().includes(search.trim().toLowerCase()))
+    : blogs
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / LIMIT))
+  const pageItems = filtered.slice((page - 1) * LIMIT, page * LIMIT)
+
+  const openAdd = () => { setForm(emptyForm); setSlugTouched(false); setModal('add') }
+  const openEdit = (b) => {
+    setForm({ title: b.title, slug: b.slug || '', content: b.content || '', thumbnail_url: b.thumbnail_url || '' })
+    setSlugTouched(true)
+    setModal(b)
+  }
+
+  const handleTitleChange = (v) => {
+    setForm(p => ({ ...p, title: v, slug: slugTouched ? p.slug : slugify(v) }))
+  }
+
+  const handleThumbnailUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    blogImagesApi.upload(file, modal !== 'add' ? modal.id : undefined)
+      .then(res => setForm(p => ({ ...p, thumbnail_url: res.data?.image_url || p.thumbnail_url })))
+      .catch(err => toast.error(err.message || 'Không thể tải ảnh lên'))
+      .finally(() => { setUploading(false); e.target.value = '' })
+  }
+
+  const handleSave = () => {
+    if (!form.title.trim() || !form.content.trim()) return
+    const slug = (form.slug || slugify(form.title)).trim()
+    if (!slug) { toast.error('Vui lòng nhập slug hợp lệ'); return }
+    setSaving(true)
+    const payload = {
+      title: form.title.trim(),
+      slug,
+      content: form.content,
+      ...(form.thumbnail_url ? { thumbnail_url: form.thumbnail_url } : {}),
+    }
+    const req = modal === 'add' ? blogsApi.create(payload) : blogsApi.update(modal.id, payload)
+    req
+      .then(() => { toast.success(modal === 'add' ? 'Đã đăng bài viết' : 'Đã cập nhật bài viết'); setModal(null); load() })
+      .catch(err => toast.error(err.message || 'Không thể lưu bài viết'))
+      .finally(() => setSaving(false))
+  }
+
+  const handleDelete = (b) => {
+    if (!confirm(`Xoá bài viết "${b.title}"?`)) return
+    blogsApi.remove(b.id)
+      .then(() => { toast.success('Đã xoá bài viết'); load() })
+      .catch(err => toast.error(err.message || 'Không thể xoá bài viết'))
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <input
+          defaultValue={search}
+          onChange={e => handleSearchChange(e.target.value)}
+          placeholder="🔍  Tìm theo tiêu đề hoặc slug..."
+          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
+        />
+        <Btn onClick={openAdd}>➕ Đăng bài viết</Btn>
+      </div>
+
+      <Card>
+        <Table headers={['Ảnh', 'Tiêu đề', 'Slug', 'Ngày đăng', '']} loading={loading} empty={!loading && 'Chưa có bài viết nào'}>
+          {pageItems.map((b, i) => (
+            <TR key={b.id} striped={i % 2 !== 0}>
+              <TD>
+                {b.thumbnail_url ? (
+                  <img src={resolveImageUrl(b.thumbnail_url)} alt="" className="w-12 h-12 rounded-lg object-cover border border-shade" />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-cream flex items-center justify-center text-muted text-lg">📰</div>
+                )}
+              </TD>
+              <TD bold className="max-w-[320px]">{b.title}</TD>
+              <TD muted>{b.slug || <Badge label="Chưa có slug" tone="warning" />}</TD>
+              <TD muted>{formatDate(b.created_at)}</TD>
+              <TD>
+                <div className="flex gap-3">
+                  <span className="text-vnpt font-bold cursor-pointer text-xs" onClick={() => openEdit(b)}>Sửa</span>
+                  <span className="text-accent font-bold cursor-pointer text-xs" onClick={() => handleDelete(b)}>Xoá</span>
+                </div>
+              </TD>
+            </TR>
+          ))}
+        </Table>
+      </Card>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-1.5 py-2">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`h-8 min-w-8 px-2.5 rounded-lg text-xs font-semibold border transition-colors
+                ${p === page ? 'bg-vnpt border-vnpt text-white' : 'border-shade text-muted bg-canvas hover:border-vnpt hover:text-vnpt'}`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {modal && (
+        <Modal title={modal === 'add' ? 'Đăng bài viết mới' : `Sửa: ${modal.title}`} onClose={() => setModal(null)} width="max-w-[640px]">
+          <div className="flex flex-col gap-4">
+            <Input label="Tiêu đề" required value={form.title} onChange={e => handleTitleChange(e.target.value)} placeholder="VD: VNPT ra mắt gói cước 5G mới" />
+            <Input
+              label="Slug (đường dẫn URL)"
+              required
+              value={form.slug}
+              onChange={e => { setSlugTouched(true); setForm(p => ({ ...p, slug: slugify(e.target.value) })) }}
+              placeholder="vnpt-ra-mat-goi-cuoc-5g-moi"
+            />
+
+            <div>
+              <label className="block text-[13px] font-semibold text-body mb-1.5">Ảnh đại diện</label>
+              <div className="flex items-center gap-3">
+                {form.thumbnail_url ? (
+                  <img src={resolveImageUrl(form.thumbnail_url)} alt="" className="w-20 h-20 rounded-lg object-cover border border-shade flex-shrink-0" />
+                ) : (
+                  <div className="w-20 h-20 rounded-lg bg-cream flex items-center justify-center text-muted text-2xl flex-shrink-0">📰</div>
+                )}
+                <label className={`flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-shade rounded-xl py-4 cursor-pointer text-xs font-semibold text-muted hover:border-vnpt hover:text-vnpt transition-colors ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                  {uploading ? 'Đang tải lên...' : '📤 Chọn ảnh đại diện (tối đa 4MB)'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleThumbnailUpload} disabled={uploading} />
+                </label>
+              </div>
+            </div>
+
+            <Textarea label="Nội dung" required rows={10} value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="Nội dung bài viết..." />
+          </div>
+
+          <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-shade">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Huỷ</Btn>
+            <Btn onClick={handleSave} disabled={saving || !form.title.trim() || !form.content.trim()}>
+              {saving ? 'Đang lưu...' : modal === 'add' ? 'Đăng bài' : 'Lưu thay đổi'}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}

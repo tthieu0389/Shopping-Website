@@ -1,108 +1,128 @@
-import { useEffect, useState } from 'react'
-import { inventoryApi } from '../../api/index.js'
-import { Card, Table, TR, TD, Badge, Btn, StatCard, Modal, Input, AdminPagination } from './ui.jsx'
-import { toast, formatDate, debounce } from '../../utils/index.js'
+import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom'
+import useAuthStore from '../../store/authStore.js'
+import { getInitials } from '../../utils/index.js'
 
-const LIMIT = 10
+const ADMIN_MENU = [
+  { section: 'Tổng quan' },
+  { to: '/admin',            icon: '▦',  label: 'Dashboard', end: true },
+  { section: 'Bán hàng' },
+  { to: '/admin/orders',     icon: '📦', label: 'Đơn hàng' },
+  { section: 'Sản phẩm' },
+  { to: '/admin/products',   icon: '🛍️', label: 'Sản phẩm' },
+  { to: '/admin/categories', icon: '🗂️', label: 'Danh mục' },
+  { to: '/admin/inventory',  icon: '🏭', label: 'Kho hàng' },
+  { section: 'Người dùng' },
+  { to: '/admin/users',      icon: '👤', label: 'Khách hàng' },
+  { section: 'Nội dung' },
+  { to: '/admin/blogs',      icon: '📰', label: 'Tin tức' },
+  { to: '/admin/contacts',   icon: '💬', label: 'Liên hệ' },
+]
 
-function statusOf(qty, min) {
-  if (qty === 0) return { label: '✕ Hết hàng', tone: 'error' }
-  if (qty <= min) return { label: '⚠ Sắp hết', tone: 'warning' }
-  return { label: 'Đủ hàng', tone: 'success' }
+const PAGE_TITLES = {
+  '/admin': 'Dashboard',
+  '/admin/orders': 'Quản lý đơn hàng',
+  '/admin/products': 'Sản phẩm',
+  '/admin/categories': 'Danh mục',
+  '/admin/inventory': 'Kho hàng',
+  '/admin/users': 'Khách hàng',
+  '/admin/blogs': 'Tin tức',
+  '/admin/contacts': 'Liên hệ',
 }
 
-export default function AdminInventory() {
-  const [allItems, setAllItems] = useState([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [adjustItem, setAdjustItem] = useState(null)
-  const [delta, setDelta] = useState('')
-  const [saving, setSaving] = useState(false)
+function AdminSidebar() {
+  return (
+    <aside className="w-[230px] bg-vnpt-dark flex flex-col flex-shrink-0 h-screen sticky top-0 self-start">
+      {/* Logo — quay lại trang chủ */}
+      <Link to="/" className="block px-5 pt-[22px] pb-[18px] border-b border-white/10 hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-canvas rounded-[9px] flex items-center justify-center text-lg flex-shrink-0">🔷</div>
+          <div>
+            <div className="text-white font-extrabold text-base font-display tracking-tight">VNPT Shop</div>
+            <div className="text-white/65 text-[11px] font-medium tracking-wide">ADMIN PANEL</div>
+          </div>
+        </div>
+      </Link>
 
-  const load = () => {
-    setLoading(true)
-    inventoryApi.getAll({ page, limit: LIMIT })
-      .then(res => { setAllItems(res.data || []); setTotal(res.total || 0) })
-      .catch(err => toast.error(err.message))
-      .finally(() => setLoading(false))
-  }
-  useEffect(() => { load() }, [page])
+      <nav className="flex-1 px-2 py-2.5 overflow-y-auto">
+        {ADMIN_MENU.map((item, idx) => {
+          if (item.section) {
+            return (
+              <div key={idx} className="px-3 pt-3.5 pb-1.5 text-[10px] font-bold tracking-wider text-white/90 uppercase">
+                {item.section}
+              </div>
+            )
+          }
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-[13px] mb-0.5 transition-all
+                ${isActive ? 'bg-white/[0.13] text-white font-bold' : 'text-white hover:bg-white/[0.07]'}`
+              }
+            >
+              <span className="text-[15px] w-5 text-center">{item.icon}</span>
+              <span className="flex-1">{item.label}</span>
+            </NavLink>
+          )
+        })}
+      </nav>
 
-  // ⚠️ Backend /inventory hiện CHƯA hỗ trợ tham số tìm kiếm (q) như /products,
-  // nên search ở đây tạm thời lọc trên dữ liệu của trang hiện tại (client-side).
-  // Cần backend bổ sung filter theo tên sản phẩm + JOIN products để search đúng
-  // trên toàn bộ dữ liệu kèm phân trang chính xác (xem báo cáo cuối file).
-  const handleSearchChange = debounce((v) => setSearch(v), 400)
-  const items = search.trim()
-    ? allItems.filter(item => (item.product_name || '').toLowerCase().includes(search.trim().toLowerCase()))
-    : allItems
+      {/* Quay về trang chủ + profile */}
+      <div className="border-t border-white/10">
+        <ProfileBlock />
+      </div>
+    </aside>
+  )
+}
 
-  const openAdjust = (item) => { setDelta(''); setAdjustItem(item) }
+function ProfileBlock() {
+  const { user, logout } = useAuthStore()
+  return (
+    <div className="px-4 py-3.5 flex items-center gap-2.5">
+      <div className="w-[34px] h-[34px] rounded-full bg-accent flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0">
+        {getInitials(user?.name || 'Admin')}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-white text-[13px] font-bold truncate">{user?.name || 'Quản trị viên'}</div>
+        <div className="text-white/60 text-[11px]">Quản trị viên</div>
+      </div>
+      <button onClick={logout} title="Đăng xuất" className="text-white/30 hover:text-white text-lg cursor-pointer">⏏</button>
+    </div>
+  )
+}
 
-  const handleAdjust = () => {
-    const d = parseInt(delta, 10)
-    if (!d) return
-    setSaving(true)
-    const newQty = Math.max(0, adjustItem.quantity + d)
-    inventoryApi.update(adjustItem.id, { quantity: newQty })
-      .then(() => { toast.success('Đã cập nhật tồn kho'); setAdjustItem(null); load() })
-      .catch(err => toast.error(err.message || 'Không thể cập nhật'))
-      .finally(() => setSaving(false))
-  }
+function TopBar() {
+  const { pathname } = useLocation()
+  const title = PAGE_TITLES[pathname] || 'Admin'
+  return (
+    <div className="bg-canvas border-b border-shade px-7 h-[58px] flex items-center justify-between sticky top-0 z-50">
+      <div className="flex items-center gap-2">
+        <span className="text-muted text-[13px]">Admin</span>
+        <span className="text-shade">›</span>
+        <span className="text-[15px] font-bold text-body">{title}</span>
+      </div>
+      <Link to="/" className="text-xs font-semibold text-vnpt hover:underline">← Xem trang chủ</Link>
+    </div>
+  )
+}
 
-  const okCount  = items.filter(i => i.quantity > i.min_quantity).length
-  const lowCount = items.filter(i => i.quantity > 0 && i.quantity <= i.min_quantity).length
-  const outCount = items.filter(i => i.quantity === 0).length
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT))
+export default function AdminLayout() {
+  const { isAuthenticated, user } = useAuthStore()
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (user?.role !== 'admin') return <Navigate to="/" replace />
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <StatCard icon="✅" label="Còn hàng đủ (trang này)" value={okCount} tone="success" />
-        <StatCard icon="⚠️" label="Sắp hết (trang này)" value={lowCount} tone="warning" />
-        <StatCard icon="❌" label="Hết hàng (trang này)" value={outCount} tone="error" />
+    <div className="flex min-h-screen font-body bg-cream text-body">
+      <AdminSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopBar />
+        <main className="flex-1 p-7 overflow-y-auto">
+          <Outlet />
+        </main>
       </div>
-
-      <div className="flex justify-between items-center flex-wrap gap-3">
-        <input
-          defaultValue={search}
-          onChange={e => handleSearchChange(e.target.value)}
-          placeholder="🔍  Tìm theo tên sản phẩm..."
-          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
-        />
-      </div>
-
-      <Card>
-        <Table headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']} loading={loading} empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp trong trang này' : 'Chưa có dữ liệu kho')}>
-          {items.map((item, i) => (
-            <TR key={item.id} striped={i % 2 !== 0}>
-              <TD bold>{item.product_name || `Sản phẩm #${item.product_id}`}</TD>
-              <TD bold className={item.quantity === 0 ? 'text-accent' : ''}>{item.quantity}</TD>
-              <TD muted>{item.min_quantity}</TD>
-              <TD><Badge {...statusOf(item.quantity, item.min_quantity)} /></TD>
-              <TD muted>{formatDate(item.updated_at)}</TD>
-              <TD><span className="text-vnpt text-xs font-bold cursor-pointer" onClick={() => openAdjust(item)}>Điều chỉnh</span></TD>
-            </TR>
-          ))}
-        </Table>
-      </Card>
-
-      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
-
-      {adjustItem && (
-        <Modal title={`Điều chỉnh kho — ${adjustItem.product_name || ''}`} onClose={() => setAdjustItem(null)} width="max-w-[400px]">
-          <div className="bg-cream rounded-lg p-3 mb-4 text-sm text-body">
-            Tồn kho hiện tại: <strong>{adjustItem.quantity}</strong>
-          </div>
-          <Input label="Số lượng thay đổi (+nhập / -xuất)" type="number" value={delta} onChange={e => setDelta(e.target.value)} placeholder="VD: +20 hoặc -5" />
-          <div className="flex justify-end gap-2.5">
-            <Btn variant="ghost" onClick={() => setAdjustItem(null)}>Huỷ</Btn>
-            <Btn onClick={handleAdjust} disabled={saving || !delta}>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</Btn>
-          </div>
-        </Modal>
-      )}
     </div>
   )
 }

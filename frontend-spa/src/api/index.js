@@ -109,6 +109,21 @@ export const reviewsApi = {
 export const blogsApi = {
   getAll:    (params) => api.get('/blogs', { params }),
   getBySlug: (slug)   => api.get(`/blogs/slug/${slug}`),
+  // Admin
+  create: (data)     => api.post('/blogs', data),
+  update: (id, data) => api.put(`/blogs/${id}`, data),
+  remove: (id)        => api.delete(`/blogs/${id}`),
+}
+
+// ── BLOG IMAGES (ADMIN) ──────────────────────────────────────────────────────
+export const blogImagesApi = {
+  // Upload ảnh thumbnail/ảnh trong bài viết — trả về { data: { image_url, ... } }
+  upload: (file, blogId) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    if (blogId) formData.append('blog_id', blogId)
+    return api.post('/blog-images/upload', formData, { headers: { 'Content-Type': undefined } })
+  },
 }
 
 // ── USER ─────────────────────────────────────────────────────────────────────
