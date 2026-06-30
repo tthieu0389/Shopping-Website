@@ -262,11 +262,34 @@ export const useSearch = (delay = 400) => {
     const timer = setTimeout(async () => {
       try {
         const res = await productsApi.getAll({ search: query, limit: 8 })
-        if (!cancelled) setResults(res.data || [])
+        const list = res.data || []
+        if (cancelled) return
+
+        // Hiển thị kết quả trước (chưa có ảnh) để người dùng thấy ngay
+        setResults(list)
+        setLoading(false)
+
+        // Bổ sung ảnh đại diện cho từng sản phẩm (vì API danh sách không trả ảnh)
+        if (list.length > 0) {
+          const withImages = await Promise.all(
+            list.map(async (p) => {
+              try {
+                const imgRes = await productImagesApi.getByProduct(p.id)
+                const images = imgRes.data || []
+                const thumb = images.find(img => img.is_thumbnail) || images[0]
+                return thumb ? { ...p, thumbnail: thumb.image_url } : p
+              } catch (_) {
+                return p
+              }
+            })
+          )
+          if (!cancelled) setResults(withImages)
+        }
       } catch (_) {
-        if (!cancelled) setResults([])
-      } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setResults([])
+          setLoading(false)
+        }
       }
     }, delay)
 

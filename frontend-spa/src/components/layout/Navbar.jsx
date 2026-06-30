@@ -3,7 +3,41 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import useCartStore from '../../store/cartStore.js'
 import { useSearch } from '../../hooks/index.js'
-import { formatPrice } from '../../utils/index.js'
+import { formatPrice, resolveImageUrl } from '../../utils/index.js'
+
+function SearchResultItem({ product: p, onSelect }) {
+  const img = resolveImageUrl(p.img || p.thumbnail || p.image_url || null)
+  const [errored, setErrored] = useState(false)
+  const showImg = img && !errored
+
+  return (
+    <button
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-cream transition-colors text-left"
+      onMouseDown={(e) => {
+        // dùng onMouseDown thay vì onClick để không bị onBlur chặn
+        e.preventDefault()
+        onSelect(p.slug)
+      }}
+    >
+      <div className="w-10 h-10 bg-cream rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {showImg ? (
+          <img
+            src={img}
+            alt={p.name}
+            className="w-full h-full object-cover"
+            onError={() => setErrored(true)}
+          />
+        ) : (
+          <span className="text-xl">📦</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-body line-clamp-1">{p.name}</div>
+        <div className="text-xs text-accent font-bold">{formatPrice(p.price)}</div>
+      </div>
+    </button>
+  )
+}
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
@@ -142,21 +176,7 @@ export default function Navbar() {
                   <div className="p-4 text-sm text-muted text-center">Không tìm thấy kết quả cho &ldquo;{query}&rdquo;</div>
                 )}
                 {!loading && results.length > 0 && results.map(p => (
-                  <button
-                    key={p.id}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-cream transition-colors text-left"
-                    onMouseDown={(e) => {
-                      // dùng onMouseDown thay vì onClick để không bị onBlur chặn
-                      e.preventDefault()
-                      handleSelectResult(p.slug)
-                    }}
-                  >
-                    <div className="w-10 h-10 bg-cream rounded-md flex items-center justify-center flex-shrink-0 text-xl">📦</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-body line-clamp-1">{p.name}</div>
-                      <div className="text-xs text-accent font-bold">{formatPrice(p.price)}</div>
-                    </div>
-                  </button>
+                  <SearchResultItem key={p.id} product={p} onSelect={handleSelectResult} />
                 ))}
               </div>
             )}
