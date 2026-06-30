@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useProduct, useRelatedProducts, useReviews } from '../hooks/index.js'
 import { Breadcrumb, LoadingSpinner, EmptyState, ProductCard, StarRating } from '../components/common/index.jsx'
-import { formatPrice, formatDate, toast } from '../utils/index.js'
+import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
 import { reviewsApi } from '../api/index.js'
 import useCartStore from '../store/cartStore.js'
 import useAuthStore from '../store/authStore.js'
@@ -43,7 +43,7 @@ export default function ProductDetailPage() {
   )
 
   const images = product.images || []
-  const mainImg = images[activeImg]?.image_url || product.img || product.thumbnail || product.image_url || null
+  const mainImg = resolveImageUrl(images[activeImg]?.image_url || product.img || product.thumbnail || product.image_url || null)
   const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : 0
@@ -128,7 +128,12 @@ export default function ProductDetailPage() {
                       i === activeImg ? 'border-vnpt' : 'border-shade hover:border-vnpt-light'
                     }`}
                   >
-                    <img src={img.image_url} alt="" className="w-full h-full object-contain p-2" />
+                    <img
+                      src={resolveImageUrl(img.image_url)}
+                      alt=""
+                      className="w-full h-full object-contain p-2"
+                      onError={e => { e.target.src = 'https://placehold.co/200x200?text=No+Image' }}
+                    />
                   </button>
                 ))}
               </div>

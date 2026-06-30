@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi } from '../api/index.js'
+import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi, productImagesApi } from '../api/index.js'
 
 // ── useProducts ───────────────────────────────────────────────────────────────
 export const useProducts = (params = {}) => {
@@ -13,11 +13,30 @@ export const useProducts = (params = {}) => {
     setLoading(true)
     setError(null)
     productsApi.getAll(params)
-      .then(res => {
-        if (!cancelled) {
-          setData(res.data || [])
-          setTotal(res.total || 0)
-          setLoading(false)
+      .then(async (res) => {
+        const list = res.data || []
+        if (cancelled) return
+
+        // Hiển thị sản phẩm trước (chưa có ảnh) để người dùng thấy nội dung ngay
+        setData(list)
+        setTotal(res.total || 0)
+        setLoading(false)
+
+        // Bổ sung ảnh đại diện cho từng sản phẩm (vì API danh sách không trả ảnh)
+        if (list.length > 0) {
+          const withImages = await Promise.all(
+            list.map(async (p) => {
+              try {
+                const imgRes = await productImagesApi.getByProduct(p.id)
+                const images = imgRes.data || []
+                const thumb = images.find(img => img.is_thumbnail) || images[0]
+                return thumb ? { ...p, thumbnail: thumb.image_url } : p
+              } catch (_) {
+                return p
+              }
+            })
+          )
+          if (!cancelled) setData(withImages)
         }
       })
       .catch(err => {

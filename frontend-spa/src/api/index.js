@@ -25,7 +25,7 @@ export const productImagesApi = {
     const formData = new FormData()
     formData.append('product_id', productId)
     Array.from(files).forEach(file => formData.append('images', file))
-    return api.post('/product-images/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return api.post('/product-images/upload', formData, { headers: { 'Content-Type': undefined } })
   },
   remove:       (id)             => api.delete(`/product-images/${id}`),
   setThumbnail: (id, productId)  => api.patch(`/product-images/${id}/thumbnail`, { product_id: productId }),
