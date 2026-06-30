@@ -35,6 +35,7 @@ export default function AdminOrders() {
   useEffect(() => { load() }, [page, status])
 
   const handleStatusChange = (order, newStatus) => {
+    if (newStatus === 'cancelled' && !window.confirm(`Bạn có chắc muốn huỷ đơn hàng ${order.order_code || order.id} không?`)) return
     setUpdating(true)
     const action = newStatus === 'cancelled' ? ordersApi.cancel(order.id) : ordersApi.update(order.id, { status: newStatus })
     action
