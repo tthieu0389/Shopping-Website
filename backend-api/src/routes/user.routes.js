@@ -15,11 +15,11 @@ const userFieldLabels = {
   role: "Vai trò",
 };
 
-// Lấy danh sách người dùng
+// Lấy danh sách người dùng (admin/staff - staff chỉ xem, hỗ trợ CSKH)
 router.get(
   "/",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   pagination(),
   userController.getAllUsers,
 );

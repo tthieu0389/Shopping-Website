@@ -10,20 +10,20 @@ const upload = require("../middlewares/upload");
 
 const { createBlogSchema, updateBlogSchema } = require("../schema/blog.schema");
 
-// UPLOAD THUMBNAIL CHO BLOG (admin)
+// UPLOAD THUMBNAIL CHO BLOG (admin/staff)
 router.post(
   "/upload-thumbnail",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   upload("blogs").single("image"),
   blogController.uploadThumbnail,
 );
 
-// CREATE BLOG (admin)
+// CREATE BLOG (admin/staff)
 router.post(
   "/",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(createBlogSchema),
   blogController.create,
 );
@@ -37,11 +37,11 @@ router.get("/slug/:slug", blogController.getBySlug);
 // GET BLOG BY ID (đặt sau /slug/:slug để tránh conflict)
 router.get("/:id", blogController.getById);
 
-// UPDATE BLOG (admin)
+// UPDATE BLOG (admin/staff)
 router.put(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(updateBlogSchema),
   blogController.update,
 );

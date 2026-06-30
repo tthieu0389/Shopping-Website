@@ -16,7 +16,7 @@ const {
 router.get(
   "/",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   pagination(),
   inventoryController.getAllInventory,
 );
@@ -25,7 +25,7 @@ router.get(
 router.get(
   "/low-stock",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   inventoryController.getLowStockItems,
 );
 
@@ -33,7 +33,7 @@ router.get(
 router.get(
   "/product/:product_id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   inventoryController.getInventoryByProductId,
 );
 
@@ -41,7 +41,7 @@ router.get(
 router.post(
   "/",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(createInventorySchema),
   inventoryController.createInventory,
 );
@@ -50,7 +50,7 @@ router.post(
 router.put(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(updateInventorySchema),
   inventoryController.updateInventory,
 );

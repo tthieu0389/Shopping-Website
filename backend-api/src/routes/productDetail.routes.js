@@ -16,7 +16,7 @@ router.get("/product/:productId", productDetailController.getByProductId);
 router.post(
   "/",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(createProductDetailSchema),
   productDetailController.create,
 );
@@ -24,7 +24,7 @@ router.post(
 router.put(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(updateProductDetailSchema),
   productDetailController.update,
 );

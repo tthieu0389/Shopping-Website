@@ -35,22 +35,22 @@ router.get("/:id/related", productController.getRelatedProducts);
 // Lấy chi tiết sản phẩm theo ID hoặc Slug (PHẢI XẾP DƯỚI CÙNG trong nhóm GET)
 router.get("/:idOrSlug", productController.getProductByIdOrSlug);
 
-// Tạo mới sản phẩm (Admin)
+// Tạo mới sản phẩm (Admin/Staff)
 router.post(
   "/",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(createProductSchema, {
     fieldLabels: productFieldLabels,
   }),
   productController.createProduct,
 );
 
-// Cập nhật thông tin sản phẩm (Admin)
+// Cập nhật thông tin sản phẩm (Admin/Staff)
 router.put(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(updateProductSchema, {
     fieldLabels: productFieldLabels,
   }),

@@ -12,7 +12,7 @@ const { createProductImageSchema } = require("../schema/productsimage.schema");
 router.post(
   "/upload",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   upload("products").array("images", 10),
   validate(createProductImageSchema),
   productImageController.uploadImages,
@@ -33,7 +33,7 @@ router.delete(
 router.patch(
   "/:id/thumbnail",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   productImageController.setThumbnail,
 );
 
