@@ -16,8 +16,11 @@ exports.getAllUsers = async (req, res, next) => {
       limit: 10,
       offset: 0,
     };
-    // search: tên hoặc email (từ query ?search=...)
-    const search = req.query.search?.trim() || undefined;
+
+    // Ưu tiên lấy 'q', nếu không có thì lấy 'search'
+    const searchQuery = req.query.q || req.query.search;
+    const search = searchQuery?.trim() || undefined;
+
     const result = await userService.getAllUsers({ limit, offset, search });
     res.json({ data: result.data, total: result.total, page, limit });
   } catch (err) {

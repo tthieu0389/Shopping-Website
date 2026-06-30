@@ -2,154 +2,45 @@ const rateLimit = require("express-rate-limit");
 
 const createLimiter = (options) =>
   rateLimit({
-    standardHeaders: true, // Trả về thông tin rate limit qua header RateLimit-*
-    legacyHeaders: false, // Tắt header X-RateLimit-* cũ
+    standardHeaders: true,
+    legacyHeaders: false,
     handler: (req, res, _next, opts) => {
       res.status(429).json({
         success: false,
-        error: opts.message || "Quá nhiều request. Vui lòng thử lại sau.",
+        error:
+          opts.message || "Thao tác quá nhanh, vui lòng chậm lại một chút.",
       });
     },
     ...options,
   });
 
-// login / register
-const loginLimiter = createLimiter({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
-  message: "Quá nhiều lần đăng nhập. Vui lòng thử lại sau.",
-});
+// Nhóm thao tác quan trọng (Giữ lại độ trễ nhỏ để tránh brute force)
+const loginLimiter = createLimiter({ windowMs: 60 * 1000, max: 20 }); // 1 phút 20 lần
+const userLimiter = createLimiter({ windowMs: 60 * 1000, max: 20 });
+const contactLimiter = createLimiter({ windowMs: 60 * 1000, max: 10 });
+const reviewLimiter = createLimiter({ windowMs: 60 * 1000, max: 10 });
 
-// order / checkout
-const orderLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 3,
-  message: "Bạn thao tác đặt đơn quá nhanh.",
-});
+// Nhóm thao tác người dùng (Nới lỏng tối đa)
+const orderLimiter = createLimiter({ windowMs: 1000, max: 10 });
+const orderItemLimiter = createLimiter({ windowMs: 1000, max: 10 });
+const cartLimiter = createLimiter({ windowMs: 1000, max: 50 });
+const userAddressLimiter = createLimiter({ windowMs: 1000, max: 20 });
+const userPaymentLimiter = createLimiter({ windowMs: 1000, max: 20 });
+const userProfileLimiter = createLimiter({ windowMs: 1000, max: 20 });
+const favoriteLimiter = createLimiter({ windowMs: 1000, max: 20 });
 
-// order items
-const orderItemLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 5,
-  message: "Thao tác món trong đơn quá nhanh.",
-});
+// Nhóm dữ liệu công khai (Sản phẩm, danh mục, blog -> Nới lỏng hoàn toàn)
+const productLimiter = createLimiter({ windowMs: 1000, max: 100 });
+const categoryLimiter = createLimiter({ windowMs: 1000, max: 100 });
+const storeLimiter = createLimiter({ windowMs: 1000, max: 50 });
+const blogLimiter = createLimiter({ windowMs: 1000, max: 50 });
+const blogImageLimiter = createLimiter({ windowMs: 1000, max: 50 });
 
-// inventory
-const inventoryLimiter = createLimiter({
-  windowMs: 30 * 1000,
-  max: 10,
-  message: "Bạn thao tác kho quá nhanh.",
-});
-
-// user admin
-const userLimiter = createLimiter({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
-  message: "Bạn thao tác user quá nhiều.",
-});
-
-// cart
-const cartLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 20,
-  message: "Bạn cập nhật giỏ hàng quá nhanh.",
-});
-
-// blog
-const blogLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 15,
-  message: "Bạn thao tác blog quá nhanh.",
-});
-
-// review
-const reviewLimiter = createLimiter({
-  windowMs: 5 * 60 * 1000,
-  max: 3,
-  message: "Bạn đã gửi quá nhiều đánh giá.",
-});
-
-// favorite
-const favoriteLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 10,
-  message: "Bạn thao tác quá nhanh.",
-});
-
-// contact
-const contactLimiter = createLimiter({
-  windowMs: 5 * 60 * 1000,
-  max: 2,
-  message: "Bạn đã gửi quá nhiều yêu cầu liên hệ.",
-});
-
-// promotion
-const promotionLimiter = createLimiter({
-  windowMs: 30 * 1000,
-  max: 10,
-  message: "Bạn thao tác khuyến mãi quá nhanh.",
-});
-
-// product
-const productLimiter = createLimiter({
-  windowMs: 3 * 1000,
-  max: 50,
-  message: "Quá nhiều request sản phẩm.",
-});
-
-// category
-const categoryLimiter = createLimiter({
-  windowMs: 3 * 1000,
-  max: 50,
-  message: "Quá nhiều request danh mục.",
-});
-
-// store (danh sách cửa hàng, ít thay đổi)
-const storeLimiter = createLimiter({
-  windowMs: 3 * 1000,
-  max: 10,
-  message: "Bạn thao tác cửa hàng quá nhanh.",
-});
-
-// blog-images (ảnh blog)
-const blogImageLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 15,
-  message: "Bạn thao tác ảnh blog quá nhanh.",
-});
-
-// inventory-logs
-const inventoryLogLimiter = createLimiter({
-  windowMs: 3 * 1000,
-  max: 10,
-  message: "Bạn truy vấn lịch sử kho quá nhanh.",
-});
-
-// user-address / user-payment / user-profile (thao tác tài khoản cá nhân)
-const userAddressLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 10,
-  message: "Bạn thao tác địa chỉ quá nhanh.",
-});
-
-const userPaymentLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 10,
-  message: "Bạn thao tác phương thức thanh toán quá nhanh.",
-});
-
-const userProfileLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 10,
-  message: "Bạn thao tác hồ sơ quá nhanh.",
-});
-
-// api-docs (chặn bot crawl/scan swagger)
-const docsLimiter = createLimiter({
-  windowMs: 60 * 1000,
-  max: 60,
-  message: "Quá nhiều request tới tài liệu API.",
-});
+// Nhóm hệ thống / quản trị nội bộ
+const inventoryLimiter = createLimiter({ windowMs: 2000, max: 50 });
+const inventoryLogLimiter = createLimiter({ windowMs: 1000, max: 50 });
+const promotionLimiter = createLimiter({ windowMs: 2000, max: 50 });
+const docsLimiter = createLimiter({ windowMs: 1000, max: 100 });
 
 module.exports = {
   loginLimiter,

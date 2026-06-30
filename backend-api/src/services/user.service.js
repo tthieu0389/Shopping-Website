@@ -15,25 +15,36 @@ exports.createUser = async (data) => {
   return user;
 };
 
-exports.getAllUsers = async ({ limit, offset, search }) => {
+exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
+  // Chuẩn hóa đầu vào ngay từ đầu
+  const searchTerm = typeof search === "string" ? search.trim() : "";
+  const pageSize = Math.min(Number(limit) || 10, 300);
+  const pageOffset = Math.max(Number(offset) || 0, 0);
+
+  // Xây dựng base query
   let base = knex("users").where({ is_deleted: false });
 
-  // Tìm theo tên hoặc email (không phân biệt hoa thường)
-  if (search) {
+  // Chỉ áp dụng filter khi có từ khóa thực sự
+  if (searchTerm.length > 0) {
     base = base.where((qb) => {
-      qb.whereILike("name", `%${search}%`).orWhereILike("email", `%${search}%`);
+      qb.whereILike("name", `%${searchTerm}%`).orWhereILike(
+        "email",
+        `%${searchTerm}%`,
+      );
     });
   }
 
   const [{ count }] = await base.clone().count("* as count");
+  const total = parseInt(count) || 0;
 
+  // Truy vấn dữ liệu
   const data = await base
     .select("id", "name", "email", "role")
     .orderBy("id", "desc")
-    .limit(limit)
-    .offset(offset);
+    .limit(pageSize)
+    .offset(pageOffset);
 
-  return { data, total: Number(count) };
+  return { data, total };
 };
 
 exports.updateUser = async (id, data) => {
