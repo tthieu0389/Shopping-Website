@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { productsApi, categoriesApi } from '../../api/index.js'
+import { productsApi, categoriesApi, productImagesApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Select, Textarea, AdminPagination } from './ui.jsx'
-import { formatPrice, toast, debounce } from '../../utils/index.js'
+import { formatPrice, toast, debounce, resolveImageUrl } from '../../utils/index.js'
 
 const LIMIT = 10
 const emptyForm = { name: '', description: '', price: '', stock: '', category_id: '', brand: 'VNPT', model: '', product_type: 'device', is_available: true }
@@ -16,6 +16,7 @@ export default function AdminProducts() {
   const [modal, setModal] = useState(null) // null | 'add' | product
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [imageModal, setImageModal] = useState(null) // null | product
 
   useEffect(() => { categoriesApi.getAll().then(res => setCategories(res.data || [])) }, [])
 
@@ -95,6 +96,7 @@ export default function AdminProducts() {
               <TD><Badge label={p.is_available ? 'Đang bán' : 'Tạm ẩn'} tone={p.is_available ? 'success' : 'muted'} /></TD>
               <TD>
                 <div className="flex gap-3">
+                  <span className="text-muted font-bold cursor-pointer text-xs" onClick={() => setImageModal(p)}>Ảnh</span>
                   <span className="text-vnpt font-bold cursor-pointer text-xs" onClick={() => openEdit(p)}>Sửa</span>
                   <span className="text-accent font-bold cursor-pointer text-xs" onClick={() => handleDelete(p)}>Xoá</span>
                 </div>
@@ -127,6 +129,102 @@ export default function AdminProducts() {
           </div>
         </Modal>
       )}
+      {imageModal && (
+        <ProductImagesModal product={imageModal} onClose={() => setImageModal(null)} />
+      )}
     </div>
+  )
+}
+
+// ─── Modal quản lý ảnh sản phẩm (thêm / xoá / đặt ảnh đại diện) ──────────────
+function ProductImagesModal({ product, onClose }) {
+  const [images, setImages] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [busyId, setBusyId] = useState(null)
+
+  const load = () => {
+    setLoading(true)
+    productImagesApi.getByProduct(product.id)
+      .then(res => setImages(res.data || []))
+      .catch(err => toast.error(err.message || 'Không thể tải ảnh'))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleUpload = (e) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    setUploading(true)
+    productImagesApi.upload(product.id, files)
+      .then(() => { toast.success('Đã thêm ảnh'); load() })
+      .catch(err => toast.error(err.message || 'Không thể tải ảnh lên'))
+      .finally(() => { setUploading(false); e.target.value = '' })
+  }
+
+  const handleDelete = (img) => {
+    if (!confirm('Xoá ảnh này?')) return
+    setBusyId(img.id)
+    productImagesApi.remove(img.id)
+      .then(() => { toast.success('Đã xoá ảnh'); load() })
+      .catch(err => toast.error(err.message || 'Không thể xoá ảnh'))
+      .finally(() => setBusyId(null))
+  }
+
+  const handleSetThumbnail = (img) => {
+    setBusyId(img.id)
+    productImagesApi.setThumbnail(img.id, product.id)
+      .then(() => { toast.success('Đã đặt ảnh đại diện'); load() })
+      .catch(err => toast.error(err.message || 'Không thể đặt ảnh đại diện'))
+      .finally(() => setBusyId(null))
+  }
+
+  return (
+    <Modal title={`Ảnh sản phẩm — ${product.name}`} onClose={onClose} width="max-w-[640px]">
+      <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-shade rounded-xl py-6 mb-5 cursor-pointer text-sm font-semibold text-muted hover:border-vnpt hover:text-vnpt transition-colors ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+        {uploading ? 'Đang tải lên...' : '📤 Bấm để chọn ảnh (có thể chọn nhiều ảnh, tối đa 4MB/ảnh)'}
+        <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleUpload} disabled={uploading} />
+      </label>
+
+      {loading ? (
+        <div className="text-center text-sm text-muted py-8">Đang tải...</div>
+      ) : images.length === 0 ? (
+        <div className="text-center text-sm text-muted py-8">Sản phẩm chưa có ảnh nào</div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3">
+          {images.map(img => (
+            <div key={img.id} className="relative group rounded-lg border border-shade overflow-hidden aspect-square bg-cream">
+              <img src={resolveImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" />
+              {img.is_thumbnail && (
+                <span className="absolute top-1.5 left-1.5 bg-vnpt text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Đại diện</span>
+              )}
+              <div className="absolute inset-0 bg-vnpt-dark/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                {!img.is_thumbnail && (
+                  <button
+                    disabled={busyId === img.id}
+                    onClick={() => handleSetThumbnail(img)}
+                    className="px-2.5 py-1 rounded-full bg-white text-vnpt text-[11px] font-bold disabled:opacity-50"
+                  >
+                    ⭐ Đặt đại diện
+                  </button>
+                )}
+                <button
+                  disabled={busyId === img.id}
+                  onClick={() => handleDelete(img)}
+                  className="px-2.5 py-1 rounded-full bg-accent text-white text-[11px] font-bold disabled:opacity-50"
+                >
+                  ✕ Xoá
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-end mt-5">
+        <Btn variant="ghost" onClick={onClose}>Đóng</Btn>
+      </div>
+    </Modal>
   )
 }

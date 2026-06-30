@@ -48,6 +48,14 @@ export const debounce = (fn, delay = 400) => {
 export const getInitials = (name = '') =>
   name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 
+// ── RESOLVE ẢNH (path tương đối từ backend → URL đầy đủ) ─────────────────────
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/api\/?$/, '')
+export const resolveImageUrl = (url) => {
+  if (!url) return null
+  if (/^https?:\/\//i.test(url)) return url
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 export const toast = {
   success: (msg) => window.dispatchEvent(new CustomEvent('vnpt:toast', { detail: { msg, type: 'success' } })),

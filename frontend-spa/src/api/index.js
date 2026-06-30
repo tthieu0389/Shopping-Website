@@ -18,6 +18,19 @@ export const productsApi = {
   remove: (id)        => api.delete(`/products/${id}`),
 }
 
+// ── PRODUCT IMAGES (ADMIN) ───────────────────────────────────────────────────
+export const productImagesApi = {
+  getByProduct: (productId) => api.get(`/product-images/product/${productId}`),
+  upload: (productId, files) => {
+    const formData = new FormData()
+    formData.append('product_id', productId)
+    Array.from(files).forEach(file => formData.append('images', file))
+    return api.post('/product-images/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  remove:       (id)             => api.delete(`/product-images/${id}`),
+  setThumbnail: (id, productId)  => api.patch(`/product-images/${id}/thumbnail`, { product_id: productId }),
+}
+
 // ── CATEGORIES ───────────────────────────────────────────────────────────────
 // Backend: res.json({ data: [...] })
 export const categoriesApi = {
