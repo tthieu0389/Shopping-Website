@@ -36,7 +36,7 @@ function AdminSidebar() {
           <div className="w-9 h-9 bg-canvas rounded-[9px] flex items-center justify-center text-lg flex-shrink-0">🔷</div>
           <div>
             <div className="text-white font-extrabold text-base font-display tracking-tight">VNPT Shop</div>
-            <div className="text-white/45 text-[11px] font-medium tracking-wide">ADMIN PANEL</div>
+            <div className="text-white/65 text-[11px] font-medium tracking-wide">ADMIN PANEL</div>
           </div>
         </div>
       </Link>
@@ -45,7 +45,7 @@ function AdminSidebar() {
         {ADMIN_MENU.map((item, idx) => {
           if (item.section) {
             return (
-              <div key={idx} className="px-3 pt-3.5 pb-1.5 text-[10px] font-bold tracking-wider text-white/35 uppercase">
+              <div key={idx} className="px-3 pt-3.5 pb-1.5 text-[10px] font-bold tracking-wider text-white/90 uppercase">
                 {item.section}
               </div>
             )
@@ -57,7 +57,7 @@ function AdminSidebar() {
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-[13px] mb-0.5 transition-all
-                ${isActive ? 'bg-white/[0.13] text-white font-bold' : 'text-white/60 hover:bg-white/[0.07] hover:text-white'}`
+                ${isActive ? 'bg-white/[0.13] text-white font-bold' : 'text-white hover:bg-white/[0.07]'}`
               }
             >
               <span className="text-[15px] w-5 text-center">{item.icon}</span>
@@ -69,9 +69,6 @@ function AdminSidebar() {
 
       {/* Quay về trang chủ + profile */}
       <div className="border-t border-white/10">
-        <Link to="/" className="flex items-center gap-2.5 px-4 py-3 text-white/65 hover:text-white hover:bg-white/5 transition-colors text-[13px] font-semibold border-b border-white/10">
-          <span>🏠</span> Về trang chủ
-        </Link>
         <ProfileBlock />
       </div>
     </aside>
@@ -87,7 +84,7 @@ function ProfileBlock() {
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-white text-[13px] font-bold truncate">{user?.name || 'Quản trị viên'}</div>
-        <div className="text-white/40 text-[11px]">Quản trị viên</div>
+        <div className="text-white/60 text-[11px]">Quản trị viên</div>
       </div>
       <button onClick={logout} title="Đăng xuất" className="text-white/30 hover:text-white text-lg cursor-pointer">⏏</button>
     </div>
