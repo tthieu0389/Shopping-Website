@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Breadcrumb, LoadingSpinner } from '../components/common/index.jsx'
-import { formatPrice, formatDate, toast } from '../utils/index.js'
+import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
 import { ordersApi } from '../api/index.js'
 
 // ── Hằng số ───────────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ function OrderItems({ items = [] }) {
       </div>
       <div className="divide-y divide-shade">
         {items.map((item, i) => {
-          const img = item.image_url || item.thumbnail || null
+          const img = resolveImageUrl(item.image_url || item.thumbnail || null)
           const unitPrice = item.unit_price ?? item.price ?? 0
           const qty       = item.quantity ?? 1
           const subtotal  = unitPrice * qty

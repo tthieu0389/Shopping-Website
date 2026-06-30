@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { useCountdown, useProducts } from '../hooks/index.js'
 import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, FlashSaleCard } from '../components/common/index.jsx'
-import { formatPrice } from '../utils/index.js'
+import { formatPrice, resolveImageUrl } from '../utils/index.js'
 import api from '../api/axiosInstance.js'
 
 const CATEGORIES = [
@@ -65,7 +65,7 @@ function HeroSlider() {
   if (topProducts.length === 0) return null
 
   const p = topProducts[current]
-  const img = p.img || p.thumbnail || p.image_url || null
+  const img = resolveImageUrl(p.img || p.thumbnail || p.image_url || null)
   const salePrice = p.price
   const rawOld = p.oldPrice || p.original_price
   const originalPrice = rawOld && rawOld > salePrice
@@ -95,7 +95,7 @@ function HeroSlider() {
           }}
         >
           {topProducts.map((prod, i) => {
-            const pImg = prod.img || prod.thumbnail || prod.image_url
+            const pImg = resolveImageUrl(prod.img || prod.thumbnail || prod.image_url)
             return (
               <img
                 key={prod.id}

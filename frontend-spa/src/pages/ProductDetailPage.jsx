@@ -128,12 +128,7 @@ export default function ProductDetailPage() {
                       i === activeImg ? 'border-vnpt' : 'border-shade hover:border-vnpt-light'
                     }`}
                   >
-                    <img
-                      src={resolveImageUrl(img.image_url)}
-                      alt=""
-                      className="w-full h-full object-contain p-2"
-                      onError={e => { e.target.src = 'https://placehold.co/200x200?text=No+Image' }}
-                    />
+                    <img src={resolveImageUrl(img.image_url)} alt="" className="w-full h-full object-contain p-2" />
                   </button>
                 ))}
               </div>

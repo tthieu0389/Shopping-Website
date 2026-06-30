@@ -1,5 +1,5 @@
 import { Link, Navigate } from 'react-router-dom'
-import { formatPrice, calcDiscount } from '../../utils/index.js'
+import { formatPrice, calcDiscount, resolveImageUrl } from '../../utils/index.js'
 import useCartStore from '../../store/cartStore.js'
 import useAuthStore from '../../store/authStore.js'
 import { toast } from '../../utils/index.js'
@@ -15,7 +15,7 @@ export function ProductCard({ product, showProgress = false }) {
     : Math.round(salePrice * (1 + (0.15 + (((product.id || 1) * 7) % 26) / 100)))
   const discount = Math.round((1 - salePrice / originalPrice) * 100)
 
-  const img = product.img || product.thumbnail || product.image_url || null
+  const img = resolveImageUrl(product.img || product.thumbnail || product.image_url || null)
 
   // Hết hàng: is_available = false HOẶC stock_quantity = 0
   const stockQty = product.stock_quantity ?? product.stock ?? null
@@ -118,7 +118,7 @@ export function FlashSaleCard({ product }) {
   const remain  = Math.max(0, stock - sold)
   const soldPct = Math.min(100, Math.round(sold / stock * 100))
 
-  const img = product.img || product.thumbnail || product.image_url || null
+  const img = resolveImageUrl(product.img || product.thumbnail || product.image_url || null)
 
   const handleAdd = (e) => {
     e.preventDefault()
