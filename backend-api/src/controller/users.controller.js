@@ -16,7 +16,9 @@ exports.getAllUsers = async (req, res, next) => {
       limit: 10,
       offset: 0,
     };
-    const result = await userService.getAllUsers({ limit, offset });
+    // search: tên hoặc email (từ query ?search=...)
+    const search = req.query.search?.trim() || undefined;
+    const result = await userService.getAllUsers({ limit, offset, search });
     res.json({ data: result.data, total: result.total, page, limit });
   } catch (err) {
     next(err);

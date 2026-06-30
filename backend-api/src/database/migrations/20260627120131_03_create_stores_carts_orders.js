@@ -27,6 +27,10 @@ exports.up = function (knex) {
       t.string("payment_method", 30);
       t.string("status", 30).defaultTo("pending");
       t.text("note");
+      t.integer("created_by_staff_id")
+        .references("id")
+        .inTable("users")
+        .onDelete("SET NULL");
       t.timestamp("created_at").defaultTo(knex.fn.now());
     })
     .createTable("cart_items", (t) => {

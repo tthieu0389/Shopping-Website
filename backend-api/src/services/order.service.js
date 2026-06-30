@@ -4,7 +4,7 @@ const promotionService = require("./promotion.service");
 const inventoryService = require("./inventory.service");
 const generateOrderCode = require("../utils/generateOrderCode");
 
-// Ham tinh toan noi bo: Tinh tien hang, khuyen mai, phi ship va snapshot thong tin giao hang
+// Ham tinh toan noi bo (Da toi uu hoa truy van batch)
 const calculateOrderAmount = async (
   items,
   addressId = null,
@@ -12,6 +12,32 @@ const calculateOrderAmount = async (
   trx = knex,
   userId = null,
 ) => {
+  // 1. Thu thap tat ca ID can thiet de truy van mot lan duy nhat
+  const productIds = [...new Set(items.map((i) => i.product_id))];
+
+  // Fetch tat ca du lieu lien quan trong 1 query
+  const products = await trx("products")
+    .whereIn("id", productIds)
+    .andWhere({ is_deleted: false });
+
+  const inventories = await trx("inventory")
+    .whereIn("product_id", productIds)
+    .forUpdate();
+
+  // Fetch tat ca anh thumbnail trong 1 query
+  const images = await trx("product_images")
+    .whereIn("product_id", productIds)
+    .orderBy("is_thumbnail", "desc");
+
+  // Chuyen thanh Map de tra cuu nhanh trong O(1)
+  const productMap = new Map(products.map((p) => [p.id, p]));
+  const inventoryMap = new Map(inventories.map((i) => [i.product_id, i]));
+  const imageMap = new Map();
+  images.forEach((img) => {
+    if (!imageMap.has(img.product_id))
+      imageMap.set(img.product_id, img.image_url);
+  });
+
   let totalBaseAmount = 0;
   let totalDiscountAmount = 0;
   let totalFinalAmount = 0;
@@ -19,7 +45,7 @@ const calculateOrderAmount = async (
   let shippingDetails = null;
   const processedItems = [];
 
-  // 1. Tinh toan tien hang va ap dung khuyen mai
+  // 2. Tinh toan (Dung du lieu da fetch san, khong goi query them trong vong lap)
   for (const item of items) {
     if (!item.product_id || !item.quantity) {
       const err = new Error("Invalid item data");
@@ -27,22 +53,14 @@ const calculateOrderAmount = async (
       throw err;
     }
 
-    const product = await trx("products")
-      .where({ id: item.product_id, is_deleted: false })
-      .first();
-
+    const product = productMap.get(item.product_id);
     if (!product) {
       const err = new Error(`Product ${item.product_id} not found`);
       err.statusCode = 404;
       throw err;
     }
 
-    // Lock row tồn kho và kiểm tra số lượng trước khi xử lý
-    const inventory = await trx("inventory")
-      .where({ product_id: item.product_id })
-      .forUpdate()
-      .first();
-
+    const inventory = inventoryMap.get(item.product_id);
     if (!inventory) {
       const err = new Error(
         `Không tìm thấy thông tin tồn kho cho sản phẩm "${product.name}"`,
@@ -81,6 +99,8 @@ const calculateOrderAmount = async (
     processedItems.push({
       product_id: product.id,
       product_name: product.name,
+      brand: product.brand,
+      image_url: imageMap.get(item.product_id) || null,
       quantity: item.quantity,
       unit_price: unitPrice,
       base_price: basePrice,
@@ -89,7 +109,7 @@ const calculateOrderAmount = async (
     });
   }
 
-  // 2. Logic tinh phi van chuyen va lay snapshot thong tin
+  // 3. Logic tinh phi van chuyen
   if (addressId) {
     const address = await trx("user_addresses")
       .where({ id: addressId })
@@ -165,7 +185,7 @@ exports.previewOrder = async (data) => {
 };
 
 // Tao don hang moi (Chot don, tru kho va luu lich su)
-exports.createOrder = async (userId, data) => {
+exports.createOrder = async (userId, data, createdByStaffId = null) => {
   return knex.transaction(async (trx) => {
     if (!data.items || data.items.length === 0) {
       const err = new Error("Cart cannot be empty");
@@ -187,7 +207,7 @@ exports.createOrder = async (userId, data) => {
       throw err;
     }
 
-    // calculateOrderAmount đã có forUpdate lock + check tồn kho bên trong
+    // calculateOrderAmount da co forUpdate lock + check ton kho ben trong
     const calcResult = await calculateOrderAmount(
       data.items,
       data.address_id,
@@ -200,6 +220,7 @@ exports.createOrder = async (userId, data) => {
       .insert({
         order_code: generateOrderCode(userId),
         user_id: userId,
+        created_by_staff_id: createdByStaffId,
         address_id: data.address_id || null,
         pickup_store_id: data.pickup_store_id || null,
         receiver_name: calcResult.shipping_details?.receiver_name || null,
@@ -250,8 +271,12 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
       throw err;
     }
 
-    // Chỉ admin hoặc chủ đơn hàng mới được hủy
-    if (userRole !== "admin" && order.user_id !== userId) {
+    // Chi admin hoac chu don hang moi duoc huy (staff chi huy duoc don chinh minh tao)
+    if (
+      userRole !== "admin" &&
+      order.user_id !== userId &&
+      order.created_by_staff_id !== userId
+    ) {
       const err = new Error("Forbidden: bạn không có quyền hủy đơn này");
       err.statusCode = 403;
       throw err;
@@ -280,14 +305,18 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
   });
 };
 
-// Lay danh sach tat ca don hang (Phan trang + Bo loc)
+// Lay danh sach tat ca don hang cho ADMIN (phan trang + bo loc)
 exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
-  let query = knex("orders");
-  let countQuery = knex("orders");
+  let query = knex("orders as o").leftJoin(
+    "users as staff",
+    "o.created_by_staff_id",
+    "staff.id",
+  );
+  let countQuery = knex("orders as o");
 
   if (filters.status) {
-    query.where("status", filters.status);
-    countQuery.where("status", filters.status);
+    query.where("o.status", filters.status);
+    countQuery.where("o.status", filters.status);
   }
 
   if (filters.date) {
@@ -295,37 +324,76 @@ exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
     const end = new Date(filters.date);
     end.setDate(end.getDate() + 1);
 
-    query.whereBetween("created_at", [start, end]);
-    countQuery.whereBetween("created_at", [start, end]);
+    query.whereBetween("o.created_at", [start, end]);
+    countQuery.whereBetween("o.created_at", [start, end]);
   }
 
   const totalRow = await countQuery.count("* as count").first();
   const data = await query
-    .orderBy("created_at", "desc")
+    .select("o.*", "staff.name as created_by_staff_name")
+    .orderBy("o.created_at", "desc")
     .limit(limit)
     .offset(offset);
 
   return { data, total: Number(totalRow.count) };
 };
 
-// Lay danh sach don hang theo User ID
+// Lay danh sach don hang theo User ID (user thuong)
 exports.getOrdersByUser = async ({
   userId,
   limit = 10,
   offset = 0,
   filters = {},
 }) => {
-  let query = knex("orders").where("user_id", userId);
-  let countQuery = knex("orders").where("user_id", userId);
+  let query = knex("orders as o")
+    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .where("o.user_id", userId);
+  let countQuery = knex("orders as o").where("o.user_id", userId);
 
   if (filters.status) {
-    query.where("status", filters.status);
-    countQuery.where("status", filters.status);
+    query.where("o.status", filters.status);
+    countQuery.where("o.status", filters.status);
   }
 
   const totalRow = await countQuery.count("* as count").first();
   const data = await query
-    .orderBy("created_at", "desc")
+    .select("o.*", "staff.name as created_by_staff_name")
+    .orderBy("o.created_at", "desc")
+    .limit(limit)
+    .offset(offset);
+
+  return { data, total: Number(totalRow.count) };
+};
+
+// Staff chi xem duoc don minh tao hoac don cua user ma minh tao ho
+exports.getOrdersByStaff = async ({
+  staffId,
+  limit = 10,
+  offset = 0,
+  filters = {},
+}) => {
+  let query = knex("orders as o")
+    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .where("o.created_by_staff_id", staffId);
+  let countQuery = knex("orders as o").where("o.created_by_staff_id", staffId);
+
+  if (filters.status) {
+    query.where("o.status", filters.status);
+    countQuery.where("o.status", filters.status);
+  }
+
+  if (filters.date) {
+    const start = new Date(filters.date);
+    const end = new Date(filters.date);
+    end.setDate(end.getDate() + 1);
+    query.whereBetween("o.created_at", [start, end]);
+    countQuery.whereBetween("o.created_at", [start, end]);
+  }
+
+  const totalRow = await countQuery.count("* as count").first();
+  const data = await query
+    .select("o.*", "staff.name as created_by_staff_name")
+    .orderBy("o.created_at", "desc")
     .limit(limit)
     .offset(offset);
 
@@ -333,7 +401,11 @@ exports.getOrdersByUser = async ({
 };
 
 exports.getOrderById = async (id) => {
-  const order = await knex("orders").where({ id }).first();
+  const order = await knex("orders as o")
+    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .select("o.*", "staff.name as created_by_staff_name")
+    .where("o.id", id)
+    .first();
   if (!order) return null;
   order.items = await knex("order_items").where({ order_id: id });
   return order;

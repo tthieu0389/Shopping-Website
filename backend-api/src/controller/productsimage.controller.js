@@ -13,7 +13,7 @@ exports.uploadImages = async (req, res, next) => {
 
     const images = req.files.map((file) => ({
       product_id: Number(product_id),
-      image_url: `/public/uploads/${file.filename}`,
+      image_url: `/public/uploads/products/${file.filename}`,
       is_thumbnail: false,
     }));
 

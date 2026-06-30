@@ -2,25 +2,9 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// 1. Đảm bảo folder tồn tại
-const uploadDir = path.join(process.cwd(), "public/uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const baseUploadDir = path.join(process.cwd(), "public/uploads");
 
-// 2. Storage engine
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, safeName);
-  },
-});
-
-// 3. File filter
+// File filter (dùng chung cho mọi subfolder)
 const fileFilter = (req, file, cb) => {
   const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -33,16 +17,7 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-// 4. Tạo instance gốc của Multer (Để private nội bộ trong file này)
-const multerInstance = multer({
-  storage,
-  limits: {
-    fileSize: 4 * 1024 * 1024, // Giới hạn 4MB/file của bạn
-  },
-  fileFilter,
-});
-
-// 5. Hàm helper dùng để bọc và bắt lỗi tự động cho các method của Multer
+// Hàm helper dùng để bọc và bắt lỗi tự động cho các method của Multer
 const wrapMulterMethod = (multerMethod) => {
   return (req, res, next) => {
     multerMethod(req, res, (err) => {
@@ -72,12 +47,44 @@ const wrapMulterMethod = (multerMethod) => {
   };
 };
 
-// 6. Export ra một object giả lập cấu trúc của Multer nhưng đã được bọc bắt lỗi
-module.exports = {
-  single: (fieldName) => wrapMulterMethod(multerInstance.single(fieldName)),
-  array: (fieldName, maxCount) =>
-    wrapMulterMethod(multerInstance.array(fieldName, maxCount)),
-  fields: (fieldsArray) => wrapMulterMethod(multerInstance.fields(fieldsArray)),
-  none: () => wrapMulterMethod(multerInstance.none()),
-  any: () => wrapMulterMethod(multerInstance.any()),
+const createUploader = (subfolder = "") => {
+  const uploadDir = path.join(baseUploadDir, subfolder);
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      cb(null, safeName);
+    },
+  });
+
+  const multerInstance = multer({
+    storage,
+    limits: {
+      fileSize: 4 * 1024 * 1024, // Giới hạn 4MB/file
+    },
+    fileFilter,
+  });
+
+  return {
+    single: (fieldName) => wrapMulterMethod(multerInstance.single(fieldName)),
+    array: (fieldName, maxCount) =>
+      wrapMulterMethod(multerInstance.array(fieldName, maxCount)),
+    fields: (fieldsArray) =>
+      wrapMulterMethod(multerInstance.fields(fieldsArray)),
+    none: () => wrapMulterMethod(multerInstance.none()),
+    any: () => wrapMulterMethod(multerInstance.any()),
+  };
 };
+
+// Mặc định: lưu thẳng vào public/uploads (giữ tương thích các route đang gọi
+// upload.single(...) / upload.array(...) trực tiếp không qua subfolder).
+const defaultUploader = createUploader();
+
+module.exports = Object.assign(createUploader, defaultUploader);

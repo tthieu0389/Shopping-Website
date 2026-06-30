@@ -3,9 +3,16 @@ const router = express.Router();
 
 const favoriteController = require("../controller/favorite.controller");
 const verifyToken = require("../middlewares/verifyToken");
+const validate = require("../middlewares/validate");
+const { addFavoriteSchema } = require("../schema/favorite.schema");
 
 // ADD FAVORITE
-router.post("/", verifyToken(), favoriteController.add);
+router.post(
+  "/",
+  verifyToken(),
+  validate(addFavoriteSchema),
+  favoriteController.add,
+);
 
 // GET MY FAVORITES
 router.get("/", verifyToken(), favoriteController.get);

@@ -18,6 +18,8 @@ CREATE TABLE user_profiles (
     date_of_birth DATE,
     gender VARCHAR(20),
     phone VARCHAR(20),
+    avatar VARCHAR(255),
+    bio TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -67,7 +69,6 @@ CREATE TABLE products (
     slug VARCHAR(200) UNIQUE NOT NULL,
     description TEXT,
     price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
-    stock INT DEFAULT 0,
     product_type VARCHAR(20),
     category_id INT REFERENCES categories(id) ON DELETE SET NULL,
     brand VARCHAR(100) DEFAULT 'VNPT',
@@ -151,6 +152,7 @@ CREATE TABLE orders (
     status VARCHAR(30) DEFAULT 'pending'
         CHECK (status IN ('pending', 'confirmed', 'shipping', 'completed', 'cancelled')),
     note TEXT,
+    created_by_staff_id INT REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- Đảm bảo mỗi đơn chỉ chọn 1 trong 2 hình thức nhận hàng
     CONSTRAINT chk_delivery_method CHECK (
@@ -238,6 +240,11 @@ CREATE TABLE contacts (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     message TEXT NOT NULL,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    reply TEXT,
+    replied_by INT REFERENCES users(id) ON DELETE SET NULL,
+    replied_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

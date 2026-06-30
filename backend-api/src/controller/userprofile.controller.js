@@ -1,5 +1,31 @@
 const userProfileService = require("../services/userprofile.service");
 
+// Upload avatar (multipart/form-data, field "avatar") -> lưu URL vào user_profiles.avatar
+exports.uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No image uploaded" });
+    }
+
+    const userId = req.params.userId || req.user.id;
+    const url = `/public/uploads/avatars/${req.file.filename}`;
+
+    const profile = await userProfileService.createOrUpdateProfile(userId, {
+      avatar: url,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Avatar uploaded",
+      data: profile,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Create or update user profile
 exports.createOrUpdateProfile = async (req, res, next) => {
   try {

@@ -53,9 +53,24 @@ exports.getProductReviews = async (productId) => {
     .orderBy("r.created_at", "desc");
 };
 
-// DELETE (soft)
-exports.deleteReview = async (id, userId) => {
-  return knex("reviews")
-    .where({ id, user_id: userId })
-    .update({ is_deleted: true });
+// DELETE (soft) - chu so huu hoac admin (kiem duyet) deu xoa duoc
+exports.deleteReview = async (id, userId, userRole) => {
+  const review = await knex("reviews").where({ id }).first();
+
+  if (!review) {
+    const err = new Error("Review not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const isOwner = review.user_id === userId;
+  const isAdmin = userRole === "admin";
+
+  if (!isOwner && !isAdmin) {
+    const err = new Error("Forbidden: bạn không có quyền xóa đánh giá này");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  return knex("reviews").where({ id }).update({ is_deleted: true });
 };

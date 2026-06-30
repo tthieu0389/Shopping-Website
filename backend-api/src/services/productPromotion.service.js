@@ -14,6 +14,7 @@ exports.getAll = async () => {
     .join("promotions", "product_promotions.promotion_id", "promotions.id")
     .select(
       "product_promotions.id",
+      "product_promotions.product_id",
       "products.name as product_name",
       "promotions.name as promotion_name",
       "promotions.discount_type",

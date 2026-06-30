@@ -7,16 +7,29 @@ exports.createBlog = async (data) => {
   return blog;
 };
 
-// GET ALL
-exports.getBlogs = async () => {
-  return knex("blogs")
+// GET ALL (có phân trang)
+exports.getBlogs = async ({ limit = 10, offset = 0 } = {}) => {
+  const [{ count }] = await knex("blogs")
     .where({ is_deleted: false })
-    .orderBy("created_at", "desc");
+    .count("id as count");
+
+  const data = await knex("blogs")
+    .where({ is_deleted: false })
+    .orderBy("created_at", "desc")
+    .limit(limit)
+    .offset(offset);
+
+  return { data, total: Number(count) };
 };
 
 // GET BY SLUG
 exports.getBySlug = async (slug) => {
   return knex("blogs").where({ slug, is_deleted: false }).first();
+};
+
+// GET BY ID
+exports.getBlogById = async (id) => {
+  return knex("blogs").where({ id, is_deleted: false }).first();
 };
 
 // UPDATE

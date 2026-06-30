@@ -36,7 +36,7 @@ exports.createUserSchema = z.object({
   password: z
     .string({ required_error: "Mật khẩu không được để trống" })
     .min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-  role: z.enum(["admin", "user"], {
+  role: z.enum(["admin", "staff", "user"], {
     required_error: "Vai trò không hợp lệ",
     invalid_type_error: "Vai trò không hợp lệ",
   }),
@@ -46,5 +46,5 @@ exports.updateUserSchema = z.object({
   name: z.string().trim().min(1, "Tên không hợp lệ").optional(),
   email: z.string().trim().email("Email không hợp lệ").optional(),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự").optional(),
-  role: z.enum(["admin", "user"]).optional(),
+  role: z.enum(["admin", "staff", "user"]).optional(),
 });

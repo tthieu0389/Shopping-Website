@@ -5,3 +5,7 @@ exports.createContactSchema = z.object({
   email: z.string().email(),
   message: z.string().min(1),
 });
+
+exports.replyContactSchema = z.object({
+  reply: z.string().min(1, "Nội dung phản hồi không được để trống"),
+});

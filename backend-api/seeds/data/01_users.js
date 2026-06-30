@@ -7,7 +7,13 @@ async function createUser() {
     name: faker.person.fullName(),
     email: faker.internet.email(),
     password: hashedPassword,
-    role: faker.helpers.arrayElement(["user", "admin"]),
+    role: faker.helpers.arrayElement([
+      "user",
+      "user",
+      "user",
+      "admin",
+      "staff",
+    ]),
     is_deleted: false,
   };
 }

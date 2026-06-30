@@ -13,7 +13,6 @@ exports.up = function (knex) {
       t.string("slug", 200).unique().notNullable();
       t.text("description");
       t.decimal("price", 12, 2).notNullable().defaultTo(0.0);
-      t.integer("stock").defaultTo(0);
       t.string("product_type", 20);
       t.integer("category_id")
         .references("id")

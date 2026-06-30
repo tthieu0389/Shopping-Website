@@ -35,11 +35,11 @@ router.get("/", verifyToken(), pagination(), orderController.getAllOrders);
 // GET ORDER BY ID
 router.get("/:id", verifyToken(), orderController.getOrderById);
 
-// UPDATE ORDER
+// UPDATE ORDER (admin + staff đều được cập nhật — staff chỉ sửa đơn mình tạo)
 router.put(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(updateOrderSchema),
   orderController.updateOrder,
 );

@@ -15,13 +15,19 @@ exports.createUser = async (data) => {
   return user;
 };
 
-exports.getAllUsers = async ({ limit, offset }) => {
-  const [{ count }] = await knex("users")
-    .where({ is_deleted: false })
-    .count("* as count");
+exports.getAllUsers = async ({ limit, offset, search }) => {
+  let base = knex("users").where({ is_deleted: false });
 
-  const data = await knex("users")
-    .where({ is_deleted: false })
+  // Tìm theo tên hoặc email (không phân biệt hoa thường)
+  if (search) {
+    base = base.where((qb) => {
+      qb.whereILike("name", `%${search}%`).orWhereILike("email", `%${search}%`);
+    });
+  }
+
+  const [{ count }] = await base.clone().count("* as count");
+
+  const data = await base
     .select("id", "name", "email", "role")
     .orderBy("id", "desc")
     .limit(limit)

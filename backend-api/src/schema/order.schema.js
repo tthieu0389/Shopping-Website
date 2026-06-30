@@ -3,6 +3,10 @@ const { z } = require("zod");
 // CREATE ORDER
 exports.createOrderSchema = z
   .object({
+    // Chỉ admin/staff được dùng field này để tạo đơn hộ user khác.
+    // User thường gửi field này sẽ bị bỏ qua ở controller.
+    user_id: z.coerce.number().int().positive().optional(),
+
     address_id: z.coerce.number().int().optional(),
     pickup_store_id: z.coerce.number().int().optional(),
 

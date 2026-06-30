@@ -11,7 +11,7 @@ exports.uploadImage = async (req, res, next) => {
 
     const { blog_id, alt_text } = req.body;
 
-    const image_url = `/public/uploads/${req.file.filename}`;
+    const image_url = `/public/uploads/blogs/${req.file.filename}`;
 
     const result = await blogImageService.createBlogImage({
       blog_id: blog_id ? Number(blog_id) : null,

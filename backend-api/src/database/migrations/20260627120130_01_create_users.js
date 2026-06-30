@@ -20,6 +20,8 @@ exports.up = function (knex) {
       t.date("date_of_birth");
       t.string("gender", 20);
       t.string("phone", 20);
+      t.string("avatar", 255);
+      t.text("bio");
       t.timestamp("created_at").defaultTo(knex.fn.now());
     })
     .createTable("user_addresses", (t) => {

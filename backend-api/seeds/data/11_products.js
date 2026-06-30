@@ -19,11 +19,6 @@ exports.seed = async function (knex) {
         max: 5000000,
       }),
 
-      stock: faker.number.int({
-        min: 0,
-        max: 200,
-      }),
-
       product_type: faker.helpers.arrayElement([
         "sim",
         "device",

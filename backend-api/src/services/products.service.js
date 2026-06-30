@@ -21,8 +21,19 @@ exports.createProduct = async (data) => {
 };
 
 exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
-  let query = knex("products").where("is_deleted", false).select("*");
   let countQuery = knex("products").where("is_deleted", false);
+
+  let query = knex("products as p")
+    .select("p.*")
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = p.id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
+    )
+    .where("p.is_deleted", false);
 
   const {
     q,
@@ -122,9 +133,7 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   const currentSort = sortMapping[sort] || sortMapping.newest;
 
   const data = await query
-    .orderByRaw(
-      "CASE WHEN stock = 0 OR is_available = false THEN 1 ELSE 0 END ASC",
-    )
+    .orderByRaw("CASE WHEN is_available = false THEN 1 ELSE 0 END ASC")
     .orderBy(currentSort.column, currentSort.direction)
     .limit(safeLimit)
     .offset(safeOffset);

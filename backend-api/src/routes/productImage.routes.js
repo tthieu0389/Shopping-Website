@@ -13,7 +13,7 @@ router.post(
   "/upload",
   verifyToken(),
   checkRole("admin"),
-  upload.array("images", 10),
+  upload("products").array("images", 10),
   validate(createProductImageSchema),
   productImageController.uploadImages,
 );

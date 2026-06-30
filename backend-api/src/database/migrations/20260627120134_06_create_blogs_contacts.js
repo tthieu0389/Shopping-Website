@@ -25,6 +25,17 @@ exports.up = function (knex) {
       t.string("name", 100);
       t.string("email", 100);
       t.text("message");
+      t.integer("user_id")
+        .references("id")
+        .inTable("users")
+        .onDelete("SET NULL");
+      t.string("status", 20).defaultTo("pending"); // pending | resolved
+      t.text("reply");
+      t.integer("replied_by")
+        .references("id")
+        .inTable("users")
+        .onDelete("SET NULL");
+      t.timestamp("replied_at");
       t.timestamp("created_at").defaultTo(knex.fn.now());
     })
     .raw("CREATE INDEX idx_blog_images_blog_id ON blog_images(blog_id)");

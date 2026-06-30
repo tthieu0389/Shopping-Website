@@ -23,7 +23,7 @@ exports.getByProduct = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    await service.deleteReview(req.params.id, req.user.id);
+    await service.deleteReview(req.params.id, req.user.id, req.user.role);
     res.json({ message: "Deleted" });
   } catch (err) {
     next(err);

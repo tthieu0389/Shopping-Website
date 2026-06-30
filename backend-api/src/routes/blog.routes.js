@@ -6,8 +6,18 @@ const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/checkRole");
 const validate = require("../middlewares/validate");
 const pagination = require("../middlewares/pagination");
+const upload = require("../middlewares/upload");
 
 const { createBlogSchema, updateBlogSchema } = require("../schema/blog.schema");
+
+// UPLOAD THUMBNAIL CHO BLOG (admin)
+router.post(
+  "/upload-thumbnail",
+  verifyToken(),
+  checkRole("admin"),
+  upload("blogs").single("image"),
+  blogController.uploadThumbnail,
+);
 
 // CREATE BLOG (admin)
 router.post(
@@ -23,6 +33,9 @@ router.get("/", pagination(), blogController.getAll);
 
 // GET BLOG BY SLUG
 router.get("/slug/:slug", blogController.getBySlug);
+
+// GET BLOG BY ID (đặt sau /slug/:slug để tránh conflict)
+router.get("/:id", blogController.getById);
 
 // UPDATE BLOG (admin)
 router.put(

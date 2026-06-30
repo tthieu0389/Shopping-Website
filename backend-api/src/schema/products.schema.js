@@ -23,7 +23,6 @@ exports.createProductSchema = z.object({
   slug: z.string().min(1).optional(), // sẽ auto-generate nếu thiếu
   description: z.string().optional(),
   price: z.coerce.number().positive("Giá phải lớn hơn 0"),
-  stock: z.coerce.number().int().min(0).optional().default(0),
   product_type: z.string().min(1).max(50).optional().default("device"),
   category_id: z.coerce.number().int().optional(),
   brand: z.string().max(100).optional().default("VNPT"),
@@ -40,7 +39,6 @@ exports.updateProductSchema = z.object({
   slug: z.string().min(1).optional(),
   description: z.string().optional(),
   price: z.coerce.number().positive().optional(),
-  stock: z.coerce.number().int().min(0).optional(),
   product_type: z.string().min(1).max(50).optional(),
   category_id: z.coerce.number().int().optional(),
   brand: z.string().max(100).optional(),

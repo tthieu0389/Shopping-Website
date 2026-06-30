@@ -21,7 +21,12 @@ exports.getByOrderId = async (req, res, next) => {
       });
     }
 
-    if (req.user.role !== "admin" && order.user_id !== req.user.id) {
+    const isAdmin = req.user.role === "admin";
+    const isOwner = order.user_id === req.user.id;
+    const isCreatorStaff =
+      req.user.role === "staff" && order.created_by_staff_id === req.user.id;
+
+    if (!isAdmin && !isOwner && !isCreatorStaff) {
       return res.status(403).json({
         message: "Forbidden",
       });

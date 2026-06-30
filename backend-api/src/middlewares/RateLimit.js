@@ -97,20 +97,6 @@ const productLimiter = createLimiter({
   message: "Quá nhiều request sản phẩm.",
 });
 
-// menu
-const menuLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 40,
-  message: "Bạn thao tác thực đơn quá nhanh.",
-});
-
-// default
-const defaultLimiter = createLimiter({
-  windowMs: 5 * 1000,
-  max: 30,
-  message: "Quá nhiều request. Vui lòng thử lại sau.",
-});
-
 // category
 const categoryLimiter = createLimiter({
   windowMs: 3 * 1000,
@@ -178,8 +164,6 @@ module.exports = {
   contactLimiter,
   promotionLimiter,
   productLimiter,
-  menuLimiter,
-  defaultLimiter,
   categoryLimiter,
   storeLimiter,
   blogImageLimiter,

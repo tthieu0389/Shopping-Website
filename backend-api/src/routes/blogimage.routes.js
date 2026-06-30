@@ -16,7 +16,7 @@ router.post(
   "/upload",
   verifyToken(),
   checkRole("admin"),
-  upload.single("image"),
+  upload("blogs").single("image"),
   validate(uploadBlogImageSchema),
   blogImageController.uploadImage,
 );

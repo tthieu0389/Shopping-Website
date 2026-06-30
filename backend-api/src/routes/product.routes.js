@@ -17,7 +17,6 @@ const productFieldLabels = {
   slug: "Slug",
   description: "Mô tả",
   price: "Giá bán",
-  stock: "Tồn kho",
   product_type: "Loại sản phẩm",
   category_id: "Danh mục",
   brand: "Thương hiệu",

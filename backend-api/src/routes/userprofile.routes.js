@@ -4,6 +4,7 @@ const router = express.Router();
 const userProfileController = require("../controller/userprofile.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const validate = require("../middlewares/validate");
+const upload = require("../middlewares/upload");
 
 const { userProfileSchema } = require("../schema/userprofile.schema");
 
@@ -20,6 +21,14 @@ const profileFieldLabels = {
 // Get current user profile (matches frontend)
 router.get("/", verifyToken(), userProfileController.getProfileByUserId);
 
+// Upload avatar cho user đang đăng nhập (multipart/form-data, field "avatar")
+router.post(
+  "/avatar",
+  verifyToken(),
+  upload("avatars").single("avatar"),
+  userProfileController.uploadAvatar,
+);
+
 // Update current user profile (matches frontend)
 router.put(
   "/",
@@ -34,6 +43,14 @@ router.post(
   verifyToken(),
   validate(userProfileSchema, { fieldLabels: profileFieldLabels }),
   userProfileController.createOrUpdateProfile,
+);
+
+// Upload avatar cho userId chỉ định (admin/internal)
+router.post(
+  "/:userId/avatar",
+  verifyToken(),
+  upload("avatars").single("avatar"),
+  userProfileController.uploadAvatar,
 );
 
 // Get profile by userId (admin/internal)

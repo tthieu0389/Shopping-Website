@@ -498,6 +498,15 @@
           "payment_method": {
             "type": "string"
           },
+          "created_by_staff_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "created_by_staff_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tên staff tạo đơn (populated từ JOIN)"
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -759,10 +768,33 @@
           "message": {
             "type": "string"
           },
-          "created_at": {
+          "user_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "status": {
             "type": "string",
-            "format": "date-time"
-          }
+            "example": "pending"
+          },
+          "reply": {
+            "type": "string",
+            "nullable": true
+          },
+          "replied_by": {
+            "type": "integer",
+            "nullable": true
+          },
+          "replied_by_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tên staff/admin đã phản hồi (được lấy từ bảng users)"
+          },
+          "replied_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
       "Store": {
@@ -950,6 +982,13 @@
           "type": "integer",
           "default": 10
         }
+      },
+      "SearchParam": {
+        "name": "search",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "string" },
+        "description": "Tìm kiếm theo tên hoặc email người dùng"
       }
     },
     "responses": {
@@ -1161,6 +1200,9 @@
           },
           {
             "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/SearchParam"
           }
         ],
         "responses": {
@@ -4024,6 +4066,10 @@
                     "type": "integer",
                     "description": "Bắt buộc nếu không có pickup_store_id"
                   },
+                  "user_id": {
+                    "type": "integer",
+                    "description": "Chỉ dành cho admin/staff — ID của user được tạo đơn hộ"
+                  },
                   "pickup_store_id": {
                     "type": "integer",
                     "description": "Bắt buộc nếu không có address_id"
@@ -6024,6 +6070,45 @@
           }
         },
         "operationId": "deleteBlog"
+      },
+      "get": {
+        "tags": ["Blogs"],
+        "summary": "Lấy bài viết blog theo ID (Public)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết bài viết",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Blog"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "getBlogById"
       }
     },
     "/api/blog-images/upload": {
@@ -6464,6 +6549,44 @@
       }
     },
     "/api/contacts/{id}": {
+      "get": {
+        "tags": ["Contacts"],
+        "summary": "Xem chi tiết một liên hệ (Admin/Staff)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin chi tiết liên hệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/Contact" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        },
+        "operationId": "getContactById"
+      },
       "delete": {
         "tags": ["Contacts"],
         "summary": "Xóa liên hệ (Admin)",
@@ -6488,18 +6611,10 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          }
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
         },
         "operationId": "deleteContact"
       }
@@ -6726,6 +6841,329 @@
           }
         },
         "operationId": "deleteStore"
+      }
+    },
+    "/api/blogs/upload-thumbnail": {
+      "post": {
+        "tags": ["Blogs"],
+        "summary": "Upload ảnh thumbnail cho blog (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image"],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Ảnh JPG/PNG/WEBP, tối đa 4MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Đã upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "uploadBlogThumbnail"
+      }
+    },
+    "/api/contacts/mine": {
+      "get": {
+        "tags": ["Contacts"],
+        "summary": "Xem các liên hệ của chính mình (User đã đăng nhập)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách liên hệ của tôi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Contact"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "getMyContacts"
+      }
+    },
+    "/api/contacts/{id}/reply": {
+      "patch": {
+        "tags": ["Contacts"],
+        "summary": "Phản hồi liên hệ (Admin/Staff)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reply"],
+                "properties": {
+                  "reply": {
+                    "type": "string",
+                    "description": "Nội dung phản hồi"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đã phản hồi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Contact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "replyContact"
+      }
+    },
+    "/api/user-profile/avatar": {
+      "post": {
+        "tags": ["UserProfile"],
+        "summary": "Upload avatar cho hồ sơ của chính mình",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["avatar"],
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Ảnh JPG/PNG/WEBP, tối đa 4MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đã cập nhật avatar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/UserProfile"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "uploadMyAvatar"
+      }
+    },
+    "/api/user-profile/{userId}/avatar": {
+      "post": {
+        "tags": ["UserProfile"],
+        "summary": "Upload avatar cho userId chỉ định (Admin/Internal)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["avatar"],
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Ảnh JPG/PNG/WEBP, tối đa 4MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đã cập nhật avatar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/UserProfile"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "uploadUserAvatar"
       }
     }
   }
