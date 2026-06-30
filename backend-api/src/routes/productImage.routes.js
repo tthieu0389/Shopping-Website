@@ -6,7 +6,7 @@ const productImageController = require("../controller/productsimage.controller")
 const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/checkRole");
 const validate = require("../middlewares/validate");
-const { uploadProductImagesSchema } = require("../schema/productsimage.schema");
+const { createProductImageSchema } = require("../schema/productsimage.schema");
 
 // UPLOAD IMAGES
 router.post(
@@ -14,7 +14,7 @@ router.post(
   verifyToken(),
   checkRole("admin"),
   upload.array("images", 10),
-  validate(uploadProductImagesSchema),
+  validate(createProductImageSchema),
   productImageController.uploadImages,
 );
 
