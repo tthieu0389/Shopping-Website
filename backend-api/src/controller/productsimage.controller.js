@@ -13,8 +13,8 @@ exports.uploadImages = async (req, res, next) => {
 
     const images = req.files.map((file) => ({
       product_id: Number(product_id),
-      image_url: `/uploads/${file.filename}`,
-      is_thumbnail: false, // default
+      image_url: `/public/uploads/${file.filename}`,
+      is_thumbnail: false,
     }));
 
     const result = await productImageService.createManyProductImages(images);
