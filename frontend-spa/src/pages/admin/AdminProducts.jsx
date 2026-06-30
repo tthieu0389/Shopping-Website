@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
-import { productsApi, categoriesApi, productImagesApi } from '../../api/index.js'
+import { productsApi, categoriesApi, productImagesApi, inventoryApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Select, Textarea, AdminPagination } from './ui.jsx'
 import { formatPrice, toast, debounce, resolveImageUrl } from '../../utils/index.js'
 
 const LIMIT = 10
-const emptyForm = { name: '', description: '', price: '', stock: '', category_id: '', brand: 'VNPT', model: '', product_type: 'device', is_available: true }
+const emptyForm = { name: '', description: '', price: '', stock: '', category_id: '', brand: 'VNPT', model: '', product_type: 'device', is_available: true, min_quantity: '5' }
+
+function SectionLabel({ children }) {
+  return <div className="text-[11px] font-bold text-muted uppercase tracking-wide mb-2.5">{children}</div>
+}
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
@@ -50,11 +54,34 @@ export default function AdminProducts() {
       category_id: form.category_id || undefined, brand: form.brand, model: form.model,
       product_type: form.product_type, is_available: form.is_available,
     }
-    const action = modal === 'add' ? productsApi.create(payload) : productsApi.update(modal.id, payload)
-    action
-      .then(() => { toast.success(modal === 'add' ? 'Đã thêm sản phẩm' : 'Đã cập nhật sản phẩm'); setModal(null); load() })
-      .catch(err => toast.error(err.message || 'Không thể lưu sản phẩm'))
-      .finally(() => setSaving(false))
+
+    if (modal === 'add') {
+      // Tạo sản phẩm mới, đồng thời tạo luôn dòng tồn kho tương ứng để sản phẩm
+      // xuất hiện ngay trong trang Inventory (BE chưa tự tạo dòng inventory khi
+      // tạo sản phẩm — xem ghi chú cuối file).
+      productsApi.create(payload)
+        .then(res => {
+          const newProductId = res.data?.id
+          if (!newProductId) return
+          return inventoryApi.create({
+            product_id: newProductId,
+            quantity: form.stock || 0,
+            min_quantity: form.min_quantity || 5,
+          }).catch(err => {
+            // Không chặn việc tạo sản phẩm nếu tạo dòng tồn kho thất bại,
+            // chỉ cảnh báo để admin biết cần vào Inventory bổ sung thủ công.
+            toast.error('Đã tạo sản phẩm nhưng không thể tạo dòng tồn kho: ' + (err.message || 'Lỗi không xác định'))
+          })
+        })
+        .then(() => { toast.success('Đã thêm sản phẩm'); setModal(null); load() })
+        .catch(err => toast.error(err.message || 'Không thể lưu sản phẩm'))
+        .finally(() => setSaving(false))
+    } else {
+      productsApi.update(modal.id, payload)
+        .then(() => { toast.success('Đã cập nhật sản phẩm'); setModal(null); load() })
+        .catch(err => toast.error(err.message || 'Không thể lưu sản phẩm'))
+        .finally(() => setSaving(false))
+    }
   }
 
   const handleDelete = (p) => {
@@ -109,21 +136,44 @@ export default function AdminProducts() {
       <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
 
       {modal && (
-        <Modal title={modal === 'add' ? 'Thêm sản phẩm mới' : `Sửa: ${modal.name}`} onClose={() => setModal(null)} width="max-w-[560px]">
-          <Input label="Tên sản phẩm" required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="VD: iPhone 16 Pro Max 256GB" />
-          <Textarea label="Mô tả" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Mô tả sản phẩm..." />
-          <div className="grid grid-cols-2 gap-3">
-            <Select label="Danh mục" value={form.category_id} onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))} options={catOptions} />
-            <Select label="Loại sản phẩm" value={form.product_type} onChange={e => setForm(p => ({ ...p, product_type: e.target.value }))}
-              options={[['device', 'Điện thoại/Thiết bị'], ['sim', 'Sim số'], ['internet', 'Gói cước'], ['accessory', 'Phụ kiện']]} />
-            <Input label="Thương hiệu" value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))} placeholder="Apple, Samsung, VNPT..." />
-            <Input label="Mã thiết bị (model)" value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} />
-            <Input label="Giá bán (VNĐ)" required type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="33990000" />
-            <Input label="Tồn kho ban đầu" type="number" value={form.stock} onChange={e => setForm(p => ({ ...p, stock: e.target.value }))} placeholder="10" />
+        <Modal title={modal === 'add' ? 'Thêm sản phẩm mới' : `Sửa: ${modal.name}`} onClose={() => setModal(null)} width="max-w-[620px]">
+          <div className="flex flex-col gap-5">
+            <section>
+              <SectionLabel>Thông tin cơ bản</SectionLabel>
+              <Input label="Tên sản phẩm" required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="VD: iPhone 16 Pro Max 256GB" />
+              <Textarea label="Mô tả" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Mô tả sản phẩm..." />
+            </section>
+
+            <section>
+              <SectionLabel>Phân loại</SectionLabel>
+              <div className="grid grid-cols-2 gap-x-3">
+                <Select label="Danh mục" value={form.category_id} onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))} options={catOptions} />
+                <Select label="Loại sản phẩm" value={form.product_type} onChange={e => setForm(p => ({ ...p, product_type: e.target.value }))}
+                  options={[['device', 'Điện thoại/Thiết bị'], ['sim', 'Sim số'], ['internet', 'Gói cước'], ['accessory', 'Phụ kiện']]} />
+                <Input label="Thương hiệu" value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))} placeholder="Apple, Samsung, VNPT..." />
+                <Input label="Mã thiết bị (model)" value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} placeholder="Không bắt buộc" />
+              </div>
+            </section>
+
+            <section>
+              <SectionLabel>Giá &amp; Tồn kho</SectionLabel>
+              <div className={`grid gap-x-3 ${modal === 'add' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <Input label="Giá bán (VNĐ)" required type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="33990000" />
+                <Input label="Tồn kho ban đầu" type="number" value={form.stock} onChange={e => setForm(p => ({ ...p, stock: e.target.value }))} placeholder="10" />
+                {modal === 'add' && (
+                  <Input label="Ngưỡng cảnh báo" type="number" min="0" value={form.min_quantity} onChange={e => setForm(p => ({ ...p, min_quantity: e.target.value }))} placeholder="5" />
+                )}
+              </div>
+            </section>
+
+            <section>
+              <SectionLabel>Hiển thị</SectionLabel>
+              <Select label="Trạng thái hiển thị" value={form.is_available ? 'true' : 'false'} onChange={e => setForm(p => ({ ...p, is_available: e.target.value === 'true' }))}
+                options={[['true', 'Đang bán'], ['false', 'Tạm ẩn']]} />
+            </section>
           </div>
-          <Select label="Trạng thái hiển thị" value={form.is_available ? 'true' : 'false'} onChange={e => setForm(p => ({ ...p, is_available: e.target.value === 'true' }))}
-            options={[['true', 'Đang bán'], ['false', 'Tạm ẩn']]} />
-          <div className="flex justify-end gap-2.5 mt-2">
+
+          <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-shade">
             <Btn variant="ghost" onClick={() => setModal(null)}>Huỷ</Btn>
             <Btn onClick={handleSave} disabled={saving || !form.name || !form.price}>{saving ? 'Đang lưu...' : 'Lưu sản phẩm'}</Btn>
           </div>
