@@ -1,11 +1,27 @@
+// Map mã lỗi Postgres phổ biến sang HTTP status + message,
+// tránh việc lỗi DB rơi thẳng thành 500 kèm câu SQL gốc lộ ra ngoài
+const PG_ERROR_MAP = {
+  23505: { status: 409, message: "Dữ liệu đã tồn tại (trùng khóa duy nhất)." },
+  23503: {
+    status: 409,
+    message: "Dữ liệu đang được tham chiếu hoặc không hợp lệ (khóa ngoại).",
+  },
+  23502: { status: 400, message: "Thiếu dữ liệu bắt buộc." },
+  "22P02": { status: 400, message: "Dữ liệu gửi lên không đúng định dạng." },
+};
+
 module.exports = (err, req, res, next) => {
-  const status = err.statusCode || 500;
-  const message = err.message || "Internal server error";
+  const pgError = err.code && PG_ERROR_MAP[err.code];
+
+  const status = err.statusCode || (pgError ? pgError.status : 500);
+  const message = pgError
+    ? pgError.message
+    : err.message || "Internal server error";
 
   // Log chi tiết kèm Path và Method
   if (status >= 500) {
     console.error({
-      error: message,
+      error: err.message || message,
       path: req.originalUrl,
       method: req.method,
       stack: err.stack, // Hiện file nào, dòng mấy bị lỗi ngầm
