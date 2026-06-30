@@ -5,7 +5,19 @@ exports.up = function (knex) {
       t.string("title", 200);
       t.string("slug", 200);
       t.text("content");
+      t.text("thumbnail_url");
       t.boolean("is_deleted").defaultTo(false);
+      t.timestamp("created_at").defaultTo(knex.fn.now());
+    })
+    .createTable("blog_images", (t) => {
+      t.increments("id").primary();
+      t.integer("blog_id")
+        .references("id")
+        .inTable("blogs")
+        .onDelete("CASCADE");
+      t.text("image_url").notNullable();
+      t.string("alt_text", 200);
+      t.integer("sort_order").defaultTo(0);
       t.timestamp("created_at").defaultTo(knex.fn.now());
     })
     .createTable("contacts", (t) => {
@@ -14,9 +26,13 @@ exports.up = function (knex) {
       t.string("email", 100);
       t.text("message");
       t.timestamp("created_at").defaultTo(knex.fn.now());
-    });
+    })
+    .raw("CREATE INDEX idx_blog_images_blog_id ON blog_images(blog_id)");
 };
 
 exports.down = function (knex) {
-  return knex.schema.dropTableIfExists("contacts").dropTableIfExists("blogs");
+  return knex.schema
+    .dropTableIfExists("contacts")
+    .dropTableIfExists("blog_images")
+    .dropTableIfExists("blogs");
 };

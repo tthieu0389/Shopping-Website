@@ -6,19 +6,20 @@ const stores = require("./data/05_stores");
 const categories = require("./data/06_categories");
 const promotions = require("./data/07_promotions");
 const blogs = require("./data/08_blogs");
-const contacts = require("./data/09_contacts");
-const products = require("./data/10_products");
-const productDetails = require("./data/11_product_details");
-const productImages = require("./data/12_product_images");
-const productPromotions = require("./data/13_product_promotions");
-const inventory = require("./data/14_inventory");
-const inventoryLogs = require("./data/15_inventory_logs");
-const carts = require("./data/16_carts");
-const cartItems = require("./data/17_cart_items");
-const orders = require("./data/18_orders");
-const orderItems = require("./data/19_order_items");
-const favorites = require("./data/20_favorites");
-const reviews = require("./data/21_reviews");
+const blogImages = require("./data/09_blog_images");
+const contacts = require("./data/10_contacts");
+const products = require("./data/11_products");
+const productDetails = require("./data/12_product_details");
+const productImages = require("./data/13_product_images");
+const productPromotions = require("./data/14_product_promotions");
+const inventory = require("./data/15_inventory");
+const inventoryLogs = require("./data/16_inventory_logs");
+const carts = require("./data/17_carts");
+const cartItems = require("./data/18_cart_items");
+const orders = require("./data/19_orders");
+const orderItems = require("./data/20_order_items");
+const favorites = require("./data/21_favorites");
+const reviews = require("./data/22_reviews");
 
 exports.seed = async function (knex) {
   await knex.transaction(async (trx) => {
@@ -28,7 +29,7 @@ exports.seed = async function (knex) {
         reviews, favorites, order_items, orders,
         cart_items, carts, inventory_logs, inventory,
         product_promotions, product_images, product_details, products,
-        blogs, contacts, promotions, categories, stores,
+        blog_images, blogs, contacts, promotions, categories, stores,
         user_payment_methods, user_addresses, user_profiles, users
       RESTART IDENTITY CASCADE
     `);
@@ -44,6 +45,7 @@ exports.seed = async function (knex) {
     await categories.seed(trx);
     await promotions.seed(trx);
     await blogs.seed(trx);
+    await blogImages.seed(trx); // phai chay sau blogs de co blog.id
     await contacts.seed(trx);
 
     // ===== PRODUCT SYSTEM =====

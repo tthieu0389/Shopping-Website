@@ -217,9 +217,21 @@ CREATE TABLE blogs (
     title VARCHAR(200) NOT NULL,
     slug VARCHAR(200) UNIQUE,
     content TEXT,
+    thumbnail_url TEXT,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE blog_images (
+    id SERIAL PRIMARY KEY,
+    blog_id INT REFERENCES blogs(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    alt_text VARCHAR(200),
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_blog_images_blog_id ON blog_images(blog_id);
 
 CREATE TABLE contacts (
     id SERIAL PRIMARY KEY,

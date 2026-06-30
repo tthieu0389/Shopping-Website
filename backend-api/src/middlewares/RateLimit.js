@@ -1,6 +1,17 @@
 const rateLimit = require("express-rate-limit");
 
-const createLimiter = (options) => rateLimit(options);
+const createLimiter = (options) =>
+  rateLimit({
+    standardHeaders: true, // Trả về thông tin rate limit qua header RateLimit-*
+    legacyHeaders: false, // Tắt header X-RateLimit-* cũ
+    handler: (req, res, _next, opts) => {
+      res.status(429).json({
+        success: false,
+        error: opts.message || "Quá nhiều request. Vui lòng thử lại sau.",
+      });
+    },
+    ...options,
+  });
 
 // login / register
 const loginLimiter = createLimiter({
@@ -100,6 +111,60 @@ const defaultLimiter = createLimiter({
   message: "Quá nhiều request. Vui lòng thử lại sau.",
 });
 
+// category
+const categoryLimiter = createLimiter({
+  windowMs: 3 * 1000,
+  max: 50,
+  message: "Quá nhiều request danh mục.",
+});
+
+// store (danh sách cửa hàng, ít thay đổi)
+const storeLimiter = createLimiter({
+  windowMs: 3 * 1000,
+  max: 10,
+  message: "Bạn thao tác cửa hàng quá nhanh.",
+});
+
+// blog-images (ảnh blog)
+const blogImageLimiter = createLimiter({
+  windowMs: 5 * 1000,
+  max: 15,
+  message: "Bạn thao tác ảnh blog quá nhanh.",
+});
+
+// inventory-logs
+const inventoryLogLimiter = createLimiter({
+  windowMs: 3 * 1000,
+  max: 10,
+  message: "Bạn truy vấn lịch sử kho quá nhanh.",
+});
+
+// user-address / user-payment / user-profile (thao tác tài khoản cá nhân)
+const userAddressLimiter = createLimiter({
+  windowMs: 5 * 1000,
+  max: 10,
+  message: "Bạn thao tác địa chỉ quá nhanh.",
+});
+
+const userPaymentLimiter = createLimiter({
+  windowMs: 5 * 1000,
+  max: 10,
+  message: "Bạn thao tác phương thức thanh toán quá nhanh.",
+});
+
+const userProfileLimiter = createLimiter({
+  windowMs: 5 * 1000,
+  max: 10,
+  message: "Bạn thao tác hồ sơ quá nhanh.",
+});
+
+// api-docs (chặn bot crawl/scan swagger)
+const docsLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: "Quá nhiều request tới tài liệu API.",
+});
+
 module.exports = {
   loginLimiter,
   orderLimiter,
@@ -115,4 +180,12 @@ module.exports = {
   productLimiter,
   menuLimiter,
   defaultLimiter,
+  categoryLimiter,
+  storeLimiter,
+  blogImageLimiter,
+  inventoryLogLimiter,
+  userAddressLimiter,
+  userPaymentLimiter,
+  userProfileLimiter,
+  docsLimiter,
 };

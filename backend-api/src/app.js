@@ -20,6 +20,14 @@ const {
   contactLimiter,
   promotionLimiter,
   productLimiter,
+  categoryLimiter,
+  storeLimiter,
+  blogImageLimiter,
+  inventoryLogLimiter,
+  userAddressLimiter,
+  userPaymentLimiter,
+  userProfileLimiter,
+  docsLimiter,
 } = require("./middlewares/RateLimit");
 
 const app = express();
@@ -54,11 +62,15 @@ if (process.env.NODE_ENV !== "production") {
 app.use("/public", express.static(path.join(process.cwd(), "public")));
 
 // ROUTE
-app.use("/api-docs", require("./routes/swagger"));
+app.use("/api-docs", docsLimiter, require("./routes/swagger"));
 app.use("/api/auth", loginLimiter, require("./routes/auth.routes"));
 app.use("/api/blogs", blogLimiter, require("./routes/blog.routes"));
 app.use("/api/cart", cartLimiter, require("./routes/cart.routes"));
-app.use("/api/categories", require("./routes/category.routes"));
+app.use(
+  "/api/categories",
+  categoryLimiter,
+  require("./routes/category.routes"),
+);
 app.use("/api/contacts", contactLimiter, require("./routes/contact.routes"));
 app.use("/api/favorites", favoriteLimiter, require("./routes/favorite.routes"));
 app.use(
@@ -66,7 +78,11 @@ app.use(
   inventoryLimiter,
   require("./routes/inventory.routes"),
 );
-app.use("/api/inventory-logs", require("./routes/inventoryLog.routes"));
+app.use(
+  "/api/inventory-logs",
+  inventoryLogLimiter,
+  require("./routes/inventoryLog.routes"),
+);
 app.use("/api/orders", orderLimiter, require("./routes/order.routes"));
 app.use(
   "/api/order-items",
@@ -94,14 +110,30 @@ app.use(
   productLimiter,
   require("./routes/productImage.routes"),
 );
+app.use(
+  "/api/blog-images",
+  blogImageLimiter,
+  require("./routes/blogimage.routes"),
+);
 app.use("/api/reviews", reviewLimiter, require("./routes/review.routes"));
-app.use("/api/stores", require("./routes/store.routes"));
+app.use("/api/stores", storeLimiter, require("./routes/store.routes"));
 app.use("/api/users", userLimiter, require("./routes/user.routes"));
 
-// ── ĐÃ CHỈNH SỬA: Đồng bộ Số ít (Singular) theo file API của Frontend ──
-app.use("/api/user-address", require("./routes/useraddress.routes"));
-app.use("/api/user-payment", require("./routes/userpayment.routes"));
-app.use("/api/user-profile", require("./routes/userprofile.routes"));
+app.use(
+  "/api/user-address",
+  userAddressLimiter,
+  require("./routes/useraddress.routes"),
+);
+app.use(
+  "/api/user-payment",
+  userPaymentLimiter,
+  require("./routes/userpayment.routes"),
+);
+app.use(
+  "/api/user-profile",
+  userProfileLimiter,
+  require("./routes/userprofile.routes"),
+);
 
 // KIEM TRA TRANG THAI SERVER
 app.get("/health", (req, res) => {

@@ -89,6 +89,10 @@
       "description": "Bài viết blog"
     },
     {
+      "name": "Blog Images",
+      "description": "Quản lý ảnh trong bài viết blog"
+    },
+    {
       "name": "Contacts",
       "description": "Liên hệ"
     },
@@ -731,6 +735,11 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
           }
         }
       },
@@ -885,6 +894,34 @@
                 "type": "string"
               }
             }
+          }
+        }
+      },
+      "BlogImage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "blog_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "alt_text": {
+            "type": "string",
+            "nullable": true
+          },
+          "sort_order": {
+            "type": "integer",
+            "default": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
@@ -5774,6 +5811,11 @@
                   },
                   "content": {
                     "type": "string"
+                  },
+                  "thumbnail_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL ảnh đại diện bài viết"
                   }
                 }
               }
@@ -5893,6 +5935,11 @@
                   },
                   "content": {
                     "type": "string"
+                  },
+                  "thumbnail_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL ảnh đại diện bài viết"
                   }
                 }
               }
@@ -5977,6 +6024,339 @@
           }
         },
         "operationId": "deleteBlog"
+      }
+    },
+    "/api/blog-images/upload": {
+      "post": {
+        "tags": ["Blog Images"],
+        "summary": "Upload ảnh blog (Admin)",
+        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image"],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File ảnh cần upload"
+                  },
+                  "blog_id": {
+                    "type": "integer",
+                    "description": "ID blog (tuỳ chọn, để trống nếu blog chưa được tạo)"
+                  },
+                  "alt_text": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Alt text cho ảnh"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ảnh đã upload thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/BlogImage"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "uploadBlogImage"
+      }
+    },
+    "/api/blog-images/blog/{blogId}": {
+      "get": {
+        "tags": ["Blog Images"],
+        "summary": "Lấy danh sách ảnh của blog (Public)",
+        "parameters": [
+          {
+            "name": "blogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID của blog"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách ảnh của blog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/BlogImage"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "getBlogImagesByBlogId"
+      }
+    },
+    "/api/blog-images/{id}/attach": {
+      "patch": {
+        "tags": ["Blog Images"],
+        "summary": "Gắn ảnh mồ côi vào blog (Admin)",
+        "description": "Sau khi blog mới được lưu lần đầu và có ID, dùng endpoint này để gắn các ảnh đã upload trước đó (blog_id = null) vào đúng blog.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID của ảnh cần gắn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["blog_id"],
+                "properties": {
+                  "blog_id": {
+                    "type": "integer",
+                    "description": "ID blog cần gắn ảnh vào"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ảnh đã được gắn vào blog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/BlogImage"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "attachBlogImage"
+      }
+    },
+    "/api/blog-images/blog/{blogId}/prune": {
+      "post": {
+        "tags": ["Blog Images"],
+        "summary": "Dọn ảnh không còn dùng trong blog (Admin)",
+        "description": "Sau khi lưu bài viết, gọi endpoint này với content mới nhất để xoá các ảnh đã upload vào blog nhưng cuối cùng không được dùng trong nội dung.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID của blog"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "Nội dung HTML/Markdown mới nhất của blog để đối chiếu URL ảnh"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Danh sách ảnh đã bị xoá",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/BlogImage"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "pruneUnusedBlogImages"
+      }
+    },
+    "/api/blog-images/{id}": {
+      "delete": {
+        "tags": ["Blog Images"],
+        "summary": "Xoá ảnh blog (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID ảnh cần xoá"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Xoá thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Image deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "deleteBlogImage"
       }
     },
     "/api/contacts": {
