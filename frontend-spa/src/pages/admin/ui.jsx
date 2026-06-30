@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Children } from 'react'
 
 // ─── Badge ──────────────────────────────────────────────────────────────────
 const BADGE_TONES = {
@@ -131,6 +131,7 @@ export function Modal({ title, onClose, children, width = 'max-w-[480px]' }) {
 
 // ─── Table ──────────────────────────────────────────────────────────────────
 export function Table({ headers, children, loading, empty }) {
+  const hasRows = Children.count(children) > 0
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-[13px]">
@@ -144,9 +145,8 @@ export function Table({ headers, children, loading, empty }) {
         <tbody>
           {loading ? (
             <tr><td colSpan={headers.length} className="py-10 text-center text-muted text-sm">Đang tải...</td></tr>
-          ) : children}
-          {!loading && empty && (
-            <tr><td colSpan={headers.length} className="py-10 text-center text-muted text-sm">{empty}</td></tr>
+          ) : hasRows ? children : (
+            empty && <tr><td colSpan={headers.length} className="py-10 text-center text-muted text-sm">{empty}</td></tr>
           )}
         </tbody>
       </table>
@@ -205,15 +205,67 @@ export function DrawerPanel({ open, onClose, title, children }) {
 }
 
 // ─── Pagination (compact, for admin tables) ─────────────────────────────────
+// Sinh danh sách số trang để hiển thị, có dấu "…" khi nhiều trang
+// VD: trang 1/10 -> [1, 2, 3, '…', 10] | trang 6/10 -> [1, '…', 5, 6, 7, '…', 10]
+function getPageNumbers(page, totalPages) {
+  const pages = []
+  const add = (v) => pages.push(v)
+  const siblings = 1
+
+  add(1)
+  const start = Math.max(2, page - siblings)
+  const end = Math.min(totalPages - 1, page + siblings)
+
+  if (start > 2) add('…')
+  for (let i = start; i <= end; i++) add(i)
+  if (end < totalPages - 1) add('…')
+  if (totalPages > 1) add(totalPages)
+
+  return pages
+}
+
+const pageBtnBase = 'h-8 min-w-8 px-2.5 rounded-lg text-xs font-semibold transition-colors disabled:cursor-not-allowed'
+
 export function AdminPagination({ page, totalPages, onChange }) {
   if (totalPages <= 1) return null
+  const pages = getPageNumbers(page, totalPages)
+
   return (
-    <div className="flex items-center justify-center gap-2 py-5">
-      <button onClick={() => onChange(page - 1)} disabled={page <= 1}
-        className="px-3 h-8 border border-shade rounded-lg text-xs text-muted hover:border-vnpt hover:text-vnpt disabled:opacity-40 disabled:cursor-not-allowed">‹ Trước</button>
-      <span className="text-xs text-muted font-semibold px-2">Trang {page} / {totalPages}</span>
-      <button onClick={() => onChange(page + 1)} disabled={page >= totalPages}
-        className="px-3 h-8 border border-shade rounded-lg text-xs text-muted hover:border-vnpt hover:text-vnpt disabled:opacity-40 disabled:cursor-not-allowed">Sau ›</button>
+    <div className="sticky bottom-0 -mx-7 px-7 bg-cream/95 backdrop-blur-sm border-t border-shade flex items-center justify-center gap-1.5 py-3.5">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page <= 1}
+        className={`${pageBtnBase} border border-shade text-muted bg-canvas hover:border-vnpt hover:text-vnpt disabled:opacity-40`}
+      >
+        ‹
+      </button>
+
+      {pages.map((p, i) =>
+        p === '…' ? (
+          <span key={`ellipsis-${i}`} className="w-8 text-center text-xs text-muted select-none">…</span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            disabled={p === page}
+            className={`${pageBtnBase} border ${
+              p === page
+                ? 'bg-vnpt border-vnpt text-white'
+                : 'border-shade text-muted bg-canvas hover:border-vnpt hover:text-vnpt'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page >= totalPages}
+        className={`${pageBtnBase} border border-shade text-muted bg-canvas hover:border-vnpt hover:text-vnpt disabled:opacity-40`}
+      >
+        ›
+      </button>
     </div>
   )
 }
