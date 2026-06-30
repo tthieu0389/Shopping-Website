@@ -20,15 +20,28 @@ exports.createReview = async (userId, data) => {
     throw err;
   }
 
-  // Check đã review chưa (1 user 1 review / product)
+  // Check đã review chưa (kể cả review đã bị xóa mềm, vì DB có UNIQUE(user_id, product_id))
   const existing = await knex("reviews")
-    .where({ user_id: userId, product_id: data.product_id, is_deleted: false })
+    .where({ user_id: userId, product_id: data.product_id })
     .first();
 
-  if (existing) {
+  if (existing && !existing.is_deleted) {
     const err = new Error("Bạn đã đánh giá sản phẩm này rồi");
     err.statusCode = 409;
     throw err;
+  }
+
+  if (existing && existing.is_deleted) {
+    const [revived] = await knex("reviews")
+      .where({ id: existing.id })
+      .update({
+        rating: data.rating,
+        comment: data.comment,
+        is_deleted: false,
+        created_at: knex.fn.now(),
+      })
+      .returning("*");
+    return revived;
   }
 
   const [review] = await knex("reviews")

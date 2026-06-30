@@ -6,6 +6,7 @@ exports.up = function (knex) {
       t.integer("quantity").defaultTo(0);
       t.integer("min_quantity").defaultTo(5);
       t.string("status", 20).defaultTo("active");
+      t.check("status IN ('active', 'inactive', 'archived')");
       t.timestamp("deleted_at");
       t.timestamp("updated_at").defaultTo(knex.fn.now());
     })

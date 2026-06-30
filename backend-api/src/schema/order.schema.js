@@ -10,12 +10,7 @@ exports.createOrderSchema = z
     address_id: z.coerce.number().int().optional(),
     pickup_store_id: z.coerce.number().int().optional(),
 
-    // payment method:
-    // - cod = thanh toán khi nhận hàng
-    // - payment_method_id = id từ user_payment_methods
-    payment_method: z
-      .union([z.literal("cod"), z.coerce.number().int()])
-      .default("cod"),
+    payment_method: z.enum(["cod", "card", "wallet"]),
 
     note: z.string().optional(),
 

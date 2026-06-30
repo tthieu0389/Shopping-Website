@@ -1,8 +1,21 @@
 const knex = require("../database/knex");
 
+const generateSlug = (title) =>
+  title
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]/g, "") +
+  "-" +
+  Date.now();
+
 // CREATE
 exports.createBlog = async (data) => {
-  const [blog] = await knex("blogs").insert(data).returning("*");
+  const payload = { ...data };
+  if (!payload.slug && payload.title) {
+    payload.slug = generateSlug(payload.title);
+  }
+  const [blog] = await knex("blogs").insert(payload).returning("*");
 
   return blog;
 };

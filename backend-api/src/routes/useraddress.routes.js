@@ -5,6 +5,7 @@ const userAddressController = require("../controller/useraddress.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/checkRole");
 const validate = require("../middlewares/validate");
+const checkOwnership = require("../middlewares/checkOwnership");
 
 const {
   createAddressSchema,
@@ -21,7 +22,7 @@ const addressFieldLabels = {
   is_default: "Địa chỉ mặc định",
 };
 
-// Get current user addresses (matches frontend)
+// Get current user addresses
 router.get("/", verifyToken(), userAddressController.getAddressesByUserId);
 
 // Create address
@@ -36,25 +37,33 @@ router.post(
 router.get(
   "/user/:userId",
   verifyToken(),
+  checkRole("admin", "staff"),
   userAddressController.getAddressesByUserId,
 );
 
-// Set default address
+// Set default address (Cần checkOwnership vì thao tác trên :id)
 router.put(
   "/:id/default",
   verifyToken(),
+  checkOwnership("user_addresses"),
   userAddressController.setDefaultAddress,
 );
 
-// Update address
+// Update address (thêm checkOwnership để chống IDOR)
 router.put(
   "/:id",
   verifyToken(),
+  checkOwnership("user_addresses"),
   validate(updateAddressSchema, { fieldLabels: addressFieldLabels }),
   userAddressController.updateAddress,
 );
 
-// Delete address
-router.delete("/:id", verifyToken(), userAddressController.deleteAddress);
+// Delete address (thêm checkOwnership để chống IDOR)
+router.delete(
+  "/:id",
+  verifyToken(),
+  checkOwnership("user_addresses"),
+  userAddressController.deleteAddress,
+);
 
 module.exports = router;

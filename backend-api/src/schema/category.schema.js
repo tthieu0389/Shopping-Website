@@ -10,6 +10,6 @@ exports.createCategorySchema = z.object({
 exports.updateCategorySchema = z.object({
   name: z.string().optional(),
   slug: z.string().optional(),
-  description: z.string().optional().default(""),
+  description: z.string().optional(),
   is_deleted: z.boolean().optional(),
 });

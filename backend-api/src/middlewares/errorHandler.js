@@ -7,6 +7,10 @@ const PG_ERROR_MAP = {
     message: "Dữ liệu đang được tham chiếu hoặc không hợp lệ (khóa ngoại).",
   },
   23502: { status: 400, message: "Thiếu dữ liệu bắt buộc." },
+  23514: {
+    status: 400,
+    message: "Dữ liệu không thỏa điều kiện hợp lệ (check constraint).",
+  },
   "22P02": { status: 400, message: "Dữ liệu gửi lên không đúng định dạng." },
 };
 

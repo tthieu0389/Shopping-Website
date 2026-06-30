@@ -82,7 +82,15 @@ exports.getCartItems = async (user_id) => {
   const rawItems = await knex("cart_items").where("cart_id", cart.id);
   if (rawItems.length === 0) return { items: [], total_final_amount: 0 };
 
-  const calculated = await _calculateOrderAmount(rawItems);
+  // Truyền user_id để tính toán phí vận chuyển chính xác nếu có địa chỉ mặc định/thông tin user
+  const calculated = await _calculateOrderAmount(
+    rawItems,
+    null,
+    null,
+    knex,
+    user_id,
+  );
+
   calculated.items = calculated.items.map((item) => {
     const rawMatch = rawItems.find((r) => r.product_id === item.product_id);
     return { id: rawMatch.id, is_selected: rawMatch.is_selected, ...item };
@@ -104,6 +112,8 @@ exports.previewCart = async (user_id, data) => {
     selectedItems,
     data.address_id,
     data.pickup_store_id,
+    knex,
+    user_id,
   );
 };
 

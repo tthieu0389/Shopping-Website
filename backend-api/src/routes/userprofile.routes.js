@@ -3,6 +3,7 @@ const router = express.Router();
 
 const userProfileController = require("../controller/userprofile.controller");
 const verifyToken = require("../middlewares/verifyToken");
+const checkRole = require("../middlewares/checkRole");
 const validate = require("../middlewares/validate");
 const upload = require("../middlewares/upload");
 
@@ -29,7 +30,7 @@ router.post(
   userProfileController.uploadAvatar,
 );
 
-// Update current user profile (matches frontend)
+// Update current user profile
 router.put(
   "/",
   verifyToken(),
@@ -41,6 +42,7 @@ router.put(
 router.post(
   "/:userId",
   verifyToken(),
+  checkRole("admin", "staff"),
   validate(userProfileSchema, { fieldLabels: profileFieldLabels }),
   userProfileController.createOrUpdateProfile,
 );
@@ -49,14 +51,25 @@ router.post(
 router.post(
   "/:userId/avatar",
   verifyToken(),
+  checkRole("admin", "staff"),
   upload("avatars").single("avatar"),
   userProfileController.uploadAvatar,
 );
 
 // Get profile by userId (admin/internal)
-router.get("/:userId", verifyToken(), userProfileController.getProfileByUserId);
+router.get(
+  "/:userId",
+  verifyToken(),
+  checkRole("admin", "staff"),
+  userProfileController.getProfileByUserId,
+);
 
 // Delete profile by userId
-router.delete("/:userId", verifyToken(), userProfileController.deleteProfile);
+router.delete(
+  "/:userId",
+  verifyToken(),
+  checkRole("admin", "staff"),
+  userProfileController.deleteProfile,
+);
 
 module.exports = router;

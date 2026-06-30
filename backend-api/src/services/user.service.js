@@ -48,9 +48,13 @@ exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
 };
 
 exports.updateUser = async (id, data) => {
+  const payload = { ...data };
+  if (payload.password) {
+    payload.password = await bcrypt.hash(payload.password, 10);
+  }
   const [user] = await knex("users")
     .where({ id, is_deleted: false })
-    .update(data)
+    .update(payload)
     .returning(["id", "name", "email", "role"]);
   return user;
 };

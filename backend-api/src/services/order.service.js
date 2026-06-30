@@ -89,6 +89,8 @@ const calculateOrderAmount = async (
       discountAmount =
         promotionService.calculateTotalDiscount(unitPrice, promotions) *
         item.quantity;
+      // Khong cho phep discount vuot qua gia tri don hang (tranh final_price < 0)
+      discountAmount = Math.min(discountAmount, basePrice);
     }
 
     const finalPrice = basePrice - discountAmount;

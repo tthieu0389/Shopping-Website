@@ -3,10 +3,17 @@ const knex = require("../database/knex");
 // ADD FAVORITE
 exports.addFavorite = async (userId, productId) => {
   const existing = await knex("favorites")
-    .where({ user_id: userId, product_id: productId, is_deleted: false })
+    .where({ user_id: userId, product_id: productId })
     .first();
 
-  if (existing) return existing;
+  if (existing) {
+    if (!existing.is_deleted) return existing;
+    const [revived] = await knex("favorites")
+      .where({ id: existing.id })
+      .update({ is_deleted: false })
+      .returning("*");
+    return revived;
+  }
 
   const [fav] = await knex("favorites")
     .insert({

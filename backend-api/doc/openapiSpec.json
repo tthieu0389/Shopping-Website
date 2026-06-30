@@ -794,7 +794,10 @@
             "format": "date-time",
             "nullable": true
           },
-          "created_at": { "type": "string", "format": "date-time" }
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Store": {
@@ -987,7 +990,9 @@
         "name": "search",
         "in": "query",
         "required": false,
-        "schema": { "type": "string" },
+        "schema": {
+          "type": "string"
+        },
         "description": "Tìm kiếm theo tên hoặc email người dùng"
       }
     },
@@ -1258,7 +1263,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "listUsers"
+        "operationId": "listUsers",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "post": {
         "tags": ["Users"],
@@ -1289,7 +1295,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": ["admin", "user"]
+                    "enum": ["admin", "staff", "user"]
                   }
                 }
               }
@@ -1331,7 +1337,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createUser"
+        "operationId": "createUser",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/users/{id}": {
@@ -1368,7 +1375,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": ["admin", "user"]
+                    "enum": ["admin", "staff", "user"]
                   }
                 }
               }
@@ -1413,7 +1420,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "updateUser"
+        "operationId": "updateUser",
+        "description": "**Yêu cầu quyền: admin.**"
       },
       "delete": {
         "tags": ["Users"],
@@ -1452,7 +1460,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteUser"
+        "operationId": "deleteUser",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/user-profile": {
@@ -1632,7 +1641,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "getProfileById"
+        "operationId": "getProfileById",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "post": {
         "tags": ["User Profile"],
@@ -1719,7 +1729,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "upsertProfileById"
+        "operationId": "upsertProfileById",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["User Profile"],
@@ -1763,7 +1774,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "deleteProfileById"
+        "operationId": "deleteProfileById",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/user-address": {
@@ -1952,7 +1964,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "listAddressesByUserId"
+        "operationId": "listAddressesByUserId",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/user-address/{id}": {
@@ -2046,7 +2059,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updateAddress"
+        "operationId": "updateAddress",
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
       },
       "delete": {
         "tags": ["User Address"],
@@ -2085,7 +2099,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "deleteAddress"
+        "operationId": "deleteAddress",
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
       }
     },
     "/api/user-address/{id}/default": {
@@ -2138,7 +2153,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "setDefaultAddress"
+        "operationId": "setDefaultAddress",
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
       }
     },
     "/api/user-payment": {
@@ -2324,7 +2340,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "listPaymentsByUserId"
+        "operationId": "listPaymentsByUserId",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/user-payment/{id}": {
@@ -2415,7 +2432,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updatePayment"
+        "operationId": "updatePayment",
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
       },
       "delete": {
         "tags": ["User Payment"],
@@ -2454,7 +2472,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "deletePayment"
+        "operationId": "deletePayment",
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
       }
     },
     "/api/categories": {
@@ -2557,7 +2576,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createCategory"
+        "operationId": "createCategory",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/categories/{id}": {
@@ -2633,7 +2653,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updateCategory"
+        "operationId": "updateCategory",
+        "description": "**Yêu cầu quyền: admin.**"
       },
       "delete": {
         "tags": ["Categories"],
@@ -2672,7 +2693,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteCategory"
+        "operationId": "deleteCategory",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/products": {
@@ -2784,10 +2806,6 @@
                   "price": {
                     "type": "number"
                   },
-                  "stock": {
-                    "type": "integer",
-                    "default": 0
-                  },
                   "product_type": {
                     "type": "string",
                     "default": "device"
@@ -2853,7 +2871,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createProduct"
+        "operationId": "createProduct",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/products/{idOrSlug}": {
@@ -3047,7 +3066,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "updateProduct"
+        "operationId": "updateProduct",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["Products"],
@@ -3086,7 +3106,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteProduct"
+        "operationId": "deleteProduct",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/product-details/product/{productId}": {
@@ -3201,7 +3222,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "createProductDetail"
+        "operationId": "createProductDetail",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/product-details/{id}": {
@@ -3274,7 +3296,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updateProductDetail"
+        "operationId": "updateProductDetail",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["Product Details"],
@@ -3313,7 +3336,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteProductDetail"
+        "operationId": "deleteProductDetail",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/product-images/upload": {
@@ -3387,7 +3411,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "uploadProductImages"
+        "operationId": "uploadProductImages",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/product-images/product/{productId}": {
@@ -3474,7 +3499,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteProductImage"
+        "operationId": "deleteProductImage",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/product-images/{id}/thumbnail": {
@@ -3526,7 +3552,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "setThumbnail"
+        "operationId": "setThumbnail",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/cart": {
@@ -4075,16 +4102,8 @@
                     "description": "Bắt buộc nếu không có address_id"
                   },
                   "payment_method": {
-                    "oneOf": [
-                      {
-                        "type": "string",
-                        "enum": ["cod"]
-                      },
-                      {
-                        "type": "integer",
-                        "description": "ID phương thức thanh toán"
-                      }
-                    ]
+                    "type": "string",
+                    "enum": ["cod", "card", "wallet"]
                   },
                   "note": {
                     "type": "string"
@@ -4340,7 +4359,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "updateOrder"
+        "operationId": "updateOrder",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["Orders"],
@@ -4379,7 +4399,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteOrder"
+        "operationId": "deleteOrder",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/orders/{id}/cancel": {
@@ -4423,7 +4444,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "cancelOrder"
+        "operationId": "cancelOrder",
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
       }
     },
     "/api/order-items/order/{orderId}": {
@@ -4541,7 +4563,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listInventory"
+        "operationId": "listInventory",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "post": {
         "tags": ["Inventory"],
@@ -4617,7 +4640,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createInventory"
+        "operationId": "createInventory",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/inventory/low-stock": {
@@ -4664,7 +4688,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "getLowStockItems"
+        "operationId": "getLowStockItems",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/inventory/product/{product_id}": {
@@ -4721,7 +4746,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "getInventoryByProduct"
+        "operationId": "getInventoryByProduct",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/inventory/{id}": {
@@ -4800,7 +4826,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updateInventory"
+        "operationId": "updateInventory",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["Inventory"],
@@ -4839,7 +4866,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "archiveInventory"
+        "operationId": "archiveInventory",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/inventory-logs": {
@@ -4897,7 +4925,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listInventoryLogs"
+        "operationId": "listInventoryLogs",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/inventory-logs/inventory/{inventory_id}": {
@@ -4957,7 +4986,8 @@
             "$ref": "#/components/responses/NotFound"
           }
         },
-        "operationId": "getLogsByInventoryId"
+        "operationId": "getLogsByInventoryId",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/inventory-logs/product/{product_id}": {
@@ -5017,7 +5047,8 @@
             "$ref": "#/components/responses/NotFound"
           }
         },
-        "operationId": "getLogsByProductId"
+        "operationId": "getLogsByProductId",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/promotions": {
@@ -5069,7 +5100,13 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "discount_type", "discount_value"],
+                "required": [
+                  "name",
+                  "discount_type",
+                  "discount_value",
+                  "start_date",
+                  "end_date"
+                ],
                 "properties": {
                   "name": {
                     "type": "string"
@@ -5092,6 +5129,14 @@
                   "is_active": {
                     "type": "boolean",
                     "default": true
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "description": "Độ ưu tiên áp dụng, càng cao càng được ưu tiên trước"
+                  },
+                  "stackable": {
+                    "type": "boolean",
+                    "description": "FALSE = độc quyền, không cộng dồn với promotion khác"
                   }
                 }
               }
@@ -5133,18 +5178,14 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createPromotion"
+        "operationId": "createPromotion",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/promotions/{id}": {
       "get": {
         "tags": ["Promotions"],
         "summary": "Lấy chi tiết khuyến mãi",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "parameters": [
           {
             "$ref": "#/components/parameters/IdParam"
@@ -5227,8 +5268,17 @@
                   },
                   "is_active": {
                     "type": "boolean"
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "description": "Độ ưu tiên áp dụng, càng cao càng được ưu tiên trước"
+                  },
+                  "stackable": {
+                    "type": "boolean",
+                    "description": "FALSE = độc quyền, không cộng dồn với promotion khác"
                   }
-                }
+                },
+                "required": ["start_date", "end_date"]
               }
             }
           }
@@ -5271,7 +5321,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updatePromotion"
+        "operationId": "updatePromotion",
+        "description": "**Yêu cầu quyền: admin.**"
       },
       "delete": {
         "tags": ["Promotions"],
@@ -5310,7 +5361,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deletePromotion"
+        "operationId": "deletePromotion",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/product-promotions": {
@@ -5399,7 +5451,13 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "addProductPromotion"
+        "operationId": "addProductPromotion",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/product-promotions/{id}": {
@@ -5429,7 +5487,13 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "removeProductPromotion"
+        "operationId": "removeProductPromotion",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/reviews": {
@@ -5903,7 +5967,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createBlog"
+        "operationId": "createBlog",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/blogs/slug/{slug}": {
@@ -6030,7 +6095,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updateBlog"
+        "operationId": "updateBlog",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["Blogs"],
@@ -6069,7 +6135,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteBlog"
+        "operationId": "deleteBlog",
+        "description": "**Yêu cầu quyền: admin.**"
       },
       "get": {
         "tags": ["Blogs"],
@@ -6115,7 +6182,7 @@
       "post": {
         "tags": ["Blog Images"],
         "summary": "Upload ảnh blog (Admin)",
-        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach.",
+        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach. **Yêu cầu quyền: admin.**",
         "security": [
           {
             "bearerAuth": []
@@ -6237,7 +6304,7 @@
       "patch": {
         "tags": ["Blog Images"],
         "summary": "Gắn ảnh mồ côi vào blog (Admin)",
-        "description": "Sau khi blog mới được lưu lần đầu và có ID, dùng endpoint này để gắn các ảnh đã upload trước đó (blog_id = null) vào đúng blog.",
+        "description": "Sau khi blog mới được lưu lần đầu và có ID, dùng endpoint này để gắn các ảnh đã upload trước đó (blog_id = null) vào đúng blog. **Yêu cầu quyền: admin.**",
         "security": [
           {
             "bearerAuth": []
@@ -6316,7 +6383,7 @@
       "post": {
         "tags": ["Blog Images"],
         "summary": "Dọn ảnh không còn dùng trong blog (Admin)",
-        "description": "Sau khi lưu bài viết, gọi endpoint này với content mới nhất để xoá các ảnh đã upload vào blog nhưng cuối cùng không được dùng trong nội dung.",
+        "description": "Sau khi lưu bài viết, gọi endpoint này với content mới nhất để xoá các ảnh đã upload vào blog nhưng cuối cùng không được dùng trong nội dung. **Yêu cầu quyền: admin.**",
         "security": [
           {
             "bearerAuth": []
@@ -6441,7 +6508,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteBlogImage"
+        "operationId": "deleteBlogImage",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/contacts": {
@@ -6545,7 +6613,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listContacts"
+        "operationId": "listContacts",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/contacts/{id}": {
@@ -6569,10 +6638,14 @@
               "application/json": {
                 "schema": {
                   "allOf": [
-                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
                     {
                       "properties": {
-                        "data": { "$ref": "#/components/schemas/Contact" }
+                        "data": {
+                          "$ref": "#/components/schemas/Contact"
+                        }
                       }
                     }
                   ]
@@ -6580,12 +6653,21 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
         },
-        "operationId": "getContactById"
+        "operationId": "getContactById",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       },
       "delete": {
         "tags": ["Contacts"],
@@ -6611,12 +6693,21 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
         },
-        "operationId": "deleteContact"
+        "operationId": "deleteContact",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/stores": {
@@ -6722,7 +6813,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createStore"
+        "operationId": "createStore",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/stores/{id}": {
@@ -6801,7 +6893,8 @@
             "$ref": "#/components/responses/BadRequest"
           }
         },
-        "operationId": "updateStore"
+        "operationId": "updateStore",
+        "description": "**Yêu cầu quyền: admin.**"
       },
       "delete": {
         "tags": ["Stores"],
@@ -6840,7 +6933,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "deleteStore"
+        "operationId": "deleteStore",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     },
     "/api/blogs/upload-thumbnail": {
@@ -6910,7 +7004,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "uploadBlogThumbnail"
+        "operationId": "uploadBlogThumbnail",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/contacts/mine": {
@@ -7026,7 +7121,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "replyContact"
+        "operationId": "replyContact",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/user-profile/avatar": {
@@ -7163,7 +7259,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "uploadUserAvatar"
+        "operationId": "uploadUserAvatar",
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     }
   }

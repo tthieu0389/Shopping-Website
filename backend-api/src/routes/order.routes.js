@@ -4,6 +4,7 @@ const router = express.Router();
 const orderController = require("../controller/order.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/checkRole");
+const checkOwnership = require("../middlewares/checkOwnership");
 const validate = require("../middlewares/validate");
 const pagination = require("../middlewares/pagination");
 
@@ -39,15 +40,21 @@ router.get("/:id", verifyToken(), orderController.getOrderById);
 router.put(
   "/:id",
   verifyToken(),
+  checkOwnership("orders"),
   checkRole("admin", "staff"),
   validate(updateOrderSchema),
   orderController.updateOrder,
 );
 
 // CANCEL ORDER (Khách hàng hoặc Admin tự hủy đơn)
-router.post("/:id/cancel", verifyToken(), orderController.cancelOrder);
+router.post(
+  "/:id/cancel",
+  verifyToken(),
+  checkOwnership("orders"),
+  orderController.cancelOrder,
+);
 
-// DELETE ORDER
+// DELETE ORDER (ADMIN ONLY)
 router.delete(
   "/:id",
   verifyToken(),
