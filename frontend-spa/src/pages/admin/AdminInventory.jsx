@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { inventoryApi, productsApi } from '../../api/index.js'
-import { Card, Table, TR, TD, Badge, Btn, StatCard, Modal, Select, Input, AdminPagination } from './ui.jsx'
-import { toast, formatDate } from '../../utils/index.js'
+import { inventoryApi } from '../../api/index.js'
+import { Card, Table, TR, TD, Badge, Btn, StatCard, Modal, Input, AdminPagination } from './ui.jsx'
+import { toast, formatDate, debounce } from '../../utils/index.js'
 
 const LIMIT = 10
 
@@ -12,27 +12,32 @@ function statusOf(qty, min) {
 }
 
 export default function AdminInventory() {
-  const [items, setItems] = useState([])
+  const [allItems, setAllItems] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [adjustItem, setAdjustItem] = useState(null)
   const [delta, setDelta] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // "Thêm vào kho" cho sản phẩm chưa có dòng inventory
-  const [addModal, setAddModal] = useState(false)
-  const [products, setProducts] = useState([])
-  const [addForm, setAddForm] = useState({ product_id: '', quantity: '', min_quantity: '5' })
-
   const load = () => {
     setLoading(true)
     inventoryApi.getAll({ page, limit: LIMIT })
-      .then(res => { setItems(res.data || []); setTotal(res.total || 0) })
+      .then(res => { setAllItems(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [page])
+
+  // ⚠️ Backend /inventory hiện CHƯA hỗ trợ tham số tìm kiếm (q) như /products,
+  // nên search ở đây tạm thời lọc trên dữ liệu của trang hiện tại (client-side).
+  // Cần backend bổ sung filter theo tên sản phẩm + JOIN products để search đúng
+  // trên toàn bộ dữ liệu kèm phân trang chính xác (xem báo cáo cuối file).
+  const handleSearchChange = debounce((v) => setSearch(v), 400)
+  const items = search.trim()
+    ? allItems.filter(item => (item.product_name || '').toLowerCase().includes(search.trim().toLowerCase()))
+    : allItems
 
   const openAdjust = (item) => { setDelta(''); setAdjustItem(item) }
 
@@ -44,21 +49,6 @@ export default function AdminInventory() {
     inventoryApi.update(adjustItem.id, { quantity: newQty })
       .then(() => { toast.success('Đã cập nhật tồn kho'); setAdjustItem(null); load() })
       .catch(err => toast.error(err.message || 'Không thể cập nhật'))
-      .finally(() => setSaving(false))
-  }
-
-  const openAddModal = () => {
-    setAddForm({ product_id: '', quantity: '', min_quantity: '5' })
-    productsApi.getAll({ limit: 100 }).then(res => setProducts(res.data || []))
-    setAddModal(true)
-  }
-
-  const handleAddInventory = () => {
-    if (!addForm.product_id) return
-    setSaving(true)
-    inventoryApi.create(addForm)
-      .then(() => { toast.success('Đã thêm sản phẩm vào kho'); setAddModal(false); load() })
-      .catch(err => toast.error(err.message || 'Không thể thêm'))
       .finally(() => setSaving(false))
   }
 
@@ -75,12 +65,17 @@ export default function AdminInventory() {
         <StatCard icon="❌" label="Hết hàng (trang này)" value={outCount} tone="error" />
       </div>
 
-      <div className="flex justify-end">
-        <Btn onClick={openAddModal}>➕ Thêm sản phẩm vào kho</Btn>
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <input
+          defaultValue={search}
+          onChange={e => handleSearchChange(e.target.value)}
+          placeholder="🔍  Tìm theo tên sản phẩm..."
+          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
+        />
       </div>
 
       <Card>
-        <Table headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']} loading={loading} empty={!loading && 'Chưa có dữ liệu kho'}>
+        <Table headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']} loading={loading} empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp trong trang này' : 'Chưa có dữ liệu kho')}>
           {items.map((item, i) => (
             <TR key={item.id} striped={i % 2 !== 0}>
               <TD bold>{item.product_name || `Sản phẩm #${item.product_id}`}</TD>
@@ -105,19 +100,6 @@ export default function AdminInventory() {
           <div className="flex justify-end gap-2.5">
             <Btn variant="ghost" onClick={() => setAdjustItem(null)}>Huỷ</Btn>
             <Btn onClick={handleAdjust} disabled={saving || !delta}>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</Btn>
-          </div>
-        </Modal>
-      )}
-
-      {addModal && (
-        <Modal title="Thêm sản phẩm vào kho" onClose={() => setAddModal(false)} width="max-w-[440px]">
-          <Select label="Sản phẩm" required value={addForm.product_id} onChange={e => setAddForm(p => ({ ...p, product_id: e.target.value }))}
-            options={[['', '— Chọn sản phẩm —'], ...products.map(p => [String(p.id), p.name])]} />
-          <Input label="Số lượng tồn kho ban đầu" type="number" value={addForm.quantity} onChange={e => setAddForm(p => ({ ...p, quantity: e.target.value }))} placeholder="0" />
-          <Input label="Ngưỡng cảnh báo tối thiểu" type="number" value={addForm.min_quantity} onChange={e => setAddForm(p => ({ ...p, min_quantity: e.target.value }))} placeholder="5" />
-          <div className="flex justify-end gap-2.5">
-            <Btn variant="ghost" onClick={() => setAddModal(false)}>Huỷ</Btn>
-            <Btn onClick={handleAddInventory} disabled={saving || !addForm.product_id}>{saving ? 'Đang lưu...' : 'Thêm vào kho'}</Btn>
           </div>
         </Modal>
       )}
