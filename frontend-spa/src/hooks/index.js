@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi, productImagesApi } from '../api/index.js'
+import useAuthStore from '../store/authStore.js'
 
 // ── useProducts ───────────────────────────────────────────────────────────────
 export const useProducts = (params = {}) => {
@@ -164,22 +165,44 @@ export const useFavorites = () => {
 }
 
 // ── useOrders ─────────────────────────────────────────────────────────────────
+// Dùng cho trang "Đơn hàng của tôi" ngoài storefront (KHÔNG dùng cho Admin panel).
+//
+// ⚠️ WORKAROUND BACKEND BUG:
+// Endpoint GET /orders hiện bị backend dùng chung cho cả admin panel lẫn trang
+// "đơn hàng của tôi" ngoài storefront, và chỉ phân nhánh dữ liệu theo req.user.role:
+//   - role === 'admin'  -> trả về TẤT CẢ đơn hàng của mọi user
+//   - role !== 'admin'  -> chỉ trả về đơn hàng của chính user đó
+// Hệ quả: nếu tài khoản admin vào trang cá nhân (AccountPage, ngoài /admin) để xem
+// đơn hàng của chính họ, API vẫn trả về đơn của TẤT CẢ user khác -> đơn hàng của
+// user thường bị lộ ra ngoài trang admin panel.
+// Trong lúc chờ backend sửa endpoint (tách riêng API "đơn hàng của tôi" luôn lọc
+// theo req.user.id bất kể role), ta lọc lại ở client để đảm bảo trang storefront
+// chỉ hiển thị đúng đơn hàng của người đang đăng nhập.
 export const useOrders = (params = {}) => {
   const [data, setData]       = useState([])
   const [total, setTotal]     = useState(0)
   const [loading, setLoading] = useState(true)
+  const currentUserId = useAuthStore(state => state.user?.id)
 
   const reload = useCallback(() => {
     setLoading(true)
     ordersApi.getAll(params)
       .then(res => {
-        setData(res.data || [])
-        setTotal(res.total || 0)
+        const all = res.data || []
+        // Chỉ giữ lại đơn hàng thuộc về user đang đăng nhập (kể cả khi họ là admin),
+        // để trang storefront không lộ đơn hàng của người khác do backend trả thừa.
+        const mine = currentUserId
+          ? all.filter(o => String(o.user_id) === String(currentUserId))
+          : all
+        setData(mine)
+        // total trả từ backend là tổng toàn hệ thống khi user là admin nên không còn
+        // đúng nữa sau khi lọc -> dùng số lượng thực tế sau khi lọc cho khớp UI.
+        setTotal(mine.length)
         setLoading(false)
       })
       .catch(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(params)])
+  }, [JSON.stringify(params), currentUserId])
 
   useEffect(() => { reload() }, [reload])
 
