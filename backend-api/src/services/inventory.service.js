@@ -17,6 +17,16 @@ exports.createInventory = async (
       throw err;
     }
 
+    const existing = await trx("inventory").where({ product_id }).first();
+
+    if (existing) {
+      const err = new Error(
+        "Sản phẩm này đã có tồn kho, vui lòng dùng chức năng cập nhật thay vì tạo mới.",
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+
     const [inventory] = await trx("inventory")
       .insert({
         product_id,
