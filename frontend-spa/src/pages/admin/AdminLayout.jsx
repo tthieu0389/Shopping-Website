@@ -29,7 +29,7 @@ const PAGE_TITLES = {
 
 function AdminSidebar() {
   return (
-    <aside className="w-[230px] bg-vnpt-dark flex flex-col flex-shrink-0 min-h-screen">
+    <aside className="w-[230px] bg-vnpt-dark flex flex-col flex-shrink-0 h-screen sticky top-0 self-start">
       {/* Logo — quay lại trang chủ */}
       <Link to="/" className="block px-5 pt-[22px] pb-[18px] border-b border-white/10 hover:bg-white/5 transition-colors">
         <div className="flex items-center gap-2.5">
