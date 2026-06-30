@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { toast } from '../utils/index.js'
 import useAuthStore from '../store/authStore.js'
+import { getHomePathForRole } from '../utils/roleRedirect.js'
 
 export default function LoginPage() {
   const { login, isLoading, error, clearError } = useAuthStore()
@@ -13,7 +14,9 @@ export default function LoginPage() {
     const res = await login(data)
     if (res.success) {
       toast.success('Đăng nhập thành công!')
-      navigate('/')
+      // user mới nhất nằm trong store ngay sau khi login() set xong
+      const role = useAuthStore.getState().user?.role
+      navigate(getHomePathForRole(role))
     }
   }
 
