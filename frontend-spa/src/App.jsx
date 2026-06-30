@@ -19,8 +19,6 @@ import BlogPage, { BlogDetail } from './pages/BlogPage.jsx'
 import OrderDetailPage        from './pages/OrderDetailPage.jsx'
 import ContactPage         from './pages/ContactPage.jsx'
 import NotFoundPage        from './pages/NotFoundPage.jsx'
-import AdminPanel           from './pages/AdminPanel.jsx'
-import StaffPanel           from './pages/StaffPanel.jsx'
 
 export default function App() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -39,14 +37,6 @@ export default function App() {
         {/* Auth — no layout */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
-        {/* Admin & Staff panel — layout riêng (sidebar VNPT), không dùng Layout chung của site bán hàng */}
-        <Route path="/admin/*" element={
-          <ProtectedRoute allowedRoles={['admin']}><AdminPanel /></ProtectedRoute>
-        } />
-        <Route path="/staff/*" element={
-          <ProtectedRoute allowedRoles={['staff']}><StaffPanel /></ProtectedRoute>
-        } />
 
         {/* Main layout */}
         <Route element={<Layout />}>

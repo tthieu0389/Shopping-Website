@@ -268,24 +268,9 @@ export function CountdownTimer({ h, m, s }) {
 }
 
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
-// allowedRoles: mảng các role được phép truy cập (vd: ['admin'], ['admin','staff']).
-// Bỏ trống = chỉ cần đăng nhập (giữ nguyên hành vi cũ cho route khách hàng).
-export function ProtectedRoute({ children, allowedRoles }) {
+export function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  const user = useAuthStore(s => s.user)
-
   if (!isAuthenticated) return <Navigate to="/login" replace />
-
-  if (allowedRoles && allowedRoles.length > 0) {
-    const role = user?.role || 'user'
-    if (!allowedRoles.includes(role)) {
-      // Đăng nhập rồi nhưng sai role -> đưa về đúng khu vực của họ thay vì 404 trần trụi
-      if (role === 'admin') return <Navigate to="/admin" replace />
-      if (role === 'staff') return <Navigate to="/staff" replace />
-      return <Navigate to="/" replace />
-    }
-  }
-
   return children
 }
 
