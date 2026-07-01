@@ -2060,7 +2060,7 @@
           }
         },
         "operationId": "updateAddress",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
       },
       "delete": {
         "tags": ["User Address"],
@@ -2100,7 +2100,7 @@
           }
         },
         "operationId": "deleteAddress",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
       }
     },
     "/api/user-address/{id}/default": {
@@ -2154,7 +2154,7 @@
           }
         },
         "operationId": "setDefaultAddress",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
       }
     },
     "/api/user-payment": {
@@ -2433,7 +2433,7 @@
           }
         },
         "operationId": "updatePayment",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
       },
       "delete": {
         "tags": ["User Payment"],
@@ -2473,7 +2473,7 @@
           }
         },
         "operationId": "deletePayment",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
       }
     },
     "/api/categories": {
@@ -4406,7 +4406,7 @@
     "/api/orders/{id}/cancel": {
       "post": {
         "tags": ["Orders"],
-        "summary": "Hủy đơn hàng (User hoặc Admin)",
+        "summary": "Hủy đơn hàng (User, Admin hoặc Staff)",
         "security": [
           {
             "bearerAuth": []
@@ -4445,7 +4445,7 @@
           }
         },
         "operationId": "cancelOrder",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
       }
     },
     "/api/order-items/order/{orderId}": {
@@ -5447,6 +5447,12 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
@@ -5479,6 +5485,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -7052,6 +7064,67 @@
         "operationId": "getMyContacts"
       }
     },
+    "/api/contacts/order/{orderId}": {
+      "get": {
+        "tags": ["Contacts"],
+        "summary": "Xem các liên hệ theo đơn hàng (Admin/Staff)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách liên hệ thuộc đơn hàng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Contact"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "getContactsByOrder",
+        "description": "**Yêu cầu quyền: admin, staff.**"
+      }
+    },
     "/api/contacts/{id}/reply": {
       "patch": {
         "tags": ["Contacts"],
@@ -7127,7 +7200,7 @@
     },
     "/api/user-profile/avatar": {
       "post": {
-        "tags": ["UserProfile"],
+        "tags": ["User Profile"],
         "summary": "Upload avatar cho hồ sơ của chính mình",
         "security": [
           {
@@ -7189,7 +7262,7 @@
     },
     "/api/user-profile/{userId}/avatar": {
       "post": {
-        "tags": ["UserProfile"],
+        "tags": ["User Profile"],
         "summary": "Upload avatar cho userId chỉ định (Admin/Internal)",
         "security": [
           {
@@ -7251,6 +7324,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
