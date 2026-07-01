@@ -30,6 +30,14 @@ router.get(
   contactController.getAll,
 );
 
+// ADMIN/STAFF XEM LIÊN HỆ THEO ĐƠN HÀNG
+router.get(
+  "/order/:orderId",
+  verifyToken(),
+  checkRole("admin", "staff"),
+  contactController.getByOrder,
+);
+
 // ADMIN/STAFF XEM CHI TIẾT 1 LIÊN HỆ (Đã bổ sung)
 router.get(
   "/:id",

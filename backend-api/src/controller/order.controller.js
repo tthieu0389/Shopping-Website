@@ -163,14 +163,19 @@ exports.getOrderById = async (req, res, next) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    // Tạo dữ liệu sạch ngay từ đầu để dùng chung cho tất cả các role
+    const responseData = {
+      ...order,
+      items: order.items || [],
+      contacts: order.contacts || [],
+    };
+
     // 1. ADMIN: Có toàn quyền xem tất cả đơn
     if (req.user.role === "admin") {
-      return res.json({ data: order });
+      return res.json({ data: responseData });
     }
 
-    // 2. STAFF:
-    // - Xem được đơn do chính mình tạo cho khách (order.created_by_staff_id === req.user.id)
-    // - Xem được đơn mà chính mình là người mua (order.user_id === req.user.id - trường hợp staff mua hàng)
+    // 2. STAFF
     if (req.user.role === "staff") {
       const isCreator = order.created_by_staff_id === req.user.id;
       const isOwner = order.user_id === req.user.id;
@@ -178,16 +183,15 @@ exports.getOrderById = async (req, res, next) => {
       if (!isCreator && !isOwner) {
         return res.status(403).json({ message: "Forbidden" });
       }
-      return res.json({ data: order });
+      return res.json({ data: responseData });
     }
 
-    // 3. USER:
-    // - Chỉ xem được đơn của chính mình (order.user_id === req.user.id)
+    // 3. USER
     if (req.user.role === "user") {
       if (order.user_id !== req.user.id) {
         return res.status(403).json({ message: "Forbidden" });
       }
-      return res.json({ data: order });
+      return res.json({ data: responseData });
     }
 
     return res.status(403).json({ message: "Forbidden" });

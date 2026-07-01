@@ -29,6 +29,10 @@ exports.up = function (knex) {
         .references("id")
         .inTable("users")
         .onDelete("SET NULL");
+      t.integer("order_id")
+        .references("id")
+        .inTable("orders")
+        .onDelete("SET NULL");
       t.string("status", 20).defaultTo("pending"); // pending | resolved
       t.text("reply");
       t.integer("replied_by")
@@ -38,7 +42,8 @@ exports.up = function (knex) {
       t.timestamp("replied_at");
       t.timestamp("created_at").defaultTo(knex.fn.now());
     })
-    .raw("CREATE INDEX idx_blog_images_blog_id ON blog_images(blog_id)");
+    .raw("CREATE INDEX idx_blog_images_blog_id ON blog_images(blog_id)")
+    .raw("CREATE INDEX idx_contacts_order_id ON contacts(order_id)");
 };
 
 exports.down = function (knex) {

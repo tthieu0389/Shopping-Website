@@ -4,6 +4,7 @@ exports.createContactSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   message: z.string().min(1),
+  order_id: z.coerce.number().int().positive().optional().nullable(),
 });
 
 exports.replyContactSchema = z.object({

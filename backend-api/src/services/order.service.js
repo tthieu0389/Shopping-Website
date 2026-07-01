@@ -2,6 +2,7 @@ const knex = require("../database/knex");
 const orderItemService = require("./orderitem.service");
 const promotionService = require("./promotion.service");
 const inventoryService = require("./inventory.service");
+const contactService = require("./contact.service");
 const generateOrderCode = require("../utils/generateOrderCode");
 
 // Ham tinh toan noi bo (Da toi uu hoa truy van batch)
@@ -402,6 +403,7 @@ exports.getOrdersByStaff = async ({
   return { data, total: Number(totalRow.count) };
 };
 
+// Lay chi tiet 1 don hang (kem items + cac lien he (contacts) gan voi don nay)
 exports.getOrderById = async (id) => {
   const order = await knex("orders as o")
     .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
@@ -409,7 +411,18 @@ exports.getOrderById = async (id) => {
     .where("o.id", id)
     .first();
   if (!order) return null;
-  order.items = await knex("order_items").where({ order_id: id });
+
+  const [items, contacts] = await Promise.all([
+    knex("order_items").where({ order_id: id }),
+    // Contacts la thong tin phu tro - loi o day khong duoc lam sap ca order detail
+    contactService.getContactsByOrder(id).catch((err) => {
+      console.error(`getContactsByOrder failed for order ${id}:`, err);
+      return [];
+    }),
+  ]);
+
+  order.items = items;
+  order.contacts = contacts;
   return order;
 };
 

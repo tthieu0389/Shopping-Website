@@ -241,12 +241,15 @@ CREATE TABLE contacts (
     email VARCHAR(100) NOT NULL,
     message TEXT NOT NULL,
     user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    order_id INT REFERENCES orders(id) ON DELETE SET NULL,
     status VARCHAR(20) DEFAULT 'pending',
     reply TEXT,
     replied_by INT REFERENCES users(id) ON DELETE SET NULL,
     replied_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_contacts_order_id ON contacts(order_id);
 
 -- =========================
 -- PROMOTION

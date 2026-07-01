@@ -30,6 +30,16 @@ exports.getOne = async (req, res, next) => {
   }
 };
 
+// Admin/Staff xem các liên hệ liên quan 1 đơn hàng
+exports.getByOrder = async (req, res, next) => {
+  try {
+    const data = await service.getContactsByOrder(req.params.orderId);
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // User xem lại liên hệ của chính mình
 exports.getMine = async (req, res, next) => {
   try {
