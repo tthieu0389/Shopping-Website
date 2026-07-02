@@ -47,11 +47,6 @@ export default function StaffDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Thông báo quyền hạn */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <span className="text-xl">🔒</span>
-        <span><strong>Chế độ Nhân viên:</strong> Bạn có thể xem thông tin và trả lời liên hệ từ khách hàng. Các thao tác chỉnh sửa, xoá thuộc về Quản trị viên.</span>
-      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

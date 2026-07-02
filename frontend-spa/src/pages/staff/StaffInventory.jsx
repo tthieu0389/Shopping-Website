@@ -47,10 +47,6 @@ export default function StaffInventory() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Read-only notice */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-semibold">
-        👁️ Chế độ xem — Điều chỉnh tồn kho chỉ dành cho Quản trị viên
-      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">

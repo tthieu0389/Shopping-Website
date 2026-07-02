@@ -8,7 +8,7 @@ export default function StaffContacts() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [replyBody, setReplyBody] = useState('')
-  const [filter, setFilter] = useState('all') // all | newsletter | contact
+  const [filter, setFilter] = useState('all')
 
   const load = () => {
     setLoading(true)
@@ -19,13 +19,11 @@ export default function StaffContacts() {
   }
   useEffect(() => { load() }, [])
 
-  // Khi chọn tin nhắn mới, reset reply
   const handleSelect = (c) => {
     setSelected(c)
     setReplyBody(`Kính gửi ${c.name},\n\nCảm ơn bạn đã liên hệ với VNPT Shop.\n\n`)
   }
 
-  // Mở mail client với nội dung soạn sẵn
   const handleReply = () => {
     if (!selected) return
     const subject = encodeURIComponent(`[VNPT Shop] Phản hồi liên hệ của ${selected.name}`)
@@ -44,14 +42,13 @@ export default function StaffContacts() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Thông báo quyền */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 font-semibold">
-        ✅ Bạn có thể xem và trả lời tin nhắn liên hệ từ khách hàng
-      </div>
-
       {/* Filter tabs */}
       <div className="flex items-center gap-2">
-        {[['all', 'Tất cả'], ['contact', 'Liên hệ'], ['newsletter', 'Đăng ký email']].map(([val, lbl]) => (
+        {[
+          ['all', 'Tất cả', contacts.length],
+          ['contact', 'Liên hệ', contacts.filter(c => c.name !== 'Newsletter').length],
+          ['newsletter', 'Đăng ký email', contacts.filter(c => c.name === 'Newsletter').length],
+        ].map(([val, lbl, count]) => (
           <button
             key={val}
             onClick={() => { setFilter(val); setSelected(null) }}
@@ -61,10 +58,7 @@ export default function StaffContacts() {
                 : 'bg-cream text-muted border border-shade hover:border-vnpt hover:text-vnpt'
             }`}
           >
-            {lbl}
-            {val === 'all' && ` (${contacts.length})`}
-            {val === 'contact' && ` (${contacts.filter(c => c.name !== 'Newsletter').length})`}
-            {val === 'newsletter' && ` (${contacts.filter(c => c.name === 'Newsletter').length})`}
+            {lbl} ({count})
           </button>
         ))}
       </div>
@@ -72,8 +66,8 @@ export default function StaffContacts() {
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4" style={{ minHeight: 480 }}>
         {/* Danh sách tin nhắn */}
         <Card className="flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - 240px)' }}>
-          <div className="px-4 py-3 border-b border-shade text-[13px] font-bold text-body flex items-center justify-between">
-            <span>Tin nhắn ({filtered.length})</span>
+          <div className="px-4 py-3 border-b border-shade text-[13px] font-bold text-body">
+            Tin nhắn ({filtered.length})
           </div>
           <div className="flex-1 overflow-y-auto">
             {filtered.length === 0 && (
@@ -110,7 +104,7 @@ export default function StaffContacts() {
             </div>
           ) : (
             <>
-              {/* Header tin nhắn */}
+              {/* Header */}
               <div className="px-6 py-4 border-b border-shade">
                 <div className="font-extrabold text-base text-body mb-0.5">{selected.name}</div>
                 <div className="text-[13px] text-muted">{selected.email} · {formatDate(selected.created_at)}</div>
@@ -126,10 +120,7 @@ export default function StaffContacts() {
 
               {/* Soạn phản hồi */}
               <div className="flex-1 overflow-y-auto px-6 py-4">
-                <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">
-                  Soạn phản hồi
-                  <span className="ml-2 text-success font-semibold normal-case">✅ Được phép</span>
-                </div>
+                <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Soạn phản hồi</div>
                 <textarea
                   value={replyBody}
                   onChange={e => setReplyBody(e.target.value)}
@@ -138,16 +129,13 @@ export default function StaffContacts() {
                   placeholder="Nhập nội dung phản hồi..."
                 />
                 <div className="text-xs text-muted mt-1">
-                  Nhấn "Gửi phản hồi" sẽ mở ứng dụng email với nội dung đã soạn sẵn gửi đến <strong>{selected.email}</strong>
+                  Nhấn "Gửi phản hồi" sẽ mở ứng dụng email với nội dung soạn sẵn gửi đến <strong>{selected.email}</strong>
                 </div>
               </div>
 
-              {/* Footer actions */}
+              {/* Footer */}
               <div className="px-6 py-3.5 border-t border-shade flex items-center justify-between">
-                <a
-                  href={`mailto:${selected.email}`}
-                  className="text-xs font-bold text-muted hover:text-vnpt transition-colors"
-                >
+                <a href={`mailto:${selected.email}`} className="text-xs font-bold text-muted hover:text-vnpt transition-colors">
                   ✉️ {selected.email}
                 </a>
                 <button
