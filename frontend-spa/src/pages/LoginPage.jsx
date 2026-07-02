@@ -26,11 +26,11 @@ export default function LoginPage() {
       >
         <div className="text-center text-white max-w-xs">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-8">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-vnpt rounded-lg flex items-center justify-center">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png"
+                src="https://upload.wikimedia.org/wikipedia/vi/6/65/VNPT_Logo.svg"
                 alt="VNPT"
-                className="w-7 brightness-0 invert"
+                className="w-6 brightness-0 invert"
               />
             </div>
             <span className="text-white font-extrabold text-xl">VNPT Shop</span>
@@ -44,7 +44,6 @@ export default function LoginPage() {
           </p>
           <div className="flex flex-col gap-3 text-left">
             {[
-              '🎁 Voucher 200.000₫ khi đăng ký',
               '📦 Theo dõi đơn hàng realtime',
               '⭐ Tích điểm đổi quà mỗi đơn',
             ].map(t => (
@@ -60,7 +59,7 @@ export default function LoginPage() {
           <h2 className="font-display text-3xl font-bold text-body mb-1">Đăng nhập</h2>
           <p className="text-sm text-muted mb-8">
             Chưa có tài khoản?{' '}
-            <Link to="/register" className="text-vnpt font-bold hover:underline">Đăng ký miễn phí →</Link>
+            <Link to="/register" className="text-vnpt font-bold hover:underline">Đăng ký →</Link>
           </p>
 
           {error && (
