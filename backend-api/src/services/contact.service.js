@@ -43,6 +43,13 @@ exports.getContactsByUser = async (userId) => {
 
 // GET CONTACT THEO ĐƠN HÀNG (Admin/Staff)
 exports.getContactsByOrder = async (orderId) => {
+  const order = await knex("orders").where({ id: orderId }).first();
+  if (!order) {
+    const err = new Error("Order not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
   return knex("contacts as c")
     .leftJoin("users as replier", "c.replied_by", "replier.id")
     .select("c.*", "replier.name as replied_by_name")
