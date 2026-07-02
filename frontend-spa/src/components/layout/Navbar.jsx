@@ -168,7 +168,7 @@ export default function Navbar() {
 
             {/* Dropdown kết quả */}
             {showDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-shade rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-shade rounded-xl shadow-lg z-50 overflow-y-auto overflow-x-hidden max-h-96">
                 {loading && (
                   <div className="p-4 text-sm text-muted text-center">Đang tìm...</div>
                 )}
