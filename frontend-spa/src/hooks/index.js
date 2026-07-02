@@ -78,10 +78,41 @@ export const useRelatedProducts = (id) => {
 
   useEffect(() => {
     if (!id) return
+    let cancelled = false
     setLoading(true)
     productsApi.getRelated(id)
-      .then(res => { setData(res.data || []); setLoading(false) })
+      .then(async (res) => {
+        const list = (res.data || []).map(p =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
+        )
+        if (cancelled) return
+
+        // Hiển thị trước (có thể chưa có ảnh) rồi bổ sung ảnh sau
+        setData(list)
+        setLoading(false)
+
+        // Sản phẩm nào chưa có thumbnail (không có ảnh is_thumbnail=true)
+        // thì lấy tạm ảnh đầu tiên trong product_images, giống cách useProducts đang làm
+        const needsImage = list.filter(p => !p.thumbnail)
+        if (needsImage.length > 0) {
+          const withImages = await Promise.all(
+            list.map(async (p) => {
+              if (p.thumbnail) return p
+              try {
+                const imgRes = await productImagesApi.getByProduct(p.id)
+                const images = imgRes.data || []
+                const thumb = images.find(img => img.is_thumbnail) || images[0]
+                return thumb ? { ...p, thumbnail: thumb.image_url } : p
+              } catch (_) {
+                return p
+              }
+            })
+          )
+          if (!cancelled) setData(withImages)
+        }
+      })
       .catch(() => setLoading(false))
+    return () => { cancelled = true }
   }, [id])
 
   return { data, loading }
