@@ -10,7 +10,7 @@ export default function FlashSalePage() {
   const [page, setPage] = useState(1)
 
   const offset = (page - 1) * LIMIT
-  const { data: products, total, loading } = useProducts({ limit: LIMIT, offset })
+  const { data: products, total, loading } = useProducts({ limit: LIMIT, offset, is_available: true })
 
   const totalPages = Math.ceil((total || 0) / LIMIT)
 
