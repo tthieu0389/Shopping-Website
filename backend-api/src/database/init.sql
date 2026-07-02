@@ -188,7 +188,7 @@ CREATE TABLE inventory (
     quantity INT DEFAULT 0 CHECK (quantity >= 0),
     min_quantity INT DEFAULT 5,
     status VARCHAR(20) DEFAULT 'active'
-        CHECK (status IN ('active', "inactive", 'archived')),
+        CHECK (status IN ('active', 'inactive', 'archived')),
     deleted_at TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
