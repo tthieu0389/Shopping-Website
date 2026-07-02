@@ -55,17 +55,9 @@ exports.getAllOrders = async (req, res, next) => {
     };
 
     let result;
-    if (req.user.role === "admin") {
-      // Admin xem tat ca don hang
+    if (["admin", "staff"].includes(req.user.role)) {
+      // Admin va staff deu xem duoc tat ca don hang
       result = await orderService.getAllOrders({ limit, offset, filters });
-    } else if (req.user.role === "staff") {
-      // Staff chi xem don minh da tao ho user
-      result = await orderService.getOrdersByStaff({
-        staffId: req.user.id,
-        limit,
-        offset,
-        filters,
-      });
     } else {
       // User thuong chi xem don cua chinh minh
       result = await orderService.getOrdersByUser({
@@ -87,7 +79,39 @@ exports.getAllOrders = async (req, res, next) => {
   }
 };
 
-// UPDATE ORDER (ONLY STATUS + NOTE) — admin + staff duoc update
+// GET MY ORDERS (STAFF) - don tu mua + don tao ho khach hang
+exports.getMyOrders = async (req, res, next) => {
+  try {
+    const { page, limit, offset } = req.pagination || {
+      page: 1,
+      limit: 10,
+      offset: 0,
+    };
+
+    const filters = {
+      status: req.query.status,
+      date: req.query.date,
+    };
+
+    const result = await orderService.getOrdersByStaff({
+      staffId: req.user.id,
+      limit,
+      offset,
+      filters,
+    });
+
+    res.json({
+      data: result.data,
+      total: result.total,
+      page,
+      limit,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// UPDATE ORDER (ONLY STATUS + NOTE) — ADMIN ONLY
 exports.updateOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;
@@ -96,17 +120,6 @@ exports.updateOrder = async (req, res, next) => {
       return res.status(400).json({
         message: "Use cancel endpoint to cancel order",
       });
-    }
-
-    // Staff chi duoc update don minh tao
-    if (req.user.role === "staff") {
-      const order = await orderService.getOrderById(orderId);
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      if (order.created_by_staff_id !== req.user.id) {
-        return res.status(403).json({ message: "Forbidden" });
-      }
     }
 
     const order = await orderService.updateOrder(orderId, {
