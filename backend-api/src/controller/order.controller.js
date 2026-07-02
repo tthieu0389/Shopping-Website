@@ -55,8 +55,8 @@ exports.getAllOrders = async (req, res, next) => {
     };
 
     let result;
-    if (["admin", "staff"].includes(req.user.role)) {
-      // Admin va staff deu xem duoc tat ca don hang
+    if (req.user.role === "admin" || req.user.role === "staff") {
+      // Admin + Staff deu xem duoc toan bo don hang
       result = await orderService.getAllOrders({ limit, offset, filters });
     } else {
       // User thuong chi xem don cua chinh minh
@@ -79,7 +79,7 @@ exports.getAllOrders = async (req, res, next) => {
   }
 };
 
-// GET MY ORDERS (STAFF) - don tu mua + don tao ho khach hang
+// GET MY ORDERS (STAFF) - don staff tu mua (khach hang) + don staff tao ho khach
 exports.getMyOrders = async (req, res, next) => {
   try {
     const { page, limit, offset } = req.pagination || {
@@ -183,23 +183,13 @@ exports.getOrderById = async (req, res, next) => {
       contacts: order.contacts || [],
     };
 
-    // 1. ADMIN: Có toàn quyền xem tất cả đơn
-    if (req.user.role === "admin") {
+    // 1. ADMIN + STAFF: toàn quyền xem chi tiết mọi đơn
+    // (staff cần xem đơn không phải do mình tạo để trả lời khiếu nại/contact liên quan)
+    if (req.user.role === "admin" || req.user.role === "staff") {
       return res.json({ data: responseData });
     }
 
-    // 2. STAFF
-    if (req.user.role === "staff") {
-      const isCreator = order.created_by_staff_id === req.user.id;
-      const isOwner = order.user_id === req.user.id;
-
-      if (!isCreator && !isOwner) {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-      return res.json({ data: responseData });
-    }
-
-    // 3. USER
+    // 2. USER
     if (req.user.role === "user") {
       if (order.user_id !== req.user.id) {
         return res.status(403).json({ message: "Forbidden" });
