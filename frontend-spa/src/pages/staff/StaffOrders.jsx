@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ordersApi } from '../../api/index.js'
-import { Card, Table, TR, TD, Badge, FilterTabs, DrawerPanel, AdminPagination } from '../admin/ui.jsx'
+import { Card, Table, TR, TD, Badge, FilterTabs, DrawerPanel, Btn, AdminPagination } from '../admin/ui.jsx'
 import { formatPrice, formatDate, toast } from '../../utils/index.js'
 
 const ORDER_STATUS = {
@@ -11,6 +11,8 @@ const ORDER_STATUS = {
   cancelled: { label: 'Đã huỷ',       tone: 'error' },
 }
 
+const SETTABLE_STATUS = ['pending', 'confirmed', 'shipping', 'completed']
+
 const LIMIT = 10
 
 export default function StaffOrders() {
@@ -20,6 +22,7 @@ export default function StaffOrders() {
   const [status, setStatus] = useState('all')
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
+  const [updating, setUpdating] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -31,16 +34,27 @@ export default function StaffOrders() {
 
   useEffect(() => { load() }, [page, status])
 
+  const handleStatusChange = (order, newStatus) => {
+    if (newStatus === 'cancelled' && !window.confirm(`Bạn có chắc muốn huỷ đơn hàng ${order.order_code || order.id} không?`)) return
+    setUpdating(true)
+    const action = newStatus === 'cancelled'
+      ? ordersApi.cancel(order.id)
+      : ordersApi.update(order.id, { status: newStatus })
+    action
+      .then(() => {
+        toast.success('Đã cập nhật trạng thái đơn hàng')
+        setSelected(prev => prev && prev.id === order.id ? { ...prev, status: newStatus } : prev)
+        load()
+      })
+      .catch(err => toast.error(err.message || 'Không thể cập nhật'))
+      .finally(() => setUpdating(false))
+  }
+
   const tabs = [['all', 'Tất cả'], ...Object.entries(ORDER_STATUS).map(([k, v]) => [k, v.label])]
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Read-only notice */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-semibold">
-        👁️ Chế độ xem — Nhân viên không thể thay đổi trạng thái đơn hàng
-      </div>
-
       <FilterTabs options={tabs} value={status} onChange={(v) => { setStatus(v); setPage(1) }} />
 
       <Card>
@@ -66,7 +80,6 @@ export default function StaffOrders() {
 
       <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
 
-      {/* Drawer xem chi tiết — không có nút đổi trạng thái */}
       <DrawerPanel open={!!selected} onClose={() => setSelected(null)} title={`Đơn hàng ${selected?.order_code || ''}`}>
         {selected && (
           <div>
@@ -94,16 +107,33 @@ export default function StaffOrders() {
               )}
             </div>
 
-            {/* Hiển thị trạng thái hiện tại — không có nút thay đổi */}
-            <div className="mb-3 text-[13px] font-bold text-body">Trạng thái đơn hàng</div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-[9px] border border-vnpt bg-vnpt-light">
-              <Badge {...(ORDER_STATUS[selected.status] || ORDER_STATUS.pending)} />
-              <span className="text-[13px] text-vnpt font-semibold">
-                {ORDER_STATUS[selected.status]?.label || selected.status}
-              </span>
-            </div>
-            <div className="mt-3 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 font-semibold">
-              🔒 Thay đổi trạng thái đơn hàng chỉ dành cho Quản trị viên
+            <div className="mb-2 text-[13px] font-bold text-body">Cập nhật trạng thái</div>
+            <div className="flex flex-col gap-1.5">
+              {SETTABLE_STATUS.map(key => {
+                const { label } = ORDER_STATUS[key]
+                const isCurrent = selected.status === key
+                return (
+                  <button
+                    key={key}
+                    disabled={updating || isCurrent || selected.status === 'cancelled' || selected.status === 'completed'}
+                    onClick={() => handleStatusChange(selected, key)}
+                    className={`text-left px-4 py-2.5 rounded-[9px] border text-[13px] transition-all
+                      ${isCurrent ? 'border-vnpt bg-vnpt-light text-vnpt font-bold' : 'border-shade text-body hover:border-vnpt'}
+                      disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    {isCurrent ? '✓ ' : ''}{label}
+                  </button>
+                )
+              })}
+              {['pending', 'confirmed'].includes(selected.status) && (
+                <button
+                  disabled={updating}
+                  onClick={() => handleStatusChange(selected, 'cancelled')}
+                  className="text-left px-4 py-2.5 rounded-[9px] border border-red-200 bg-error/5 text-red-700 text-[13px] font-semibold hover:bg-error/10 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  ✕ Huỷ đơn hàng
+                </button>
+              )}
             </div>
           </div>
         )}
