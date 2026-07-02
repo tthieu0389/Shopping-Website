@@ -368,17 +368,22 @@ exports.getOrdersByUser = async ({
   return { data, total: Number(totalRow.count) };
 };
 
-// Staff chi xem duoc don minh tao hoac don cua user ma minh tao ho
+// Danh sach rieng cho staff: don staff tu mua (voi tu cach khach hang)
+// HOAC don staff tao ho cho khach hang khac
 exports.getOrdersByStaff = async ({
   staffId,
   limit = 10,
   offset = 0,
   filters = {},
 }) => {
+  const applyOwnerFilter = (qb) => {
+    qb.where("o.user_id", staffId).orWhere("o.created_by_staff_id", staffId);
+  };
+
   let query = knex("orders as o")
     .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
-    .where("o.created_by_staff_id", staffId);
-  let countQuery = knex("orders as o").where("o.created_by_staff_id", staffId);
+    .where(applyOwnerFilter);
+  let countQuery = knex("orders as o").where(applyOwnerFilter);
 
   if (filters.status) {
     query.where("o.status", filters.status);

@@ -30,18 +30,26 @@ router.post(
   orderController.createOrder,
 );
 
-// GET ALL ORDERS (ADMIN + USER)
+// GET ALL ORDERS (ADMIN + STAFF xem toan bo, USER xem cua minh)
 router.get("/", verifyToken(), pagination(), orderController.getAllOrders);
+
+// GET MY ORDERS (STAFF) - don tu mua + don tao ho khach hang
+router.get(
+  "/staff/mine",
+  verifyToken(),
+  checkRole("staff"),
+  pagination(),
+  orderController.getMyOrders,
+);
 
 // GET ORDER BY ID
 router.get("/:id", verifyToken(), orderController.getOrderById);
 
-// UPDATE ORDER (admin + staff đều được cập nhật — staff chỉ sửa đơn mình tạo)
+// UPDATE ORDER (ADMIN ONLY)
 router.put(
   "/:id",
   verifyToken(),
-  checkOwnership("orders"),
-  checkRole("admin", "staff"),
+  checkRole("admin"),
   validate(updateOrderSchema),
   orderController.updateOrder,
 );
