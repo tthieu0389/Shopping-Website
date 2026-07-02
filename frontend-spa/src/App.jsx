@@ -29,6 +29,14 @@ import AdminUsers       from './pages/admin/AdminUsers.jsx'
 import AdminContacts    from './pages/admin/AdminContacts.jsx'
 import AdminBlogs       from './pages/admin/AdminBlogs.jsx'
 
+import StaffLayout      from './pages/staff/StaffLayout.jsx'
+import StaffDashboard   from './pages/staff/StaffDashboard.jsx'
+import StaffOrders      from './pages/staff/StaffOrders.jsx'
+import StaffProducts    from './pages/staff/StaffProducts.jsx'
+import StaffInventory   from './pages/staff/StaffInventory.jsx'
+import StaffBlogs       from './pages/staff/StaffBlogs.jsx'
+import StaffContacts    from './pages/staff/StaffContacts.jsx'
+
 export default function App() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const fetchCart = useCartStore(s => s.fetchCart)
@@ -57,6 +65,16 @@ export default function App() {
           <Route path="users"         element={<AdminUsers />} />
           <Route path="contacts"      element={<AdminContacts />} />
           <Route path="blogs"         element={<AdminBlogs />} />
+        </Route>
+
+        {/* Staff — own layout, role check inside StaffLayout (staff + admin) */}
+        <Route path="/staff" element={<StaffLayout />}>
+          <Route index                element={<StaffDashboard />} />
+          <Route path="orders"        element={<StaffOrders />} />
+          <Route path="products"      element={<StaffProducts />} />
+          <Route path="inventory"     element={<StaffInventory />} />
+          <Route path="blogs"         element={<StaffBlogs />} />
+          <Route path="contacts"      element={<StaffContacts />} />
         </Route>
 
         {/* Main layout */}

@@ -196,6 +196,9 @@ export default function Navbar() {
                   {user?.role === 'admin' && (
                     <Link to="/admin" className="flex items-center gap-2 px-4 py-3 text-sm font-bold text-vnpt hover:bg-vnpt-light rounded-t-xl">🛠️ Trang quản trị</Link>
                   )}
+                  {user?.role === 'staff' && (
+                    <Link to="/staff" className="flex items-center gap-2 px-4 py-3 text-sm font-bold text-amber-600 hover:bg-amber-50 rounded-t-xl">🔶 Trang nhân viên</Link>
+                  )}
                   <Link to="/account"           className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream">👤 Tài khoản</Link>
                   <Link to="/account/orders"    className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream">📦 Đơn hàng</Link>
                   <Link to="/account/addresses" className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-cream">📍 Địa chỉ</Link>
