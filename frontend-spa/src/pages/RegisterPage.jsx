@@ -29,15 +29,15 @@ export default function RegisterPage() {
       {/* Left panel */}
       <div
         className="flex flex-col items-center justify-center p-16"
-        style={{ background: 'linear-gradient(135deg, #7b0000, #E30613)' }}
+        style={{ background: 'linear-gradient(135deg, #00205f, #003087, #b30a12)' }}
       >
         <div className="text-center text-white max-w-xs">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-8">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-vnpt rounded-lg flex items-center justify-center">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VNPT_Logo.svg/512px-VNPT_Logo.svg.png"
+                src="https://upload.wikimedia.org/wikipedia/vi/6/65/VNPT_Logo.svg"
                 alt="VNPT"
-                className="w-7 brightness-0 invert"
+                className="w-6 brightness-0 invert"
               />
             </div>
             <span className="text-white font-extrabold text-xl">VNPT Shop</span>
@@ -49,14 +49,6 @@ export default function RegisterPage() {
           <p className="text-white/75 text-sm leading-relaxed mb-6">
             Đăng ký để nhận ưu đãi đặc biệt dành riêng cho thành viên mới.
           </p>
-          <div className="bg-white/12 border border-white/20 rounded-2xl p-6 text-left">
-            <div className="text-xs font-bold uppercase tracking-wider opacity-70 mb-2">🎁 Quà chào mừng</div>
-            <div className="text-4xl font-bold font-display">200.000₫</div>
-            <div className="text-sm opacity-75 mt-1">Cho đơn hàng đầu tiên từ 500.000₫</div>
-            <div className="mt-3 bg-white/15 rounded-lg px-4 py-2 text-sm font-bold tracking-[2px]">
-              VNPTNEW200
-            </div>
-          </div>
         </div>
       </div>
 
@@ -168,9 +160,9 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 bg-accent text-white rounded-full font-bold text-base hover:bg-accent-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-vnpt text-white rounded-full font-bold text-base hover:bg-vnpt-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isLoading ? '⏳ Đang đăng ký...' : '🎁 Đăng ký & nhận voucher'}
+              {isLoading ? '⏳ Đang đăng ký...' : 'Đăng ký'}
             </button>
           </form>
         </div>

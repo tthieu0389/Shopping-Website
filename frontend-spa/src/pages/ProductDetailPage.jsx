@@ -179,10 +179,10 @@ export default function ProductDetailPage() {
 
             {/* Stock status */}
             <div className="mb-4">
-              {product.is_available !== false && product.stock > 0 ? (
+              {product.is_available !== false ? (
                 <span className="text-sm text-success font-semibold">
                   ✓ Còn hàng
-                  {product.stock <= 10 && (
+                  {product.stock > 0 && product.stock <= 10 && (
                     <span className="ml-2 text-warning font-semibold">
                       (còn {product.stock} sản phẩm)
                     </span>
