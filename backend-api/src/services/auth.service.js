@@ -77,7 +77,7 @@ exports.login = async (data) => {
       role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" },
+    { expiresIn: "4h" },
   );
 
   return {

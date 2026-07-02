@@ -308,7 +308,7 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
   });
 };
 
-// Lay danh sach tat ca don hang cho ADMIN (phan trang + bo loc)
+// Lay danh sach tat ca don hang cho ADMIN and STAFF (phan trang + bo loc)
 exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
   let query = knex("orders as o").leftJoin(
     "users as staff",

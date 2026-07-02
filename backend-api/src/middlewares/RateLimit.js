@@ -15,32 +15,32 @@ const createLimiter = (options) =>
   });
 
 // Nhóm thao tác quan trọng (Giữ lại độ trễ nhỏ để tránh brute force)
-const loginLimiter = createLimiter({ windowMs: 60 * 1000, max: 20 }); // 1 phút 20 lần
-const userLimiter = createLimiter({ windowMs: 60 * 1000, max: 20 });
-const contactLimiter = createLimiter({ windowMs: 60 * 1000, max: 10 });
-const reviewLimiter = createLimiter({ windowMs: 60 * 1000, max: 10 });
+const loginLimiter = createLimiter({ windowMs: 60 * 1000, max: 60 }); // 1 phút 60 lần
+const userLimiter = createLimiter({ windowMs: 60 * 1000, max: 60 }); // 1 phút 60 lần
+const contactLimiter = createLimiter({ windowMs: 60 * 1000, max: 30 }); // 1 phút 30 lần
+const reviewLimiter = createLimiter({ windowMs: 60 * 1000, max: 30 }); // 1 phút 30 lần
 
 // Nhóm thao tác người dùng (Nới lỏng tối đa)
-const orderLimiter = createLimiter({ windowMs: 1000, max: 10 });
-const orderItemLimiter = createLimiter({ windowMs: 1000, max: 10 });
-const cartLimiter = createLimiter({ windowMs: 1000, max: 50 });
-const userAddressLimiter = createLimiter({ windowMs: 1000, max: 20 });
-const userPaymentLimiter = createLimiter({ windowMs: 1000, max: 20 });
-const userProfileLimiter = createLimiter({ windowMs: 1000, max: 20 });
-const favoriteLimiter = createLimiter({ windowMs: 1000, max: 20 });
+const orderLimiter = createLimiter({ windowMs: 10 * 1000, max: 50 }); // 10 giây 50 lần
+const orderItemLimiter = createLimiter({ windowMs: 10 * 1000, max: 50 }); // 10 giây 50 lần
+const cartLimiter = createLimiter({ windowMs: 10 * 1000, max: 200 }); // 10 giây 200 lần
+const userAddressLimiter = createLimiter({ windowMs: 10 * 1000, max: 100 }); // 10 giây 100 lần
+const userPaymentLimiter = createLimiter({ windowMs: 10 * 1000, max: 100 }); // 10 giây 100 lần
+const userProfileLimiter = createLimiter({ windowMs: 10 * 1000, max: 100 }); // 10 giây 100 lần
+const favoriteLimiter = createLimiter({ windowMs: 10 * 1000, max: 100 }); // 10 giây 100 lần
 
 // Nhóm dữ liệu công khai (Sản phẩm, danh mục, blog -> Nới lỏng hoàn toàn)
-const productLimiter = createLimiter({ windowMs: 1000, max: 100 });
-const categoryLimiter = createLimiter({ windowMs: 1000, max: 100 });
-const storeLimiter = createLimiter({ windowMs: 1000, max: 50 });
-const blogLimiter = createLimiter({ windowMs: 1000, max: 50 });
-const blogImageLimiter = createLimiter({ windowMs: 1000, max: 50 });
+const productLimiter = createLimiter({ windowMs: 10 * 1000, max: 1000 }); // 10 giây 1000 lần
+const categoryLimiter = createLimiter({ windowMs: 10 * 1000, max: 1000 }); // 10 giây 1000 lần
+const storeLimiter = createLimiter({ windowMs: 10 * 1000, max: 500 }); // 10 giây 500 lần
+const blogLimiter = createLimiter({ windowMs: 10 * 1000, max: 500 }); // 10 giây 500 lần
+const blogImageLimiter = createLimiter({ windowMs: 10 * 1000, max: 500 }); // 10 giây 500 lần
 
 // Nhóm hệ thống / quản trị nội bộ
-const inventoryLimiter = createLimiter({ windowMs: 2000, max: 50 });
-const inventoryLogLimiter = createLimiter({ windowMs: 1000, max: 50 });
-const promotionLimiter = createLimiter({ windowMs: 2000, max: 50 });
-const docsLimiter = createLimiter({ windowMs: 1000, max: 100 });
+const inventoryLimiter = createLimiter({ windowMs: 10 * 1000, max: 200 }); // 10 giây 200 lần
+const inventoryLogLimiter = createLimiter({ windowMs: 10 * 1000, max: 200 }); // 10 giây 200 lần
+const promotionLimiter = createLimiter({ windowMs: 10 * 1000, max: 200 }); // 10 giây 200 lần
+const docsLimiter = createLimiter({ windowMs: 10 * 1000, max: 500 }); // 10 giây 500 lần
 
 module.exports = {
   loginLimiter,
