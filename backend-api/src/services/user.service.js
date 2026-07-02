@@ -9,7 +9,7 @@ exports.createUser = async (data) => {
   const hashedPassword = await bcrypt.hash(data.password, 10);
   const [user] = await knex("users")
     .insert({ ...data, password: hashedPassword })
-    .returning(["id", "name", "email", "role"]);
+    .returning(["id", "name", "email", "role", "created_at"]);
   return user;
 };
 
@@ -34,7 +34,7 @@ exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
   const total = parseInt(count) || 0;
   // Truy vấn dữ liệu
   const data = await base
-    .distinct("u.id", "u.name", "u.email", "u.role", "p.phone")
+    .distinct("u.id", "u.name", "u.email", "u.role", "p.phone", "u.created_at")
     .orderBy("u.id", "desc")
     .limit(pageSize)
     .offset(pageOffset);
