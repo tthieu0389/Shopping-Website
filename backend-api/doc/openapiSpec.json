@@ -180,7 +180,7 @@
           },
           "role": {
             "type": "string",
-            "enum": ["admin", "user"]
+            "enum": ["admin", "staff", "user"]
           },
           "is_deleted": {
             "type": "boolean"
@@ -338,9 +338,6 @@
           "price": {
             "type": "number",
             "format": "double"
-          },
-          "stock": {
-            "type": "integer"
           },
           "product_type": {
             "type": "string"
@@ -660,6 +657,16 @@
           },
           "is_active": {
             "type": "boolean"
+          },
+          "priority": {
+            "type": "integer",
+            "default": 0,
+            "description": "Càng cao càng được ưu tiên áp dụng trước"
+          },
+          "stackable": {
+            "type": "boolean",
+            "default": true,
+            "description": "FALSE = độc quyền, không cộng dồn với promotion khác"
           }
         }
       },
@@ -771,6 +778,11 @@
           "user_id": {
             "type": "integer",
             "nullable": true
+          },
+          "order_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Gắn liên hệ này với 1 đơn hàng cụ thể (nếu có)"
           },
           "status": {
             "type": "string",
@@ -959,6 +971,81 @@
             "format": "date-time"
           }
         }
+      },
+      "OrderCreateResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Order"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "order_details": {
+                "$ref": "#/components/schemas/OrderPreviewResult",
+                "description": "Chi tiết breakdown giá/ship của đơn vừa tạo (chỉ có ở response tạo đơn)"
+              }
+            }
+          }
+        ]
+      },
+      "OrderFull": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Order"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OrderItem"
+                },
+                "description": "Danh sách sản phẩm đã lưu trong đơn"
+              },
+              "contacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Contact"
+                },
+                "description": "Các liên hệ/khiếu nại gắn với đơn này"
+              }
+            }
+          }
+        ]
+      },
+      "UserSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/User"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "phone": {
+                "type": "string",
+                "nullable": true,
+                "description": "SĐT lấy từ user_profiles (LEFT JOIN, có thể null nếu user chưa tạo profile)"
+              }
+            }
+          }
+        ]
+      },
+      "ProductDetailWithName": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProductDetail"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "product_name": {
+                "type": "string",
+                "description": "Tên sản phẩm (JOIN từ bảng products)"
+              }
+            }
+          }
+        ]
       }
     },
     "parameters": {
@@ -993,7 +1080,7 @@
         "schema": {
           "type": "string"
         },
-        "description": "Tìm kiếm theo tên hoặc email người dùng"
+        "description": "Tìm kiếm theo tên, email hoặc số điện thoại người dùng"
       }
     },
     "responses": {
@@ -1193,7 +1280,7 @@
     "/api/users": {
       "get": {
         "tags": ["Users"],
-        "summary": "Lấy danh sách người dùng (Admin)",
+        "summary": "Tra cứu / danh sách người dùng (Admin, Staff)",
         "security": [
           {
             "bearerAuth": []
@@ -1212,7 +1299,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Danh sách người dùng",
+            "description": "Danh sách người dùng khớp với điều kiện tìm kiếm (hoặc toàn bộ nếu không truyền search)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1225,7 +1312,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/User"
+                            "$ref": "#/components/schemas/UserSearchResult"
                           }
                         },
                         "meta": {
@@ -1264,7 +1351,7 @@
           }
         },
         "operationId": "listUsers",
-        "description": "**Yêu cầu quyền: admin, staff.**"
+        "description": "**Yêu cầu quyền: admin, staff.**\n\nDùng endpoint này để **tra cứu `user_id`** khi staff/admin cần tạo đơn hộ khách (ví dụ khách mua trực tiếp tại cửa hàng, chỉ cung cấp tên/SĐT/email): tìm user trước bằng `search`, lấy `id` trong kết quả rồi truyền vào `user_id` của `POST /api/orders`.\n\nTham số `search` khớp theo **1 trong 3** field: `name` (ILIKE, không phân biệt hoa/thường), `email` (ILIKE), hoặc `phone` (LIKE, join từ bảng `user_profiles`) — chỉ cần khách cung cấp đúng 1 trong 3 thông tin trên là tra được, không cần biết đủ cả 3. Response luôn trả về đầy đủ cả `name`, `email`, `phone` (nếu có) của mỗi user tìm được, bất kể đang search bằng field nào, để nhân viên đối chiếu đúng khách trước khi chọn."
       },
       "post": {
         "tags": ["Users"],
@@ -2609,6 +2696,10 @@
                   },
                   "description": {
                     "type": "string"
+                  },
+                  "is_deleted": {
+                    "type": "boolean",
+                    "description": "Dùng để soft-delete/khôi phục category. Chỉ có tác dụng ở update — ở create field này luôn bị ghi đè thành false."
                   }
                 }
               }
@@ -2999,9 +3090,6 @@
                   "price": {
                     "type": "number"
                   },
-                  "stock": {
-                    "type": "integer"
-                  },
                   "product_type": {
                     "type": "string"
                   },
@@ -3139,7 +3227,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/ProductDetail"
+                            "$ref": "#/components/schemas/ProductDetailWithName"
                           }
                         }
                       }
@@ -3252,6 +3340,10 @@
                   },
                   "detail_value": {
                     "type": "string"
+                  },
+                  "product_id": {
+                    "type": "integer",
+                    "description": "Cho phép gán lại detail này sang product khác"
                   }
                 }
               }
@@ -3696,7 +3788,8 @@
                   "is_selected": {
                     "type": "boolean"
                   }
-                }
+                },
+                "required": ["quantity"]
               }
             }
           }
@@ -4143,7 +4236,7 @@
                     {
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/Order"
+                          "$ref": "#/components/schemas/OrderCreateResponse"
                         }
                       }
                     }
@@ -4165,7 +4258,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "createOrder"
+        "operationId": "createOrder",
+        "description": "Nếu là `admin`/`staff` tạo đơn hộ khách (truyền `user_id`), cần tra cứu `user_id` trước bằng `GET /api/users?search=` (theo tên, email hoặc SĐT) — khách hàng thường không tự biết ID của mình để cung cấp trực tiếp."
       },
       "get": {
         "tags": ["Orders"],
@@ -4265,7 +4359,7 @@
                     {
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/Order"
+                          "$ref": "#/components/schemas/OrderFull"
                         }
                       }
                     }
@@ -6545,6 +6639,11 @@
                   },
                   "message": {
                     "type": "string"
+                  },
+                  "order_id": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Gắn liên hệ này với 1 đơn hàng cụ thể (nếu có)"
                   }
                 }
               }

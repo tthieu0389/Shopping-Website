@@ -1,5 +1,6 @@
 const knex = require("../database/knex");
 const bcrypt = require("bcrypt");
+
 exports.createUser = async (data) => {
   const exists = await knex("users")
     .where({ email: data.email, is_deleted: false })
@@ -11,6 +12,7 @@ exports.createUser = async (data) => {
     .returning(["id", "name", "email", "role"]);
   return user;
 };
+
 exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
   // Chuẩn hóa đầu vào ngay từ đầu
   const searchTerm = typeof search === "string" ? search.trim() : "";
