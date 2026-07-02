@@ -41,6 +41,15 @@ exports.getContactsByUser = async (userId) => {
     .orderBy("c.created_at", "desc");
 };
 
+// GET CONTACT THEO ĐƠN HÀNG (Admin/Staff)
+exports.getContactsByOrder = async (orderId) => {
+  return knex("contacts as c")
+    .leftJoin("users as replier", "c.replied_by", "replier.id")
+    .select("c.*", "replier.name as replied_by_name")
+    .where("c.order_id", orderId)
+    .orderBy("c.created_at", "desc");
+};
+
 // STAFF/ADMIN PHẢN HỒI LIÊN HỆ
 exports.replyContact = async (id, replierId, reply) => {
   const contact = await knex("contacts").where({ id }).first();
