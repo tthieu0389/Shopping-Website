@@ -163,6 +163,7 @@ export const useCategories = () => {
 // ── useBlogs ──────────────────────────────────────────────────────────────────
 export const useBlogs = (params = {}) => {
   const [data, setData] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -170,13 +171,14 @@ export const useBlogs = (params = {}) => {
       .getAll(params)
       .then((res) => {
         setData(res.data || []);
+        setTotal(Number(res.total) || 0);
         setLoading(false);
       })
       .catch(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(params)]);
 
-  return { data, loading };
+  return { data, total, loading };
 };
 
 // ── useReviews ────────────────────────────────────────────────────────────────

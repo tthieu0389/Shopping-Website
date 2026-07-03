@@ -378,7 +378,7 @@ export function StarRating({ value = 0, max = 5, onChange }) {
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 export function Pagination({ page, totalPages, goTo }) {
-  if (totalPages <= 1) return null;
+  if (totalPages === 0) return null;
 
   // Tạo danh sách trang với ellipsis: 1 … 4 5 6 … 55
   const getPages = () => {
