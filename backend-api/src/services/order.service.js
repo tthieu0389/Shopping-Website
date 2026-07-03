@@ -306,9 +306,13 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
 
     // Neu don da thanh toan roi moi bi huy -> can hoan tien, chuyen sang refunded
     // (khong tu dong tra tien that, chi phan anh trang thai can xu ly hoan tien)
+    // Neu don chua thanh toan (unpaid/failed) -> huy coi nhu giao dich thanh toan
+    // that bai, chuyen thang sang failed de phan anh dung trang thai cuoi cung.
     const cancelData = { status: "cancelled" };
     if (order.payment_status === "paid") {
       cancelData.payment_status = "refunded";
+    } else if (order.payment_status !== "failed") {
+      cancelData.payment_status = "failed";
     }
 
     await trx("orders").where("id", orderId).update(cancelData);
@@ -616,6 +620,17 @@ exports.updatePaymentStatus = async (id, paymentStatus) => {
   if (paymentStatus === "paid" && order.status === "cancelled") {
     const err = new Error(
       "Không thể đánh dấu đã thanh toán cho đơn hàng đã hủy",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  // Don dang giao (shipping) chua the hoan tien - hang chua ve, chua xac dinh
+  // duoc co huy/tra hang thanh cong hay khong. Chi hoan tien khi don da huy
+  // hoac da giao thanh cong (completed).
+  if (paymentStatus === "refunded" && order.status === "shipping") {
+    const err = new Error(
+      "Đơn hàng đang giao, không thể chuyển trạng thái thanh toán sang hoàn tiền",
     );
     err.statusCode = 400;
     throw err;

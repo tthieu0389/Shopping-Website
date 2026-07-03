@@ -7,7 +7,7 @@ import {
   ordersApi,
 } from "../../api/index.js";
 import { DrawerPanel } from "./ui.jsx";
-import { formatPrice, toast } from "../../utils/index.js";
+import { formatPrice, toast, resolveImageUrl } from "../../utils/index.js";
 
 const PAYMENT_METHODS = [
   ["cod", "COD (Thanh toán khi nhận hàng)"],
@@ -143,6 +143,7 @@ export function CreateOrderDrawer({ open, onClose, onCreated }) {
         {
           product_id: p.id,
           name: p.name,
+          img: p.thumbnail_url ?? null,
           price: p.sale_price ?? p.price,
           stock: p.stock_quantity ?? p.stock ?? null,
           qty: 1,
@@ -437,8 +438,25 @@ export function CreateOrderDrawer({ open, onClose, onCreated }) {
                         onClick={() => addProduct(p)}
                         className="w-full flex items-center justify-between text-left px-3.5 py-2.5 hover:bg-cream border-b border-shade last:border-none"
                       >
-                        <span className="text-sm text-body line-clamp-1">
-                          {p.name}
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-9 h-9 rounded-md bg-cream border border-shade flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {p.thumbnail_url ? (
+                              <img
+                                src={resolveImageUrl(p.thumbnail_url)}
+                                alt={p.name}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  e.target.src =
+                                    "https://placehold.co/40x40?text=No+Image";
+                                }}
+                              />
+                            ) : (
+                              <span className="text-sm">📦</span>
+                            )}
+                          </span>
+                          <span className="text-sm text-body line-clamp-1">
+                            {p.name}
+                          </span>
                         </span>
                         <span className="flex items-center gap-2 flex-shrink-0 ml-2">
                           {added && (
@@ -468,6 +486,21 @@ export function CreateOrderDrawer({ open, onClose, onCreated }) {
                     key={i.product_id}
                     className="flex items-center gap-2.5 border border-shade rounded-lg px-3 py-2"
                   >
+                    <span className="w-9 h-9 rounded-md bg-cream border border-shade flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {i.img ? (
+                        <img
+                          src={resolveImageUrl(i.img)}
+                          alt={i.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.src =
+                              "https://placehold.co/40x40?text=No+Image";
+                          }}
+                        />
+                      ) : (
+                        <span className="text-sm">📦</span>
+                      )}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-semibold text-body line-clamp-1">
                         {i.name}
