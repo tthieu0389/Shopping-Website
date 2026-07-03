@@ -51,6 +51,11 @@ exports.updateOrderSchema = z.object({
   note: z.string().optional(),
 });
 
+// UPDATE PAYMENT STATUS (tach rieng khoi status don hang, thuong do admin/he thong thanh toan goi)
+exports.updatePaymentStatusSchema = z.object({
+  payment_status: z.enum(["unpaid", "paid", "failed", "refunded"]),
+});
+
 exports.previewOrderSchema = z.object({
   items: z
     .array(

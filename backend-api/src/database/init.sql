@@ -149,6 +149,8 @@ CREATE TABLE orders (
     shipping_fee NUMERIC(12,2) DEFAULT 0,
     total_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
     payment_method VARCHAR(30) DEFAULT 'cod',
+    payment_status VARCHAR(20) DEFAULT 'unpaid'
+        CHECK (payment_status IN ('unpaid', 'paid', 'failed', 'refunded')),
     status VARCHAR(30) DEFAULT 'pending'
         CHECK (status IN ('pending', 'confirmed', 'shipping', 'completed', 'cancelled')),
     note TEXT,

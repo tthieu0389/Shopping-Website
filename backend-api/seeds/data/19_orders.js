@@ -90,6 +90,15 @@ exports.seed = async function (knex) {
         "completed",
       ]),
 
+      // payment_status độc lập với status đơn COD giao xong mới paid,
+      // bank_transfer thường paid gần như ngay khi tạo đơn
+      payment_status: faker.helpers.arrayElement([
+        "unpaid",
+        "paid",
+        "failed",
+        "refunded",
+      ]),
+
       // Thêm staff tạo đơn
       created_by_staff_id: isStaffOrder
         ? faker.helpers.arrayElement(staffUsers).id

@@ -11,6 +11,7 @@ const pagination = require("../middlewares/pagination");
 const {
   createOrderSchema,
   updateOrderSchema,
+  updatePaymentStatusSchema,
   previewOrderSchema,
 } = require("../schema/order.schema");
 
@@ -60,6 +61,15 @@ router.post(
   verifyToken(),
   checkOwnership("orders"),
   orderController.cancelOrder,
+);
+
+// UPDATE PAYMENT STATUS (ADMIN ONLY)
+router.patch(
+  "/:id/payment-status",
+  verifyToken(),
+  checkRole("admin"),
+  validate(updatePaymentStatusSchema),
+  orderController.updatePaymentStatus,
 );
 
 // DELETE ORDER (ADMIN ONLY)

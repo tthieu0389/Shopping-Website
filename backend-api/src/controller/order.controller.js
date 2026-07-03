@@ -52,13 +52,14 @@ exports.getAllOrders = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       date: req.query.date,
-      search: req.query.search || req.query.q,
     };
 
     let result;
     if (req.user.role === "admin" || req.user.role === "staff") {
+      // Admin + Staff deu xem duoc toan bo don hang
       result = await orderService.getAllOrders({ limit, offset, filters });
     } else {
+      // User thuong chi xem don cua chinh minh
       result = await orderService.getOrdersByUser({
         userId: req.user.id,
         limit,
@@ -78,7 +79,7 @@ exports.getAllOrders = async (req, res, next) => {
   }
 };
 
-// GET MY ORDERS (STAFF)
+// GET MY ORDERS (STAFF) - don staff tu mua (khach hang) + don staff tao ho khach
 exports.getMyOrders = async (req, res, next) => {
   try {
     const { page, limit, offset } = req.pagination || {
@@ -90,7 +91,6 @@ exports.getMyOrders = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       date: req.query.date,
-      search: req.query.search || req.query.q,
     };
 
     const result = await orderService.getOrdersByStaff({
@@ -149,6 +149,24 @@ exports.cancelOrder = async (req, res, next) => {
     res.json({
       message: "Order cancelled successfully",
       data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// UPDATE PAYMENT STATUS (ADMIN ONLY)
+exports.updatePaymentStatus = async (req, res, next) => {
+  try {
+    const orderId = req.params.id;
+    const order = await orderService.updatePaymentStatus(
+      orderId,
+      req.body.payment_status,
+    );
+
+    res.json({
+      message: "Payment status updated successfully",
+      data: order,
     });
   } catch (err) {
     next(err);

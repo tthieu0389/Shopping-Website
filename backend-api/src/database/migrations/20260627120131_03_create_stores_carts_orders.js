@@ -25,6 +25,7 @@ exports.up = function (knex) {
       t.decimal("shipping_fee", 12, 2).defaultTo(0);
       t.decimal("total_amount", 12, 2);
       t.string("payment_method", 30);
+      t.string("payment_status", 20).defaultTo("unpaid");
       t.string("status", 30).defaultTo("pending");
       t.text("note");
       t.integer("created_by_staff_id")

@@ -230,6 +230,7 @@ exports.createOrder = async (userId, data, createdByStaffId = null) => {
         receiver_phone: calcResult.shipping_details?.receiver_phone || null,
         shipping_address: calcResult.shipping_details?.shipping_address || null,
         payment_method: data.payment_method || "cod",
+        payment_status: "unpaid",
         note: data.note || null,
         status: "pending",
         shipping_fee: calcResult.shipping_fee,
@@ -303,58 +304,42 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
       );
     }
 
-    await trx("orders").where("id", orderId).update({ status: "cancelled" });
+    // Neu don da thanh toan roi moi bi huy -> can hoan tien, chuyen sang refunded
+    // (khong tu dong tra tien that, chi phan anh trang thai can xu ly hoan tien)
+    const cancelData = { status: "cancelled" };
+    if (order.payment_status === "paid") {
+      cancelData.payment_status = "refunded";
+    }
+
+    await trx("orders").where("id", orderId).update(cancelData);
     return true;
   });
 };
 
-// Lay danh sach tat ca don hang cho ADMIN and STAFF (phan trang + bo loc + search)
+// Lay danh sach tat ca don hang cho ADMIN and STAFF (phan trang + bo loc)
 exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
-  const buildBase = () =>
-    knex("orders as o").leftJoin(
-      "users as customer",
-      "o.user_id",
-      "customer.id",
-    );
-
-  let query = buildBase().leftJoin(
+  let query = knex("orders as o").leftJoin(
     "users as staff",
     "o.created_by_staff_id",
     "staff.id",
   );
-  let countQuery = buildBase();
+  let countQuery = knex("orders as o");
 
-  const applyFilters = (qb) => {
-    if (filters.status) {
-      qb.where("o.status", filters.status);
-    }
+  if (filters.status) {
+    query.where("o.status", filters.status);
+    countQuery.where("o.status", filters.status);
+  }
 
-    // Giu logic cu: filter 1 ngay cu the
-    if (filters.date) {
-      const start = new Date(filters.date);
-      const end = new Date(filters.date);
-      end.setDate(end.getDate() + 1);
-      qb.whereBetween("o.created_at", [start, end]);
-    }
+  if (filters.date) {
+    const start = new Date(filters.date);
+    const end = new Date(filters.date);
+    end.setDate(end.getDate() + 1);
 
-    // Moi: search theo order_code, nguoi nhan, hoac khach hang (name/email)
-    if (filters.search && filters.search.trim()) {
-      const keyword = `%${filters.search.trim()}%`;
-      qb.where((builder) => {
-        builder
-          .whereILike("o.order_code", keyword)
-          .orWhereILike("o.receiver_name", keyword)
-          .orWhereILike("o.receiver_phone", keyword)
-          .orWhereILike("customer.name", keyword)
-          .orWhereILike("customer.email", keyword);
-      });
-    }
-  };
+    query.whereBetween("o.created_at", [start, end]);
+    countQuery.whereBetween("o.created_at", [start, end]);
+  }
 
-  applyFilters(query);
-  applyFilters(countQuery);
-
-  const totalRow = await countQuery.count("o.id as count").first();
+  const totalRow = await countQuery.count("* as count").first();
   const data = await query
     .select("o.*", "staff.name as created_by_staff_name")
     .orderBy("o.created_at", "desc")
@@ -371,36 +356,17 @@ exports.getOrdersByUser = async ({
   offset = 0,
   filters = {},
 }) => {
-  const buildBase = () => knex("orders as o").where("o.user_id", userId);
+  let query = knex("orders as o")
+    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .where("o.user_id", userId);
+  let countQuery = knex("orders as o").where("o.user_id", userId);
 
-  let query = buildBase().leftJoin(
-    "users as staff",
-    "o.created_by_staff_id",
-    "staff.id",
-  );
-  let countQuery = buildBase();
+  if (filters.status) {
+    query.where("o.status", filters.status);
+    countQuery.where("o.status", filters.status);
+  }
 
-  const applyFilters = (qb) => {
-    if (filters.status) {
-      qb.where("o.status", filters.status);
-    }
-
-    // User da biet minh la ai roi nen chi can search theo don, khong can search ten khach
-    if (filters.search && filters.search.trim()) {
-      const keyword = `%${filters.search.trim()}%`;
-      qb.where((builder) => {
-        builder
-          .whereILike("o.order_code", keyword)
-          .orWhereILike("o.receiver_name", keyword)
-          .orWhereILike("o.receiver_phone", keyword);
-      });
-    }
-  };
-
-  applyFilters(query);
-  applyFilters(countQuery);
-
-  const totalRow = await countQuery.count("o.id as count").first();
+  const totalRow = await countQuery.count("* as count").first();
   const data = await query
     .select("o.*", "staff.name as created_by_staff_name")
     .orderBy("o.created_at", "desc")
@@ -410,7 +376,8 @@ exports.getOrdersByUser = async ({
   return { data, total: Number(totalRow.count) };
 };
 
-// Danh sach rieng cho staff: don staff tu mua HOAC don staff tao ho khach
+// Danh sach rieng cho staff: don staff tu mua (voi tu cach khach hang)
+// HOAC don staff tao ho cho khach hang khac
 exports.getOrdersByStaff = async ({
   staffId,
   limit = 10,
@@ -421,47 +388,25 @@ exports.getOrdersByStaff = async ({
     qb.where("o.user_id", staffId).orWhere("o.created_by_staff_id", staffId);
   };
 
-  const buildBase = () =>
-    knex("orders as o")
-      .leftJoin("users as customer", "o.user_id", "customer.id")
-      .where(applyOwnerFilter);
+  let query = knex("orders as o")
+    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .where(applyOwnerFilter);
+  let countQuery = knex("orders as o").where(applyOwnerFilter);
 
-  let query = buildBase().leftJoin(
-    "users as staff",
-    "o.created_by_staff_id",
-    "staff.id",
-  );
-  let countQuery = buildBase();
+  if (filters.status) {
+    query.where("o.status", filters.status);
+    countQuery.where("o.status", filters.status);
+  }
 
-  const applyFilters = (qb) => {
-    if (filters.status) {
-      qb.where("o.status", filters.status);
-    }
+  if (filters.date) {
+    const start = new Date(filters.date);
+    const end = new Date(filters.date);
+    end.setDate(end.getDate() + 1);
+    query.whereBetween("o.created_at", [start, end]);
+    countQuery.whereBetween("o.created_at", [start, end]);
+  }
 
-    if (filters.date) {
-      const start = new Date(filters.date);
-      const end = new Date(filters.date);
-      end.setDate(end.getDate() + 1);
-      qb.whereBetween("o.created_at", [start, end]);
-    }
-
-    if (filters.search && filters.search.trim()) {
-      const keyword = `%${filters.search.trim()}%`;
-      qb.where((builder) => {
-        builder
-          .whereILike("o.order_code", keyword)
-          .orWhereILike("o.receiver_name", keyword)
-          .orWhereILike("o.receiver_phone", keyword)
-          .orWhereILike("customer.name", keyword)
-          .orWhereILike("customer.email", keyword);
-      });
-    }
-  };
-
-  applyFilters(query);
-  applyFilters(countQuery);
-
-  const totalRow = await countQuery.count("o.id as count").first();
+  const totalRow = await countQuery.count("* as count").first();
   const data = await query
     .select("o.*", "staff.name as created_by_staff_name")
     .orderBy("o.created_at", "desc")
@@ -481,17 +426,7 @@ exports.getOrderById = async (id) => {
   if (!order) return null;
 
   const [items, contacts] = await Promise.all([
-    knex("order_items as oi")
-      .select("oi.*")
-      .select(
-        knex("product_images")
-          .select("image_url")
-          .whereRaw("product_id = oi.product_id")
-          .where("is_thumbnail", true)
-          .limit(1)
-          .as("image_url"),
-      )
-      .where("oi.order_id", id),
+    knex("order_items").where({ order_id: id }),
     contactService.getContactsByOrder(id).catch((err) => {
       console.error(`getContactsByOrder failed for order ${id}:`, err);
       return [];
@@ -557,6 +492,54 @@ exports.updateOrder = async (id, data) => {
   const [updatedOrder] = await knex("orders")
     .where("id", id)
     .update(cleanData)
+    .returning("*");
+  return updatedOrder;
+};
+
+// Cap nhat trang thai thanh toan (tach rieng khoi status don hang)
+exports.updatePaymentStatus = async (id, paymentStatus) => {
+  if (!id || isNaN(id)) return null;
+
+  const order = await knex("orders").where("id", id).first();
+  if (!order) {
+    const err = new Error("Order not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // Rang buoc chuyen trang thai thanh toan hop le
+  const validPaymentTransitions = {
+    unpaid: ["paid", "failed"],
+    failed: ["unpaid", "paid"],
+    paid: ["refunded"],
+    refunded: [],
+  };
+
+  const currentPaymentStatus = order.payment_status;
+
+  if (currentPaymentStatus !== paymentStatus) {
+    const allowed = validPaymentTransitions[currentPaymentStatus] || [];
+    if (!allowed.includes(paymentStatus)) {
+      const err = new Error(
+        `Invalid payment status transition: ${currentPaymentStatus} -> ${paymentStatus}`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
+  // Khong cho chuyen sang paid neu don da huy (khong co y nghia nghiep vu)
+  if (paymentStatus === "paid" && order.status === "cancelled") {
+    const err = new Error(
+      "Không thể đánh dấu đã thanh toán cho đơn hàng đã hủy",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const [updatedOrder] = await knex("orders")
+    .where("id", id)
+    .update({ payment_status: paymentStatus })
     .returning("*");
   return updatedOrder;
 };
