@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { ordersApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, FilterTabs, DrawerPanel, Btn, AdminPagination } from '../admin/ui.jsx'
 import { formatPrice, formatDate, toast } from '../../utils/index.js'
@@ -20,19 +20,35 @@ export default function StaffOrders() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState('all')
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [updating, setUpdating] = useState(false)
+  const debounceRef = useRef(null)
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true)
-    ordersApi.getAll({ page, limit: LIMIT, ...(status !== 'all' ? { status } : {}) })
+    ordersApi.getAll({
+      page, limit: LIMIT,
+      ...(status !== 'all' ? { status } : {}),
+      ...(search ? { search } : {}),
+    })
       .then(res => { setOrders(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
-  }
+  }, [page, status, search])
 
-  useEffect(() => { load() }, [page, status])
+  useEffect(() => { load() }, [load])
+
+  const handleSearchInput = (val) => {
+    setSearchInput(val)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      setSearch(val.trim())
+      setPage(1)
+    }, 400)
+  }
 
   const handleStatusChange = (order, newStatus) => {
     if (newStatus === 'cancelled' && !window.confirm(`Bạn có chắc muốn huỷ đơn hàng ${order.order_code || order.id} không?`)) return
@@ -55,7 +71,16 @@ export default function StaffOrders() {
 
   return (
     <div className="flex flex-col gap-4">
-      <FilterTabs options={tabs} value={status} onChange={(v) => { setStatus(v); setPage(1) }} />
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={e => handleSearchInput(e.target.value)}
+          placeholder="🔍  Tìm theo mã đơn hoặc tên người nhận..."
+          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-86 focus:border-vnpt flex-shrink-0"
+        />
+        <FilterTabs options={tabs} value={status} onChange={(v) => { setStatus(v); setPage(1) }} />
+      </div>
 
       <Card>
         <Table
