@@ -33,7 +33,7 @@ exports.up = function (knex) {
         .references("id")
         .inTable("orders")
         .onDelete("SET NULL");
-      t.string("status", 20).defaultTo("pending"); // pending | resolved
+      t.string("status", 20).defaultTo("pending"); 
       t.text("reply");
       t.integer("replied_by")
         .references("id")
