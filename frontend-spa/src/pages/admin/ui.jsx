@@ -115,10 +115,16 @@ export function StatCard({ icon, label, value, sub, tone = 'info' }) {
 }
 
 // ─── Modal ──────────────────────────────────────────────────────────────────
-export function Modal({ title, onClose, children, width = 'max-w-[480px]' }) {
+// maxWidth (tuỳ chọn): giá trị CSS thuần (vd "min(92vw, 620px)") áp bằng inline
+// style — luôn ăn ngay lập tức, không phụ thuộc việc Tailwind/HMR có cập nhật
+// kịp class hay không. Vẫn co giãn mượt theo màn hình nhờ đơn vị vw.
+export function Modal({ title, onClose, children, width = 'max-w-[480px]', maxWidth }) {
   return (
     <div className="fixed inset-0 bg-vnpt-dark/55 z-[200] flex items-center justify-center p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={`bg-canvas rounded-2xl w-full ${width} max-h-[90vh] flex flex-col shadow-2xl`}>
+      <div
+        className={`bg-canvas rounded-2xl w-full ${width} max-h-[90vh] flex flex-col shadow-2xl`}
+        style={maxWidth ? { maxWidth } : undefined}
+      >
         <div className="px-6 pt-5 pb-4 border-b border-shade flex justify-between items-center flex-shrink-0">
           <h3 className="text-base font-bold text-body m-0">{title}</h3>
           <button onClick={onClose} className="bg-transparent border-none text-xl cursor-pointer text-muted leading-none">✕</button>
