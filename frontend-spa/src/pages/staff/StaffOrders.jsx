@@ -11,6 +11,7 @@ import {
   Btn,
   AdminPagination,
 } from "../admin/ui.jsx";
+import { CreateOrderDrawer } from "../admin/CreateOrderDrawer.jsx";
 import { formatPrice, formatDate, toast } from "../../utils/index.js";
 
 const ORDER_STATUS = {
@@ -45,6 +46,7 @@ export default function StaffOrders() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const debounceRef = useRef(null);
 
   const load = useCallback(() => {
@@ -137,6 +139,12 @@ export default function StaffOrders() {
             setPage(1);
           }}
         />
+        <button
+          onClick={() => setShowCreate(true)}
+          className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-full bg-vnpt text-white text-sm font-bold hover:bg-vnpt-dark transition-colors shadow-sm flex-shrink-0"
+        >
+          <span className="text-base leading-none">+</span> Tạo đơn hộ khách
+        </button>
       </div>
       <div className="flex items-center gap-2.5 flex-wrap">
         <FilterTabs
@@ -270,6 +278,15 @@ export default function StaffOrders() {
           </div>
         )}
       </DrawerPanel>
+
+      <CreateOrderDrawer
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => {
+          setPage(1);
+          load();
+        }}
+      />
     </div>
   );
 }

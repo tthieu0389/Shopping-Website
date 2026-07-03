@@ -107,6 +107,8 @@ export const cartApi = {
 // ── ORDERS ───────────────────────────────────────────────────────────────────
 export const ordersApi = {
   preview: (data) => api.post("/orders/preview", data),
+  // data có thể kèm user_id để admin/staff "lên đơn hộ" khách hàng
+  // (backend tự nhận diện qua req.user.role, user_id sẽ bị bỏ qua nếu người gọi là user thường)
   create: (data) => api.post("/orders", data),
   getAll: (params) => api.get("/orders", { params }),
   getById: (id) => api.get(`/orders/${id}`),
@@ -160,6 +162,8 @@ export const userApi = {
   getProfile: () => api.get("/user-profile"),
   updateProfile: (data) => api.put("/user-profile", data),
   getAddresses: () => api.get("/user-address"),
+  // Admin/staff: lấy địa chỉ của MỘT khách hàng cụ thể (dùng khi lên đơn hộ khách)
+  getAddressesByUserId: (userId) => api.get(`/user-address/user/${userId}`),
   addAddress: (data) => api.post("/user-address", data),
   updateAddress: (id, data) => api.put(`/user-address/${id}`, data),
   deleteAddress: (id) => api.delete(`/user-address/${id}`),
