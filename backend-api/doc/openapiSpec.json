@@ -1141,6 +1141,11 @@
                 "type": "string",
                 "nullable": true,
                 "description": "SĐT lấy từ user_profiles (LEFT JOIN, có thể null nếu user chưa tạo profile)"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true,
+                "description": "URL ảnh đại diện lấy từ user_profiles"
               }
             }
           }

@@ -1,6 +1,6 @@
 const userProfileService = require("../services/userprofile.service");
 
-// Upload avatar (multipart/form-data, field "avatar") -> lưu URL vào user_profiles.avatar
+// Upload avatar (multipart/form-data, field "avatar")
 exports.uploadAvatar = async (req, res, next) => {
   try {
     if (!req.file) {

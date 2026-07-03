@@ -34,7 +34,15 @@ exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
   const total = parseInt(count) || 0;
   // Truy vấn dữ liệu
   const data = await base
-    .distinct("u.id", "u.name", "u.email", "u.role", "p.phone", "u.created_at")
+    .distinct(
+      "u.id",
+      "u.name",
+      "u.email",
+      "u.role",
+      "p.phone",
+      "u.created_at",
+      "p.avatar",
+    )
     .orderBy("u.id", "desc")
     .limit(pageSize)
     .offset(pageOffset);
