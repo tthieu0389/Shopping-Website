@@ -52,14 +52,13 @@ exports.getAllOrders = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       date: req.query.date,
+      search: req.query.search || req.query.q,
     };
 
     let result;
     if (req.user.role === "admin" || req.user.role === "staff") {
-      // Admin + Staff deu xem duoc toan bo don hang
       result = await orderService.getAllOrders({ limit, offset, filters });
     } else {
-      // User thuong chi xem don cua chinh minh
       result = await orderService.getOrdersByUser({
         userId: req.user.id,
         limit,
@@ -79,7 +78,7 @@ exports.getAllOrders = async (req, res, next) => {
   }
 };
 
-// GET MY ORDERS (STAFF) - don staff tu mua (khach hang) + don staff tao ho khach
+// GET MY ORDERS (STAFF)
 exports.getMyOrders = async (req, res, next) => {
   try {
     const { page, limit, offset } = req.pagination || {
@@ -91,6 +90,7 @@ exports.getMyOrders = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       date: req.query.date,
+      search: req.query.search || req.query.q,
     };
 
     const result = await orderService.getOrdersByStaff({

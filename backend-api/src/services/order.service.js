@@ -308,30 +308,53 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
   });
 };
 
-// Lay danh sach tat ca don hang cho ADMIN and STAFF (phan trang + bo loc)
+// Lay danh sach tat ca don hang cho ADMIN and STAFF (phan trang + bo loc + search)
 exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
-  let query = knex("orders as o").leftJoin(
+  const buildBase = () =>
+    knex("orders as o").leftJoin(
+      "users as customer",
+      "o.user_id",
+      "customer.id",
+    );
+
+  let query = buildBase().leftJoin(
     "users as staff",
     "o.created_by_staff_id",
     "staff.id",
   );
-  let countQuery = knex("orders as o");
+  let countQuery = buildBase();
 
-  if (filters.status) {
-    query.where("o.status", filters.status);
-    countQuery.where("o.status", filters.status);
-  }
+  const applyFilters = (qb) => {
+    if (filters.status) {
+      qb.where("o.status", filters.status);
+    }
 
-  if (filters.date) {
-    const start = new Date(filters.date);
-    const end = new Date(filters.date);
-    end.setDate(end.getDate() + 1);
+    // Giu logic cu: filter 1 ngay cu the
+    if (filters.date) {
+      const start = new Date(filters.date);
+      const end = new Date(filters.date);
+      end.setDate(end.getDate() + 1);
+      qb.whereBetween("o.created_at", [start, end]);
+    }
 
-    query.whereBetween("o.created_at", [start, end]);
-    countQuery.whereBetween("o.created_at", [start, end]);
-  }
+    // Moi: search theo order_code, nguoi nhan, hoac khach hang (name/email)
+    if (filters.search && filters.search.trim()) {
+      const keyword = `%${filters.search.trim()}%`;
+      qb.where((builder) => {
+        builder
+          .whereILike("o.order_code", keyword)
+          .orWhereILike("o.receiver_name", keyword)
+          .orWhereILike("o.receiver_phone", keyword)
+          .orWhereILike("customer.name", keyword)
+          .orWhereILike("customer.email", keyword);
+      });
+    }
+  };
 
-  const totalRow = await countQuery.count("* as count").first();
+  applyFilters(query);
+  applyFilters(countQuery);
+
+  const totalRow = await countQuery.count("o.id as count").first();
   const data = await query
     .select("o.*", "staff.name as created_by_staff_name")
     .orderBy("o.created_at", "desc")
@@ -348,17 +371,36 @@ exports.getOrdersByUser = async ({
   offset = 0,
   filters = {},
 }) => {
-  let query = knex("orders as o")
-    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
-    .where("o.user_id", userId);
-  let countQuery = knex("orders as o").where("o.user_id", userId);
+  const buildBase = () => knex("orders as o").where("o.user_id", userId);
 
-  if (filters.status) {
-    query.where("o.status", filters.status);
-    countQuery.where("o.status", filters.status);
-  }
+  let query = buildBase().leftJoin(
+    "users as staff",
+    "o.created_by_staff_id",
+    "staff.id",
+  );
+  let countQuery = buildBase();
 
-  const totalRow = await countQuery.count("* as count").first();
+  const applyFilters = (qb) => {
+    if (filters.status) {
+      qb.where("o.status", filters.status);
+    }
+
+    // User da biet minh la ai roi nen chi can search theo don, khong can search ten khach
+    if (filters.search && filters.search.trim()) {
+      const keyword = `%${filters.search.trim()}%`;
+      qb.where((builder) => {
+        builder
+          .whereILike("o.order_code", keyword)
+          .orWhereILike("o.receiver_name", keyword)
+          .orWhereILike("o.receiver_phone", keyword);
+      });
+    }
+  };
+
+  applyFilters(query);
+  applyFilters(countQuery);
+
+  const totalRow = await countQuery.count("o.id as count").first();
   const data = await query
     .select("o.*", "staff.name as created_by_staff_name")
     .orderBy("o.created_at", "desc")
@@ -368,8 +410,7 @@ exports.getOrdersByUser = async ({
   return { data, total: Number(totalRow.count) };
 };
 
-// Danh sach rieng cho staff: don staff tu mua (voi tu cach khach hang)
-// HOAC don staff tao ho cho khach hang khac
+// Danh sach rieng cho staff: don staff tu mua HOAC don staff tao ho khach
 exports.getOrdersByStaff = async ({
   staffId,
   limit = 10,
@@ -380,25 +421,47 @@ exports.getOrdersByStaff = async ({
     qb.where("o.user_id", staffId).orWhere("o.created_by_staff_id", staffId);
   };
 
-  let query = knex("orders as o")
-    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
-    .where(applyOwnerFilter);
-  let countQuery = knex("orders as o").where(applyOwnerFilter);
+  const buildBase = () =>
+    knex("orders as o")
+      .leftJoin("users as customer", "o.user_id", "customer.id")
+      .where(applyOwnerFilter);
 
-  if (filters.status) {
-    query.where("o.status", filters.status);
-    countQuery.where("o.status", filters.status);
-  }
+  let query = buildBase().leftJoin(
+    "users as staff",
+    "o.created_by_staff_id",
+    "staff.id",
+  );
+  let countQuery = buildBase();
 
-  if (filters.date) {
-    const start = new Date(filters.date);
-    const end = new Date(filters.date);
-    end.setDate(end.getDate() + 1);
-    query.whereBetween("o.created_at", [start, end]);
-    countQuery.whereBetween("o.created_at", [start, end]);
-  }
+  const applyFilters = (qb) => {
+    if (filters.status) {
+      qb.where("o.status", filters.status);
+    }
 
-  const totalRow = await countQuery.count("* as count").first();
+    if (filters.date) {
+      const start = new Date(filters.date);
+      const end = new Date(filters.date);
+      end.setDate(end.getDate() + 1);
+      qb.whereBetween("o.created_at", [start, end]);
+    }
+
+    if (filters.search && filters.search.trim()) {
+      const keyword = `%${filters.search.trim()}%`;
+      qb.where((builder) => {
+        builder
+          .whereILike("o.order_code", keyword)
+          .orWhereILike("o.receiver_name", keyword)
+          .orWhereILike("o.receiver_phone", keyword)
+          .orWhereILike("customer.name", keyword)
+          .orWhereILike("customer.email", keyword);
+      });
+    }
+  };
+
+  applyFilters(query);
+  applyFilters(countQuery);
+
+  const totalRow = await countQuery.count("o.id as count").first();
   const data = await query
     .select("o.*", "staff.name as created_by_staff_name")
     .orderBy("o.created_at", "desc")
