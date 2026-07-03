@@ -13,6 +13,30 @@ const ORDER_STATUS = {
 // Trạng thái có thể set qua PUT /orders/:id (cancelled phải dùng endpoint riêng)
 const SETTABLE_STATUS = ['pending', 'confirmed', 'shipping', 'completed']
 
+const PAYMENT_STATUS = {
+  unpaid:   { label: 'Chưa thanh toán', tone: 'warning' },
+  paid:     { label: 'Đã thanh toán',   tone: 'success' },
+  failed:   { label: 'Thất bại',        tone: 'error' },
+  refunded: { label: 'Đã hoàn tiền',    tone: 'info' },
+}
+// Ràng buộc chuyển trạng thái thanh toán hợp lệ (đồng bộ với backend)
+const PAYMENT_TRANSITIONS = {
+  unpaid:   ['paid', 'failed'],
+  failed:   ['unpaid', 'paid'],
+  paid:     ['refunded'],
+  refunded: [],
+}
+// Tính danh sách trạng thái thanh toán được phép chuyển tới, có xét thêm trạng thái đơn hàng
+// - Đơn đã huỷ khi chưa thanh toán -> payment_status bị khoá ở "failed", không cho sửa nữa
+// - Đơn đang giao -> không được chuyển sang "đã hoàn tiền"
+const getAllowedPaymentTargets = (order) => {
+  const current = order.payment_status || 'unpaid'
+  if (order.status === 'cancelled' && current === 'failed') return []
+  let allowed = PAYMENT_TRANSITIONS[current] || []
+  if (order.status === 'shipping') allowed = allowed.filter(t => t !== 'refunded')
+  return allowed
+}
+
 const LIMIT = 10
 
 export default function AdminOrders() {
@@ -25,6 +49,7 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [updating, setUpdating] = useState(false)
+  const [updatingPayment, setUpdatingPayment] = useState(false)
   const debounceRef = useRef(null)
 
   const load = useCallback(() => {
@@ -57,11 +82,33 @@ export default function AdminOrders() {
     action
       .then(() => {
         toast.success('Đã cập nhật trạng thái đơn hàng')
-        setSelected(prev => prev && prev.id === order.id ? { ...prev, status: newStatus } : prev)
+        setSelected(prev => {
+          if (!prev || prev.id !== order.id) return prev
+          const next = { ...prev, status: newStatus }
+          // Backend tự động khoá/chuyển trạng thái thanh toán khi huỷ đơn
+          if (newStatus === 'cancelled') {
+            if (prev.payment_status === 'paid') next.payment_status = 'refunded'
+            else if (['unpaid', 'failed'].includes(prev.payment_status)) next.payment_status = 'failed'
+          }
+          return next
+        })
         load()
       })
       .catch(err => toast.error(err.message || 'Không thể cập nhật'))
       .finally(() => setUpdating(false))
+  }
+
+  const handlePaymentStatusChange = (order, newStatus) => {
+    if (newStatus === 'refunded' && !window.confirm(`Xác nhận hoàn tiền cho đơn hàng ${order.order_code || order.id}?`)) return
+    setUpdatingPayment(true)
+    ordersApi.updatePaymentStatus(order.id, newStatus)
+      .then(() => {
+        toast.success('Đã cập nhật trạng thái thanh toán')
+        setSelected(prev => prev && prev.id === order.id ? { ...prev, payment_status: newStatus } : prev)
+        load()
+      })
+      .catch(err => toast.error(err.message || 'Không thể cập nhật thanh toán'))
+      .finally(() => setUpdatingPayment(false))
   }
 
   const tabs = [['all', 'Tất cả'], ...Object.entries(ORDER_STATUS).map(([k, v]) => [k, v.label])]
@@ -81,7 +128,7 @@ export default function AdminOrders() {
       </div>
 
       <Card>
-        <Table headers={['Mã đơn', 'Người nhận', 'SĐT', 'Tổng tiền', 'Thanh toán', 'Trạng thái', 'Ngày tạo', '']} loading={loading} empty={!loading && 'Không có đơn hàng nào'}>
+        <Table headers={['Mã đơn', 'Người nhận', 'SĐT', 'Tổng tiền', 'Thanh toán', 'TT Thanh toán', 'Trạng thái', 'Ngày tạo', '']} loading={loading} empty={!loading && 'Không có đơn hàng nào'}>
           {orders.map((o, i) => (
             <TR key={o.id} striped={i % 2 !== 0} onClick={() => setSelected(o)}>
               <TD bold className="text-vnpt">{o.order_code}</TD>
@@ -89,6 +136,7 @@ export default function AdminOrders() {
               <TD muted>{o.receiver_phone || '—'}</TD>
               <TD bold>{formatPrice(o.total_amount)}</TD>
               <TD muted className="uppercase text-[11px]">{o.payment_method === 'cod' ? 'COD' : `PM #${o.payment_method}`}</TD>
+              <TD><Badge {...(PAYMENT_STATUS[o.payment_status] || PAYMENT_STATUS.unpaid)} /></TD>
               <TD><Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} /></TD>
               <TD muted>{formatDate(o.created_at)}</TD>
               <TD><span className="text-vnpt text-xs font-bold">Chi tiết</span></TD>
@@ -117,6 +165,10 @@ export default function AdminOrders() {
                     <div className="font-bold text-body">{v ?? '—'}</div>
                   </div>
                 ))}
+                <div>
+                  <div className="text-muted text-[11px] mb-0.5">Trạng thái thanh toán</div>
+                  <Badge {...(PAYMENT_STATUS[selected.payment_status] || PAYMENT_STATUS.unpaid)} />
+                </div>
               </div>
               {selected.shipping_address && (
                 <div className="mt-3 text-xs text-muted">📍 {selected.shipping_address}</div>
@@ -152,6 +204,51 @@ export default function AdminOrders() {
                 >
                   ✕ Huỷ đơn hàng
                 </button>
+              )}
+            </div>
+
+            <div className="mt-5 pt-5 border-t border-shade">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-[13px] font-bold text-body">Trạng thái thanh toán</div>
+                <Badge {...(PAYMENT_STATUS[selected.payment_status] || PAYMENT_STATUS.unpaid)} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {(() => {
+                  const allowedTargets = getAllowedPaymentTargets(selected)
+                  return Object.entries(PAYMENT_STATUS).map(([key, { label }]) => {
+                    const current = selected.payment_status || 'unpaid'
+                    const isCurrent = current === key
+                    const allowed = allowedTargets.includes(key)
+                    const isRefund = key === 'refunded'
+                    return (
+                      <button
+                        key={key}
+                        disabled={updatingPayment || isCurrent || !allowed}
+                        onClick={() => handlePaymentStatusChange(selected, key)}
+                        className={`text-left px-4 py-2.5 rounded-[9px] border text-[13px] transition-all
+                          ${isCurrent
+                            ? 'border-vnpt bg-vnpt-light text-vnpt font-bold'
+                            : isRefund && allowed
+                              ? 'border-red-200 bg-error/5 text-red-700 font-semibold hover:bg-error/10'
+                              : 'border-shade text-body hover:border-vnpt'}
+                          disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        {isCurrent ? '✓ ' : isRefund && allowed ? '↩ ' : ''}{label}
+                      </button>
+                    )
+                  })
+                })()}
+              </div>
+              {selected.status === 'cancelled' && selected.payment_status === 'failed' && (
+                <div className="mt-1.5 text-[11px] text-muted italic">Đơn hàng đã huỷ khi chưa thanh toán, trạng thái thanh toán đã bị khoá.</div>
+              )}
+              {selected.status === 'shipping' && selected.payment_status === 'paid' && (
+                <div className="mt-1.5 text-[11px] text-muted italic">Đơn đang giao, chưa thể hoàn tiền.</div>
+              )}
+              {!(selected.status === 'cancelled' && selected.payment_status === 'failed') &&
+               !(selected.status === 'shipping' && selected.payment_status === 'paid') &&
+               getAllowedPaymentTargets(selected).length === 0 && (
+                <div className="mt-1.5 text-[11px] text-muted italic">Trạng thái thanh toán cuối cùng, không thể thay đổi thêm.</div>
               )}
             </div>
           </div>

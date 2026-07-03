@@ -89,6 +89,7 @@ export const ordersApi = {
   // Admin
   update: (id, data) => api.put(`/orders/${id}`, data),
   remove: (id)        => api.delete(`/orders/${id}`),
+  updatePaymentStatus: (id, payment_status) => api.patch(`/orders/${id}/payment-status`, { payment_status }),
 }
 
 // ── FAVORITES ────────────────────────────────────────────────────────────────
