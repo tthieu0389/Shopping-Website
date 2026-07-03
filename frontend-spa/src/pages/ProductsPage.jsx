@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import { useProducts, useCategories } from '../hooks/index.js'
 import { ProductCard, Breadcrumb, LoadingSpinner, EmptyState, Pagination } from '../components/common/index.jsx'
 import { formatPrice } from '../utils/index.js'
@@ -86,6 +87,40 @@ export default function ProductsPage() {
   const totalPages = Math.ceil(total / LIMIT)
   const products = sortedProducts.slice((page - 1) * LIMIT, page * LIMIT)
 
+  // ── Local search state (tránh lỗi IME/telex gõ ra "aá") ──────────────────
+  // Dùng local value để hiển thị trong input, chỉ commit vào URL khi IME xong.
+  const [localSearch, setLocalSearch] = useState(filters.search)
+  const isComposing = useRef(false)
+  const debounceRef = useRef(null)
+
+  // Đồng bộ localSearch khi URL search thay đổi từ bên ngoài (xoá tag, clear filters...)
+  useEffect(() => {
+    setLocalSearch(filters.search)
+  }, [filters.search])
+
+  const commitSearch = (value) => {
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      updateFilters({ search: value })
+    }, 300)
+  }
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value
+    setLocalSearch(val)
+    // Nếu đang compose (IME chưa xong) thì chưa commit
+    if (!isComposing.current) commitSearch(val)
+  }
+
+  const handleCompositionStart = () => { isComposing.current = true }
+
+  const handleCompositionEnd = (e) => {
+    isComposing.current = false
+    // Commit giá trị đúng sau khi IME hoàn tất
+    commitSearch(e.target.value)
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const updateFilter = (key, value) => {
     updateFilters({ [key]: value })
   }
@@ -127,12 +162,17 @@ export default function ProductsPage() {
               <input
                 type="text"
                 placeholder="Tên sản phẩm..."
-                value={filters.search}
-                onChange={e => updateFilter('search', e.target.value)}
+                value={localSearch}
+                onChange={handleSearchChange}
+                onCompositionStart={handleCompositionStart}
+                onCompositionEnd={handleCompositionEnd}
                 className="w-full px-4 py-2.5 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors pr-8"
               />
-              {filters.search && (
-                <button onClick={() => updateFilter('search', '')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-body">✕</button>
+              {localSearch && (
+                <button
+                  onClick={() => { setLocalSearch(''); updateFilter('search', '') }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-body"
+                >✕</button>
               )}
             </div>
           </div>
