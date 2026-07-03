@@ -90,17 +90,21 @@ export function ProductCard({ product, showProgress = false }) {
           {product.name}
         </div>
 
-        {/* Còn X sản phẩm — nằm giữa tên và giá, không đẩy nút */}
+        {/* Row cố định: hiện "Còn X sản phẩm" hoặc giá gốc gạch ngang hoặc trống — không bao giờ đẩy nút */}
         <div className="h-5 mb-1.5 mt-1">
-          {!isOutOfStock && stockQty !== null && stockQty <= 5 && (
+          {!isOutOfStock && stockQty !== null && stockQty <= 5 ? (
             <span className="text-xs text-warning font-semibold">
               Còn {stockQty} sản phẩm
             </span>
-          )}
+          ) : hasDiscount && !isOutOfStock ? (
+            <span className="text-xs text-muted line-through">
+              {formatPrice(originalPrice)}
+            </span>
+          ) : null}
         </div>
 
         <div className="mb-3">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+          <div className="flex items-center gap-2">
             <span
               className={`text-xl font-black font-display ${isOutOfStock ? "text-muted" : "text-accent"}`}
             >
@@ -112,11 +116,6 @@ export function ProductCard({ product, showProgress = false }) {
               </span>
             )}
           </div>
-          {hasDiscount && !isOutOfStock && (
-            <div className="text-xs text-muted line-through">
-              {formatPrice(originalPrice)}
-            </div>
-          )}
         </div>
 
         <button
