@@ -31,7 +31,23 @@ exports.getFavorites = async (userId) => {
     .join("products as p", "f.product_id", "p.id")
     .where("f.user_id", userId)
     .andWhere("f.is_deleted", false)
-    .select("f.id", "p.id as product_id", "p.name", "p.price");
+    .andWhere("p.is_deleted", false)
+    .select(
+      "f.id",
+      "p.id as product_id",
+      "p.name",
+      "p.slug",
+      "p.price",
+      "p.is_available",
+    )
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = p.id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
+    );
 };
 
 // REMOVE FAVORITE

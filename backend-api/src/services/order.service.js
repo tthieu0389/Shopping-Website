@@ -481,7 +481,17 @@ exports.getOrderById = async (id) => {
   if (!order) return null;
 
   const [items, contacts] = await Promise.all([
-    knex("order_items").where({ order_id: id }),
+    knex("order_items as oi")
+      .select("oi.*")
+      .select(
+        knex("product_images")
+          .select("image_url")
+          .whereRaw("product_id = oi.product_id")
+          .where("is_thumbnail", true)
+          .limit(1)
+          .as("image_url"),
+      )
+      .where("oi.order_id", id),
     contactService.getContactsByOrder(id).catch((err) => {
       console.error(`getContactsByOrder failed for order ${id}:`, err);
       return [];

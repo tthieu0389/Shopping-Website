@@ -166,9 +166,19 @@ exports.getRelatedProducts = async (id) => {
     .first();
   if (!product) return [];
 
-  return await knex("products")
-    .where({ category_id: product.category_id, is_deleted: false })
-    .whereNot("id", id)
+  return await knex("products as p")
+    .select("p.*")
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = p.id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
+    )
+    .where("p.category_id", product.category_id)
+    .where("p.is_deleted", false)
+    .whereNot("p.id", id)
     .limit(8);
 };
 

@@ -382,6 +382,53 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL ảnh đại diện (thumbnail) của sản phẩm, có ở danh sách và sản phẩm liên quan"
+          },
+          "images": {
+            "type": "array",
+            "description": "Danh sách toàn bộ ảnh sản phẩm, chỉ có ở API chi tiết sản phẩm (GET /api/products/{idOrSlug})",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "product_id": {
+                  "type": "integer"
+                },
+                "image_url": {
+                  "type": "string"
+                },
+                "is_thumbnail": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "details": {
+            "type": "array",
+            "description": "Danh sách thông số kỹ thuật sản phẩm, chỉ có ở API chi tiết sản phẩm (GET /api/products/{idOrSlug})",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "product_id": {
+                  "type": "integer"
+                },
+                "detail_name": {
+                  "type": "string"
+                },
+                "detail_value": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },

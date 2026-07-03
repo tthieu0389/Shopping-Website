@@ -13,21 +13,29 @@ const recalculateOrderTotal = async (trx, orderId) => {
   return total;
 };
 
-// Lấy danh sách sản phẩm trong đơn hàng.
+// Lấy danh sách sản phẩm trong đơn hàng (kem anh thumbnail hien tai cua san pham).
 exports.getOrderItemsByOrderId = async (orderId) => {
-  return knex("order_items")
-    .where("order_id", orderId)
+  return knex("order_items as oi")
     .select(
-      "id",
-      "order_id",
-      "product_id",
-      "product_name",
-      "quantity",
-      "base_price",
-      "unit_price",
-      "discount_amount",
-      "final_price",
-    );
+      "oi.id",
+      "oi.order_id",
+      "oi.product_id",
+      "oi.product_name",
+      "oi.quantity",
+      "oi.base_price",
+      "oi.unit_price",
+      "oi.discount_amount",
+      "oi.final_price",
+    )
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = oi.product_id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("image_url"),
+    )
+    .where("oi.order_id", orderId);
 };
 
 // Thêm sản phẩm vào đơn hàng

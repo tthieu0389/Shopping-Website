@@ -3,6 +3,7 @@ const knex = require("../database/knex");
 exports.getAllInventoryLogs = async ({ limit, offset }) => {
   const data = await knex("inventory_logs as l")
     .leftJoin("products as p", "l.product_id", "p.id")
+    .leftJoin("users as u", "l.created_by", "u.id")
     .select(
       "l.id",
       "l.inventory_id",
@@ -15,6 +16,7 @@ exports.getAllInventoryLogs = async ({ limit, offset }) => {
       "l.reference_id",
       "l.note",
       "l.created_by",
+      "u.name as created_by_name",
       "l.created_at",
     )
     .orderBy("l.id", "desc")
@@ -30,15 +32,17 @@ exports.getAllInventoryLogs = async ({ limit, offset }) => {
 exports.getLogsByInventoryId = async (inventory_id) => {
   return await knex("inventory_logs as l")
     .leftJoin("products as p", "l.product_id", "p.id")
+    .leftJoin("users as u", "l.created_by", "u.id")
     .where("l.inventory_id", inventory_id)
-    .select("l.*", "p.name as product_name")
+    .select("l.*", "p.name as product_name", "u.name as created_by_name")
     .orderBy("l.id", "desc");
 };
 
 // GET BY PRODUCT ID
 exports.getLogsByProductId = async (product_id) => {
   return await knex("inventory_logs as l")
+    .leftJoin("users as u", "l.created_by", "u.id")
     .where("l.product_id", product_id)
     .orderBy("l.id", "desc")
-    .select("*");
+    .select("l.*", "u.name as created_by_name");
 };
