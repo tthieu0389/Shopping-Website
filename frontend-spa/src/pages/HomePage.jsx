@@ -384,7 +384,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="flex gap-8">
-              {[['2M+','Khách hàng tin dùng'],['500K+','Đơn hàng thành công'],['99.9%','Hàng chính hãng']].map(([n,l]) => (
+              {[['2M+','Khách hàng tin dùng'],['500K+','Đơn hàng thành công'],['100%','Hàng chính hãng']].map(([n,l]) => (
                 <div key={l}>
                   <div className="text-[28px] font-bold text-white font-display">{n}</div>
                   <div className="text-xs text-white/60 mt-0.5">{l}</div>
