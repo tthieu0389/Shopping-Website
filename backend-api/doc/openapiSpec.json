@@ -549,6 +549,10 @@
           "total_amount": {
             "type": "number"
           },
+          "payment_status": {
+            "type": "string",
+            "enum": ["unpaid", "paid", "failed", "refunded"]
+          },
           "payment_method": {
             "type": "string"
           },
@@ -612,6 +616,16 @@
           },
           "final_price": {
             "type": "number"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "Thương hiệu sản phẩm (JOIN từ products, có thể null nếu sản phẩm đã bị xóa)"
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ảnh thumbnail hiện tại của sản phẩm (JOIN từ product_images)"
           }
         }
       },
@@ -930,13 +944,6 @@
           "brand": {
             "type": "string",
             "nullable": true
-          },
-          "stock": {
-            "type": "integer",
-            "nullable": true
-          },
-          "is_available": {
-            "type": "boolean"
           }
         }
       },
@@ -953,6 +960,14 @@
                 },
                 "product_name": {
                   "type": "string"
+                },
+                "brand": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "image_url": {
+                  "type": "string",
+                  "nullable": true
                 },
                 "quantity": {
                   "type": "integer"
@@ -7614,6 +7629,76 @@
           }
         },
         "operationId": "listStaffMyOrders"
+      }
+    },
+    "/api/orders/{id}/payment-status": {
+      "patch": {
+        "tags": ["Orders"],
+        "summary": "Cập nhật trạng thái thanh toán (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["payment_status"],
+                "properties": {
+                  "payment_status": {
+                    "type": "string",
+                    "enum": ["unpaid", "paid", "failed", "refunded"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trạng thái thanh toán đã cập nhật",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Order"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "updatePaymentStatus",
+        "description": "**Yêu cầu quyền: admin.**"
       }
     }
   }

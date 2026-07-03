@@ -426,7 +426,7 @@ exports.getOrderById = async (id) => {
   if (!order) return null;
 
   const [items, contacts] = await Promise.all([
-    knex("order_items").where({ order_id: id }),
+    orderItemService.getOrderItemsByOrderId(id),
     contactService.getContactsByOrder(id).catch((err) => {
       console.error(`getContactsByOrder failed for order ${id}:`, err);
       return [];

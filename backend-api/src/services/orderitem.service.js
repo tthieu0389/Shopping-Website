@@ -16,6 +16,7 @@ const recalculateOrderTotal = async (trx, orderId) => {
 // Lấy danh sách sản phẩm trong đơn hàng (kem anh thumbnail hien tai cua san pham).
 exports.getOrderItemsByOrderId = async (orderId) => {
   return knex("order_items as oi")
+    .leftJoin("products as p", "oi.product_id", "p.id")
     .select(
       "oi.id",
       "oi.order_id",
@@ -26,6 +27,7 @@ exports.getOrderItemsByOrderId = async (orderId) => {
       "oi.unit_price",
       "oi.discount_amount",
       "oi.final_price",
+      "p.brand as brand",
     )
     .select(
       knex("product_images")
