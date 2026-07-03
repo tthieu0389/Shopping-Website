@@ -7,20 +7,18 @@ import useAuthStore from '../store/authStore.js'
 
 // ── Hằng số ───────────────────────────────────────────────────────────────────
 const ORDER_STATUS = {
-  pending:    { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-700',  dot: 'bg-yellow-400',  step: 0 },
-  confirmed:  { label: 'Đã xác nhận',  color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500',    step: 1 },
-  processing: { label: 'Đang xử lý',   color: 'bg-purple-100 text-purple-700',  dot: 'bg-purple-500',  step: 2 },
-  shipped:    { label: 'Đang giao',     color: 'bg-indigo-100 text-indigo-700',  dot: 'bg-indigo-500',  step: 3 },
-  completed:  { label: 'Đã giao',       color: 'bg-green-100 text-green-700',    dot: 'bg-green-500',   step: 4 },
-  cancelled:  { label: 'Đã huỷ',        color: 'bg-red-100 text-red-700',        dot: 'bg-red-500',     step: -1 },
+  pending:   { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400', step: 0 },
+  confirmed: { label: 'Đã xác nhận',  color: 'bg-blue-100 text-blue-700',     dot: 'bg-blue-500',   step: 1 },
+  shipping:  { label: 'Đang giao',    color: 'bg-indigo-100 text-indigo-700',  dot: 'bg-indigo-500', step: 2 },
+  completed: { label: 'Hoàn tất',     color: 'bg-green-100 text-green-700',    dot: 'bg-green-500',  step: 3 },
+  cancelled: { label: 'Đã huỷ',       color: 'bg-red-100 text-red-700',        dot: 'bg-red-500',    step: -1 },
 }
 
 const TIMELINE_STEPS = [
-  { key: 'pending',    icon: '📋', label: 'Đặt hàng' },
-  { key: 'confirmed',  icon: '✅', label: 'Xác nhận' },
-  { key: 'processing', icon: '📦', label: 'Đóng gói' },
-  { key: 'shipped',    icon: '🚚', label: 'Đang giao' },
-  { key: 'completed',  icon: '🎉', label: 'Đã nhận' },
+  { key: 'pending',   icon: '📋', label: 'Đặt hàng' },
+  { key: 'confirmed', icon: '✅', label: 'Đã xác nhận' },
+  { key: 'shipping',  icon: '🚚', label: 'Đang giao' },
+  { key: 'completed', icon: '🎉', label: 'Hoàn tất' },
 ]
 
 const PAYMENT_LABEL = {
