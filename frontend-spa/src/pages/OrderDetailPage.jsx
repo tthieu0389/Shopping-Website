@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Breadcrumb, LoadingSpinner } from '../components/common/index.jsx'
 import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
-import { ordersApi } from '../api/index.js'
+import { ordersApi, contactApi } from '../api/index.js'
+import useAuthStore from '../store/authStore.js'
 
 // ── Hằng số ───────────────────────────────────────────────────────────────────
 const ORDER_STATUS = {
@@ -236,12 +237,201 @@ function InfoRow({ label, value }) {
   )
 }
 
+// ── Component: ContactOrderModal ──────────────────────────────────────────────
+const CONTACT_TYPES = [
+  'Kiểm tra trạng thái đơn hàng',
+  'Đổi trả / Hoàn tiền',
+  'Sản phẩm bị lỗi / Thiếu hàng',
+  'Thay đổi địa chỉ giao hàng',
+  'Huỷ đơn hàng',
+  'Khác',
+]
+
+function ContactOrderModal({ order, user, onClose }) {
+  const [type, setType]         = useState(CONTACT_TYPES[0])
+  const [message, setMessage]   = useState('')
+  const [sending, setSending]   = useState(false)
+  const overlayRef              = useRef(null)
+
+  // Đóng modal khi click ra ngoài
+  const handleOverlayClick = (e) => {
+    if (e.target === overlayRef.current) onClose()
+  }
+
+  // Đóng bằng Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Khoá scroll body khi modal mở
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const statusInfo = ORDER_STATUS[order.status]
+  const items = order.items || order.order_items || []
+
+  // Build nội dung tự động đính kèm thông tin đơn hàng
+  const buildMessage = () => {
+    const header = [
+      `📦 Mã đơn hàng: #${order.id}${order.order_code ? ` (${order.order_code})` : ''}`,
+      `📌 Trạng thái: ${statusInfo?.label || order.status}`,
+      `💰 Tổng tiền: ${formatPrice(order.total_amount ?? 0)}`,
+      `📅 Ngày đặt: ${formatDate(order.created_at)}`,
+      items.length ? `🛒 Sản phẩm: ${items.map(i => `${i.product_name || i.name} x${i.quantity}`).join(', ')}` : '',
+    ].filter(Boolean).join('\n')
+
+    return `[${type}]\n\n${message.trim()}\n\n───────────────\n${header}`
+  }
+
+  const handleSend = async () => {
+    if (!message.trim()) {
+      toast.error('Vui lòng nhập nội dung tin nhắn')
+      return
+    }
+    setSending(true)
+    try {
+      await contactApi.send({
+        name:     user?.full_name || user?.name || user?.email || 'Khách hàng',
+        email:    user?.email || '',
+        message:  buildMessage(),
+        order_id: order.id,
+      })
+      toast.success('Đã gửi tin nhắn! Chúng tôi sẽ phản hồi sớm nhất có thể.')
+      onClose()
+    } catch (err) {
+      toast.error(err?.message || 'Gửi thất bại, vui lòng thử lại')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      onClick={handleOverlayClick}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+      style={{ background: 'rgba(10,10,10,0.55)', backdropFilter: 'blur(4px)' }}
+    >
+      <div className="w-full sm:max-w-[540px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-[fadeSlideUp_0.22s_ease]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-shade">
+          <div>
+            <h2 className="font-display text-lg font-bold text-body">💬 Trao đổi về đơn hàng</h2>
+            <p className="text-xs text-muted mt-0.5">
+              Đơn #{order.id}{order.order_code ? ` · ${order.order_code}` : ''} ·{' '}
+              <span className={`font-semibold ${statusInfo?.color?.includes('yellow') ? 'text-yellow-600' : statusInfo?.color?.includes('green') ? 'text-green-600' : 'text-vnpt'}`}>
+                {statusInfo?.label || order.status}
+              </span>
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full hover:bg-surface flex items-center justify-center text-muted hover:text-body transition-colors text-lg"
+          >✕</button>
+        </div>
+
+        {/* Thông tin đơn hàng đính kèm — preview */}
+        <div className="mx-6 mt-5 p-4 bg-vnpt-light border border-vnpt/15 rounded-xl">
+          <div className="text-[11px] font-bold text-vnpt uppercase tracking-wider mb-2.5">
+            📎 Thông tin đính kèm tự động
+          </div>
+          <div className="space-y-1 text-xs text-vnpt/80">
+            <div className="flex gap-2">
+              <span className="text-muted w-20 flex-shrink-0">Mã đơn</span>
+              <span className="font-semibold text-body">#{order.id}{order.order_code ? ` (${order.order_code})` : ''}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted w-20 flex-shrink-0">Trạng thái</span>
+              <span className="font-semibold text-body">{statusInfo?.label || order.status}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted w-20 flex-shrink-0">Tổng tiền</span>
+              <span className="font-semibold text-accent">{formatPrice(order.total_amount ?? 0)}</span>
+            </div>
+            {items.length > 0 && (
+              <div className="flex gap-2">
+                <span className="text-muted w-20 flex-shrink-0">Sản phẩm</span>
+                <span className="font-semibold text-body line-clamp-2">
+                  {items.map(i => `${i.product_name || i.name} ×${i.quantity}`).join(', ')}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="px-6 pt-4 pb-6 space-y-4">
+
+          {/* Loại yêu cầu */}
+          <div>
+            <label className="text-sm font-semibold block mb-1.5">Loại yêu cầu</label>
+            <select
+              value={type}
+              onChange={e => setType(e.target.value)}
+              className="w-full px-4 py-2.5 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt bg-white transition-colors"
+            >
+              {CONTACT_TYPES.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Nội dung */}
+          <div>
+            <label className="text-sm font-semibold block mb-1.5">
+              Nội dung <span className="text-accent">*</span>
+            </label>
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              rows={4}
+              placeholder="Mô tả chi tiết vấn đề của bạn về đơn hàng này..."
+              className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt resize-none transition-colors"
+            />
+            <p className="text-[11px] text-muted mt-1">
+              Tin nhắn sẽ được gửi kèm toàn bộ thông tin đơn hàng ở trên.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 border-2 border-shade text-muted rounded-full text-sm font-bold hover:border-body hover:text-body transition-all"
+            >
+              Huỷ
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={sending || !message.trim()}
+              className="flex-[2] py-3 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {sending ? (
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang gửi...</>
+              ) : (
+                <>📤 Gửi tin nhắn</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main: OrderDetailPage ─────────────────────────────────────────────────────
 export default function OrderDetailPage() {
   const { id }      = useParams()
   const navigate    = useNavigate()
   const { data: order, loading, error, reload } = useOrder(id)
-  const [cancelling, setCancelling] = useState(false)
+  const [cancelling, setCancelling]   = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  const user = useAuthStore(s => s.user)
 
   const handleCancel = async () => {
     if (!window.confirm('Bạn có chắc muốn huỷ đơn hàng này không?')) return
@@ -402,23 +592,40 @@ export default function OrderDetailPage() {
               </InfoBlock>
             )}
 
-            {/* Hỗ trợ */}
+            {/* Hỗ trợ — nút trao đổi đơn hàng */}
             <div className="bg-vnpt-light border border-vnpt/20 rounded-xl px-6 py-5">
               <div className="text-xs font-bold text-vnpt uppercase tracking-wider mb-2">Cần hỗ trợ?</div>
-              <p className="text-sm text-vnpt/80 mb-3 leading-relaxed">
-                Liên hệ với chúng tôi nếu có vấn đề với đơn hàng này.
+              <p className="text-sm text-vnpt/80 mb-4 leading-relaxed">
+                Có vấn đề với đơn hàng này? Gửi tin nhắn cho chúng tôi — thông tin đơn hàng sẽ được đính kèm tự động.
               </p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-1.5 text-sm font-bold text-vnpt hover:text-vnpt-dark transition-colors"
+              <button
+                onClick={() => setShowContact(true)}
+                className="w-full py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-all flex items-center justify-center gap-2 shadow-sm"
               >
-                📞 Liên hệ hỗ trợ →
-              </Link>
+                💬 Trao đổi về đơn hàng này
+              </button>
+              <div className="mt-3 text-center">
+                <Link
+                  to="/contact"
+                  className="text-xs text-vnpt/70 hover:text-vnpt transition-colors"
+                >
+                  Hoặc liên hệ chung →
+                </Link>
+              </div>
             </div>
 
           </div>
         </div>
       </div>
+
+      {/* Modal trao đổi đơn hàng */}
+      {showContact && order && (
+        <ContactOrderModal
+          order={order}
+          user={user}
+          onClose={() => setShowContact(false)}
+        />
+      )}
     </div>
   )
 }
