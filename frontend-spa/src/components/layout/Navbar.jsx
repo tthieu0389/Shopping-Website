@@ -81,10 +81,11 @@ export default function Navbar() {
   const navLinks = [
     { to: '/',                              label: 'Trang chủ' },
     { to: '/products?product_type=device',  label: 'Điện thoại' },
-    { to: '/products?product_type=sim',     label: 'Sim số' },
+    { to: '/products?product_type=sim',     label: 'Sim' },
     { to: '/products?product_type=internet',label: 'Dịch vụ' },
-    { to: '/flash-sale',                    label: '🔥 Flash Sale' },
+    { to: '/flash-sale',                    label: 'Flash Sale' },
     { to: '/blog',                          label: 'Tin tức' },
+    { to: '/contact',                       label: 'Liên hệ' },
   ]
 
   const showDropdown = searchOpen && query.trim().length > 0
