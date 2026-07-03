@@ -43,6 +43,22 @@ export const categoriesApi = {
   remove: (id)        => api.delete(`/categories/${id}`),
 }
 
+// ── PROMOTIONS (ADMIN) ───────────────────────────────────────────────────────
+export const promotionsApi = {
+  getAll:  ()        => api.get('/promotions'),
+  getById: (id)      => api.get(`/promotions/${id}`),
+  create:  (data)    => api.post('/promotions', data),
+  update:  (id, data)=> api.put(`/promotions/${id}`, data),
+  remove:  (id)       => api.delete(`/promotions/${id}`),
+}
+
+// ── PRODUCT PROMOTIONS (ADMIN) — gán khuyến mãi cho sản phẩm ─────────────────
+export const productPromotionsApi = {
+  getAll: ()   => api.get('/product-promotions'),
+  add:    (data) => api.post('/product-promotions', data),
+  remove: (id)   => api.delete(`/product-promotions/${id}`),
+}
+
 // ── INVENTORY (ADMIN) ──────────────────────────────────────────────────────
 export const inventoryApi = {
   getAll:     (params) => api.get('/inventory', { params }),
