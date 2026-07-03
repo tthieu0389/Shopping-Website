@@ -1,36 +1,50 @@
-import { useState } from 'react'
-import { useProducts, useCountdown } from '../hooks/index.js'
-import { FlashSaleCard, LoadingSpinner, EmptyState, CountdownTimer, Pagination } from '../components/common/index.jsx'
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { useDiscountedProducts, useCountdown } from "../hooks/index.js";
+import {
+  FlashSaleCard,
+  LoadingSpinner,
+  EmptyState,
+  CountdownTimer,
+  Pagination,
+} from "../components/common/index.jsx";
+import { Link } from "react-router-dom";
 
-const LIMIT = 8
+const LIMIT = 8;
 
 export default function FlashSalePage() {
-  const { h, m, s } = useCountdown(6443)
-  const [page, setPage] = useState(1)
+  const { h, m, s } = useCountdown(6443);
+  const [page, setPage] = useState(1);
 
-  const offset = (page - 1) * LIMIT
-  const { data: products, total, loading } = useProducts({ limit: LIMIT, offset, is_available: true })
+  const {
+    data: products,
+    total,
+    loading,
+  } = useDiscountedProducts({ page, limit: LIMIT });
 
-  const totalPages = Math.ceil((total || 0) / LIMIT)
+  const totalPages = Math.ceil((total || 0) / LIMIT);
 
   const goTo = (p) => {
-    const clamped = Math.min(Math.max(1, p), totalPages || 1)
-    setPage(clamped)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    const clamped = Math.min(Math.max(1, p), totalPages || 1);
+    setPage(clamped);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div>
       {/* Hero */}
       <div
         className="text-white text-center py-14 px-10"
-        style={{ background: 'linear-gradient(135deg, #7b0000, #E30613)' }}
+        style={{ background: "linear-gradient(135deg, #7b0000, #E30613)" }}
       >
-        <div className="text-xs font-bold uppercase tracking-[2px] text-white/70 mb-2">⚡ Flash Sale đặc biệt</div>
-        <h1 className="font-display text-5xl font-bold mb-3">🔥 FLASH SALE HÔM NAY</h1>
+        <div className="text-xs font-bold uppercase tracking-[2px] text-white/70 mb-2">
+          ⚡ Flash Sale đặc biệt
+        </div>
+        <h1 className="font-display text-5xl font-bold mb-3">
+          🔥 FLASH SALE HÔM NAY
+        </h1>
         <p className="text-white/80 mb-6 text-sm">
-          Giảm đến <strong>50%</strong> cho hàng trăm sản phẩm công nghệ chính hãng
+          Giảm đến <strong>50%</strong> cho hàng trăm sản phẩm công nghệ chính
+          hãng
         </p>
         <div className="flex justify-center">
           <CountdownTimer h={h} m={m} s={s} />
@@ -47,7 +61,10 @@ export default function FlashSalePage() {
             title="Chưa có sản phẩm Flash Sale"
             desc="Quay lại sau để xem các ưu đãi hấp dẫn"
             action={
-              <Link to="/products" className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold">
+              <Link
+                to="/products"
+                className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold"
+              >
                 Xem tất cả sản phẩm
               </Link>
             }
@@ -56,17 +73,19 @@ export default function FlashSalePage() {
           <>
             <div className="flex items-center justify-between mb-6">
               <p className="text-sm text-muted">
-                Hiển thị <strong className="text-body">{products.length}</strong> /{' '}
+                Hiển thị{" "}
+                <strong className="text-body">{products.length}</strong> /{" "}
                 <strong className="text-body">{total}</strong> sản phẩm
               </p>
               {totalPages > 1 && (
                 <p className="text-sm text-muted">
-                  Trang <strong className="text-body">{page}</strong> / {totalPages}
+                  Trang <strong className="text-body">{page}</strong> /{" "}
+                  {totalPages}
                 </p>
               )}
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {products.map(p => (
+              {products.map((p) => (
                 <FlashSaleCard key={p.id} product={p} />
               ))}
             </div>
@@ -75,5 +94,5 @@ export default function FlashSalePage() {
         )}
       </div>
     </div>
-  )
+  );
 }

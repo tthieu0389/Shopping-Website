@@ -1,160 +1,248 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi } from '../api/index.js'
-import useAuthStore from '../store/authStore.js'
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  productsApi,
+  categoriesApi,
+  blogsApi,
+  reviewsApi,
+  favoritesApi,
+  ordersApi,
+  userApi,
+  promotionsApi,
+} from "../api/index.js";
+import useAuthStore from "../store/authStore.js";
 
 // ── useProducts ───────────────────────────────────────────────────────────────
 export const useProducts = (params = {}) => {
-  const [data, setData]       = useState([])
-  const [total, setTotal]     = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+  const [data, setData] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-    productsApi.getAll(params)
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    productsApi
+      .getAll(params)
       .then((res) => {
-        if (cancelled) return
-        const list = (res.data || []).map(p =>
-          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
-        )
-        setData(list)
-        setTotal(res.total || 0)
-        setLoading(false)
+        if (cancelled) return;
+        const list = (res.data || []).map((p) =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p,
+        );
+        setData(list);
+        setTotal(res.total || 0);
+        setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         if (!cancelled) {
-          setError(err.message || 'Lỗi tải sản phẩm')
-          setLoading(false)
+          setError(err.message || "Lỗi tải sản phẩm");
+          setLoading(false);
         }
-      })
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(params)])
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(params)]);
 
-  return { data, total, loading, error }
-}
+  return { data, total, loading, error };
+};
 
 // ── useProduct (single by slug/id) ───────────────────────────────────────────
 export const useProduct = (slug) => {
-  const [data, setData]       = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!slug) return
-    setLoading(true)
-    setError(null)
-    productsApi.getBySlug(slug)
-      .then(res => { setData(res.data || res); setLoading(false) })
-      .catch(err => { setError(err.message || 'Không tìm thấy sản phẩm'); setLoading(false) })
-  }, [slug])
+    if (!slug) return;
+    setLoading(true);
+    setError(null);
+    productsApi
+      .getBySlug(slug)
+      .then((res) => {
+        setData(res.data || res);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || "Không tìm thấy sản phẩm");
+        setLoading(false);
+      });
+  }, [slug]);
 
-  return { data, loading, error }
-}
+  return { data, loading, error };
+};
 
 // ── useRelatedProducts ────────────────────────────────────────────────────────
 export const useRelatedProducts = (id) => {
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!id) return
-    let cancelled = false
-    setLoading(true)
-    productsApi.getRelated(id)
+    if (!id) return;
+    let cancelled = false;
+    setLoading(true);
+    productsApi
+      .getRelated(id)
       .then((res) => {
-        if (cancelled) return
-        const list = (res.data || []).map(p =>
-          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
-        )
-        setData(list)
-        setLoading(false)
+        if (cancelled) return;
+        const list = (res.data || []).map((p) =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p,
+        );
+        setData(list);
+        setLoading(false);
       })
-      .catch(() => setLoading(false))
-    return () => { cancelled = true }
-  }, [id])
+      .catch(() => setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  return { data, loading }
-}
+  return { data, loading };
+};
+
+// ── useDiscountedProducts ─────────────────────────────────────────────────────
+// Dùng cho trang Flash Sale / Khuyến mãi — gọi đúng endpoint chỉ trả về những sản
+// phẩm đang có promotion active thật (GET /promotions/discounted-products), thay vì
+// lấy toàn bộ sản phẩm rồi hiển thị nhầm cả sản phẩm không giảm giá.
+export const useDiscountedProducts = (params = {}) => {
+  const [data, setData] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    promotionsApi
+      .getDiscountedProducts(params)
+      .then((res) => {
+        if (cancelled) return;
+        const list = (res.data || []).map((p) =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p,
+        );
+        setData(list);
+        setTotal(res.total || 0);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message || "Lỗi tải sản phẩm khuyến mãi");
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(params)]);
+
+  return { data, total, loading, error };
+};
 
 // ── useCategories ─────────────────────────────────────────────────────────────
 export const useCategories = () => {
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // categoriesApi.getAll() đã normalize về { data: [] }
-    categoriesApi.getAll()
-      .then(res => { setData(res.data || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+    categoriesApi
+      .getAll()
+      .then((res) => {
+        setData(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  return { data, loading }
-}
+  return { data, loading };
+};
 
 // ── useBlogs ──────────────────────────────────────────────────────────────────
 export const useBlogs = (params = {}) => {
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    blogsApi.getAll(params)
-      .then(res => { setData(res.data || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(params)])
+    blogsApi
+      .getAll(params)
+      .then((res) => {
+        setData(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(params)]);
 
-  return { data, loading }
-}
+  return { data, loading };
+};
 
 // ── useReviews ────────────────────────────────────────────────────────────────
 export const useReviews = (productId) => {
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const reload = useCallback(() => {
-    if (!productId) return
-    setLoading(true)
-    reviewsApi.getByProduct(productId)
-      .then(res => { setData(res.data || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [productId])
+    if (!productId) return;
+    setLoading(true);
+    reviewsApi
+      .getByProduct(productId)
+      .then((res) => {
+        setData(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [productId]);
 
-  useEffect(() => { reload() }, [reload])
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
-  return { data, loading, reload }
-}
+  return { data, loading, reload };
+};
 
 // ── useFavorites ──────────────────────────────────────────────────────────────
 export const useFavorites = () => {
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const reload = useCallback(() => {
-    setLoading(true)
-    favoritesApi.getAll()
-      .then(res => { setData(res.data || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+    setLoading(true);
+    favoritesApi
+      .getAll()
+      .then((res) => {
+        setData(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  useEffect(() => { reload() }, [reload])
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
-  const isFav = useCallback((productId) =>
-    data.some(f => f.product_id === productId || f.id === productId), [data])
+  const isFav = useCallback(
+    (productId) =>
+      data.some((f) => f.product_id === productId || f.id === productId),
+    [data],
+  );
 
-  const toggle = useCallback(async (productId) => {
-    if (isFav(productId)) {
-      await favoritesApi.remove(productId)
-    } else {
-      await favoritesApi.add(productId)
-    }
-    reload()
-  }, [isFav, reload])
+  const toggle = useCallback(
+    async (productId) => {
+      if (isFav(productId)) {
+        await favoritesApi.remove(productId);
+      } else {
+        await favoritesApi.add(productId);
+      }
+      reload();
+    },
+    [isFav, reload],
+  );
 
-  return { data, loading, isFav, toggle, reload }
-}
+  return { data, loading, isFav, toggle, reload };
+};
 
 // ── useOrders ─────────────────────────────────────────────────────────────────
 // Dùng cho trang "Đơn hàng của tôi" ngoài storefront (KHÔNG dùng cho Admin panel).
@@ -171,139 +259,162 @@ export const useFavorites = () => {
 // theo req.user.id bất kể role), ta lọc lại ở client để đảm bảo trang storefront
 // chỉ hiển thị đúng đơn hàng của người đang đăng nhập.
 export const useOrders = (params = {}) => {
-  const [data, setData]       = useState([])
-  const [total, setTotal]     = useState(0)
-  const [loading, setLoading] = useState(true)
-  const currentUserId = useAuthStore(state => state.user?.id)
+  const [data, setData] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const currentUserId = useAuthStore((state) => state.user?.id);
 
   const reload = useCallback(() => {
-    setLoading(true)
-    ordersApi.getAll(params)
-      .then(res => {
-        const all = res.data || []
+    setLoading(true);
+    ordersApi
+      .getAll(params)
+      .then((res) => {
+        const all = res.data || [];
         // Chỉ giữ lại đơn hàng thuộc về user đang đăng nhập (kể cả khi họ là admin),
         // để trang storefront không lộ đơn hàng của người khác do backend trả thừa.
         const mine = currentUserId
-          ? all.filter(o => String(o.user_id) === String(currentUserId))
-          : all
-        setData(mine)
+          ? all.filter((o) => String(o.user_id) === String(currentUserId))
+          : all;
+        setData(mine);
         // total trả từ backend là tổng toàn hệ thống khi user là admin nên không còn
         // đúng nữa sau khi lọc -> dùng số lượng thực tế sau khi lọc cho khớp UI.
-        setTotal(mine.length)
-        setLoading(false)
+        setTotal(mine.length);
+        setLoading(false);
       })
-      .catch(() => setLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(params), currentUserId])
+      .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(params), currentUserId]);
 
-  useEffect(() => { reload() }, [reload])
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
-  return { data, total, loading, reload }
-}
+  return { data, total, loading, reload };
+};
 
 // ── useUserProfile ────────────────────────────────────────────────────────────
 export const useUserProfile = () => {
-  const [data, setData]       = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const reload = useCallback(() => {
-    setLoading(true)
-    userApi.getProfile()
-      .then(res => { setData(res.data || null); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+    setLoading(true);
+    userApi
+      .getProfile()
+      .then((res) => {
+        setData(res.data || null);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  useEffect(() => { reload() }, [reload])
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
-  return { data, loading, reload }
-}
+  return { data, loading, reload };
+};
 
 // ── useUserAddresses ──────────────────────────────────────────────────────────
 export const useUserAddresses = () => {
-  const [data, setData]       = useState([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const reload = useCallback(() => {
-    setLoading(true)
-    userApi.getAddresses()
-      .then(res => { setData(res.data || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+    setLoading(true);
+    userApi
+      .getAddresses()
+      .then((res) => {
+        setData(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  useEffect(() => { reload() }, [reload])
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
-  return { data, loading, reload }
-}
+  return { data, loading, reload };
+};
 
 // ── useSearch (debounced) ────────────────────────────────────────────────────
 export const useSearch = (delay = 400) => {
-  const [query, setQuery]     = useState('')
-  const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults([])
-      setLoading(false)
-      return
+      setResults([]);
+      setLoading(false);
+      return;
     }
 
-    setLoading(true)
-    let cancelled = false
+    setLoading(true);
+    let cancelled = false;
 
     const timer = setTimeout(async () => {
       try {
-        const res = await productsApi.getAll({ search: query, limit: 8 })
-        if (cancelled) return
-        const list = (res.data || []).map(p =>
-          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
-        )
-        setResults(list)
-        setLoading(false)
+        const res = await productsApi.getAll({ search: query, limit: 8 });
+        if (cancelled) return;
+        const list = (res.data || []).map((p) =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p,
+        );
+        setResults(list);
+        setLoading(false);
       } catch (_) {
         if (!cancelled) {
-          setResults([])
-          setLoading(false)
+          setResults([]);
+          setLoading(false);
         }
       }
-    }, delay)
+    }, delay);
 
     return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [query, delay])
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, delay]);
 
-  return { query, setQuery, results, loading }
-}
+  return { query, setQuery, results, loading };
+};
 
 // ── useCountdown ──────────────────────────────────────────────────────────────
 export const useCountdown = (targetSeconds = 6443) => {
-  const [time, setTime] = useState(targetSeconds)
-  const ref = useRef(null)
+  const [time, setTime] = useState(targetSeconds);
+  const ref = useRef(null);
 
   useEffect(() => {
     ref.current = setInterval(() => {
-      setTime(t => (t <= 0 ? 0 : t - 1))
-    }, 1000)
-    return () => clearInterval(ref.current)
-  }, [])
+      setTime((t) => (t <= 0 ? 0 : t - 1));
+    }, 1000);
+    return () => clearInterval(ref.current);
+  }, []);
 
-  const h = String(Math.floor(time / 3600)).padStart(2, '0')
-  const m = String(Math.floor((time % 3600) / 60)).padStart(2, '0')
-  const s = String(time % 60).padStart(2, '0')
+  const h = String(Math.floor(time / 3600)).padStart(2, "0");
+  const m = String(Math.floor((time % 3600) / 60)).padStart(2, "0");
+  const s = String(time % 60).padStart(2, "0");
 
-  return { h, m, s, time }
-}
+  return { h, m, s, time };
+};
 
 // ── usePagination ─────────────────────────────────────────────────────────────
 export const usePagination = (total, limit = 12) => {
-  const [page, setPage] = useState(1)
-  const totalPages = Math.ceil(total / limit)
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(total / limit);
 
-  const goTo = (p) => setPage(Math.min(Math.max(1, p), totalPages || 1))
-  const next  = () => goTo(page + 1)
-  const prev  = () => goTo(page - 1)
+  const goTo = (p) => setPage(Math.min(Math.max(1, p), totalPages || 1));
+  const next = () => goTo(page + 1);
+  const prev = () => goTo(page - 1);
 
-  return { page, totalPages, goTo, next, prev, limit, offset: (page - 1) * limit }
-}
+  return {
+    page,
+    totalPages,
+    goTo,
+    next,
+    prev,
+    limit,
+    offset: (page - 1) * limit,
+  };
+};

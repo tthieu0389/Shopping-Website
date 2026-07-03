@@ -318,16 +318,23 @@ exports.cancelOrder = async (orderId, userId, userRole) => {
 
 // Lay danh sach tat ca don hang cho ADMIN and STAFF (phan trang + bo loc)
 exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
-  let query = knex("orders as o").leftJoin(
-    "users as staff",
-    "o.created_by_staff_id",
-    "staff.id",
+  let query = knex("orders as o")
+    .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .leftJoin("users as customer", "o.user_id", "customer.id");
+  let countQuery = knex("orders as o").leftJoin(
+    "users as customer",
+    "o.user_id",
+    "customer.id",
   );
-  let countQuery = knex("orders as o");
 
   if (filters.status) {
     query.where("o.status", filters.status);
     countQuery.where("o.status", filters.status);
+  }
+
+  if (filters.payment_method) {
+    query.where("o.payment_method", filters.payment_method);
+    countQuery.where("o.payment_method", filters.payment_method);
   }
 
   if (filters.date) {
@@ -337,6 +344,19 @@ exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
 
     query.whereBetween("o.created_at", [start, end]);
     countQuery.whereBetween("o.created_at", [start, end]);
+  }
+
+  if (filters.search) {
+    const keyword = `%${filters.search}%`;
+    const applySearch = (qb) => {
+      qb.where("o.order_code", "ilike", keyword)
+        .orWhere("o.receiver_name", "ilike", keyword)
+        .orWhere("o.receiver_phone", "ilike", keyword)
+        .orWhere("customer.name", "ilike", keyword)
+        .orWhere("customer.email", "ilike", keyword);
+    };
+    query.where(applySearch);
+    countQuery.where(applySearch);
   }
 
   const totalRow = await countQuery.count("* as count").first();
@@ -358,12 +378,41 @@ exports.getOrdersByUser = async ({
 }) => {
   let query = knex("orders as o")
     .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .leftJoin("users as customer", "o.user_id", "customer.id")
     .where("o.user_id", userId);
-  let countQuery = knex("orders as o").where("o.user_id", userId);
+  let countQuery = knex("orders as o")
+    .leftJoin("users as customer", "o.user_id", "customer.id")
+    .where("o.user_id", userId);
 
   if (filters.status) {
     query.where("o.status", filters.status);
     countQuery.where("o.status", filters.status);
+  }
+
+  if (filters.payment_method) {
+    query.where("o.payment_method", filters.payment_method);
+    countQuery.where("o.payment_method", filters.payment_method);
+  }
+
+  if (filters.date) {
+    const start = new Date(filters.date);
+    const end = new Date(filters.date);
+    end.setDate(end.getDate() + 1);
+    query.whereBetween("o.created_at", [start, end]);
+    countQuery.whereBetween("o.created_at", [start, end]);
+  }
+
+  if (filters.search) {
+    const keyword = `%${filters.search}%`;
+    const applySearch = (qb) => {
+      qb.where("o.order_code", "ilike", keyword)
+        .orWhere("o.receiver_name", "ilike", keyword)
+        .orWhere("o.receiver_phone", "ilike", keyword)
+        .orWhere("customer.name", "ilike", keyword)
+        .orWhere("customer.email", "ilike", keyword);
+    };
+    query.where(applySearch);
+    countQuery.where(applySearch);
   }
 
   const totalRow = await countQuery.count("* as count").first();
@@ -390,12 +439,20 @@ exports.getOrdersByStaff = async ({
 
   let query = knex("orders as o")
     .leftJoin("users as staff", "o.created_by_staff_id", "staff.id")
+    .leftJoin("users as customer", "o.user_id", "customer.id")
     .where(applyOwnerFilter);
-  let countQuery = knex("orders as o").where(applyOwnerFilter);
+  let countQuery = knex("orders as o")
+    .leftJoin("users as customer", "o.user_id", "customer.id")
+    .where(applyOwnerFilter);
 
   if (filters.status) {
     query.where("o.status", filters.status);
     countQuery.where("o.status", filters.status);
+  }
+
+  if (filters.payment_method) {
+    query.where("o.payment_method", filters.payment_method);
+    countQuery.where("o.payment_method", filters.payment_method);
   }
 
   if (filters.date) {
@@ -404,6 +461,19 @@ exports.getOrdersByStaff = async ({
     end.setDate(end.getDate() + 1);
     query.whereBetween("o.created_at", [start, end]);
     countQuery.whereBetween("o.created_at", [start, end]);
+  }
+
+  if (filters.search) {
+    const keyword = `%${filters.search}%`;
+    const applySearch = (qb) => {
+      qb.where("o.order_code", "ilike", keyword)
+        .orWhere("o.receiver_name", "ilike", keyword)
+        .orWhere("o.receiver_phone", "ilike", keyword)
+        .orWhere("customer.name", "ilike", keyword)
+        .orWhere("customer.email", "ilike", keyword);
+    };
+    query.where(applySearch);
+    countQuery.where(applySearch);
   }
 
   const totalRow = await countQuery.count("* as count").first();
@@ -486,6 +556,20 @@ exports.updateOrder = async (id, data) => {
         err.statusCode = 400;
         throw err;
       }
+    }
+
+    // Don khong phai COD (card/wallet) bat buoc phai thanh toan xong moi duoc hoan thanh
+    // Don COD thi thu tien khi giao nen khong bat buoc paid truoc khi completed
+    if (
+      nextStatus === "completed" &&
+      currentOrder.payment_method !== "cod" &&
+      currentOrder.payment_status !== "paid"
+    ) {
+      const err = new Error(
+        "Đơn hàng chưa thanh toán, không thể chuyển sang trạng thái hoàn thành",
+      );
+      err.statusCode = 400;
+      throw err;
     }
   }
 

@@ -52,6 +52,8 @@ exports.getAllOrders = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       date: req.query.date,
+      payment_method: req.query.payment_method,
+      search: req.query.q || req.query.search,
     };
 
     let result;
@@ -91,6 +93,8 @@ exports.getMyOrders = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       date: req.query.date,
+      payment_method: req.query.payment_method,
+      search: req.query.q || req.query.search,
     };
 
     const result = await orderService.getOrdersByStaff({

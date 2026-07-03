@@ -1,41 +1,48 @@
-import { Link, Navigate } from 'react-router-dom'
-import { formatPrice, calcDiscount, resolveImageUrl } from '../../utils/index.js'
-import useCartStore from '../../store/cartStore.js'
-import useAuthStore from '../../store/authStore.js'
-import { toast } from '../../utils/index.js'
+import { Link, Navigate } from "react-router-dom";
+import {
+  formatPrice,
+  calcDiscount,
+  resolveImageUrl,
+} from "../../utils/index.js";
+import useCartStore from "../../store/cartStore.js";
+import useAuthStore from "../../store/authStore.js";
+import { toast } from "../../utils/index.js";
 
 // ── ProductCard ───────────────────────────────────────────────────────────────
 export function ProductCard({ product, showProgress = false }) {
-  const addItem = useCartStore(s => s.addItem)
+  const addItem = useCartStore((s) => s.addItem);
 
-  const salePrice = product.price
-  const rawOld = product.oldPrice || product.original_price
-  const originalPrice = rawOld && rawOld > salePrice
-    ? rawOld
-    : Math.round(salePrice * (1 + (0.15 + (((product.id || 1) * 7) % 26) / 100)))
-  const discount = Math.round((1 - salePrice / originalPrice) * 100)
+  const salePrice = product.sale_price ?? product.price;
+  const originalPrice = product.original_price ?? salePrice;
+  const discount = product.discount_percent ?? 0;
 
-  const img = resolveImageUrl(product.img || product.thumbnail || product.image_url || null)
+  const img = resolveImageUrl(
+    product.img || product.thumbnail || product.image_url || null,
+  );
 
   // Hết hàng: is_available = false HOẶC stock_quantity = 0
-  const stockQty = product.stock_quantity ?? product.stock ?? null
-  const isOutOfStock = product.is_available === false || product.is_available === 0 || stockQty === 0
+  const stockQty = product.stock_quantity ?? product.stock ?? null;
+  const isOutOfStock =
+    product.is_available === false ||
+    product.is_available === 0 ||
+    stockQty === 0;
 
   const handleAdd = (e) => {
-    e.preventDefault()
-    if (isOutOfStock) return
+    e.preventDefault();
+    if (isOutOfStock) return;
     addItem(product)
       .then(() => toast.success(`Đã thêm ${product.name} vào giỏ!`))
-      .catch(err => toast.error(err?.message || 'Không thể thêm vào giỏ'))
-  }
+      .catch((err) => toast.error(err?.message || "Không thể thêm vào giỏ"));
+  };
 
   return (
     <Link
       to={`/products/${product.slug}`}
       className={`bg-white border rounded-xl overflow-hidden transition-all duration-250 group block relative
-        ${isOutOfStock
-          ? 'border-shade opacity-60 cursor-pointer'
-          : 'border-shade hover:-translate-y-1 hover:shadow-lg hover:border-vnpt-light'
+        ${
+          isOutOfStock
+            ? "border-shade opacity-60 cursor-pointer"
+            : "border-shade hover:-translate-y-1 hover:shadow-lg hover:border-vnpt-light"
         }`}
     >
       {/* Badge hết hàng */}
@@ -50,37 +57,55 @@ export function ProductCard({ product, showProgress = false }) {
           <img
             src={img}
             alt={product.name}
-            className={`w-3/4 h-3/4 object-contain transition-transform duration-300 ${isOutOfStock ? '' : 'group-hover:scale-105'}`}
+            className={`w-3/4 h-3/4 object-contain transition-transform duration-300 ${isOutOfStock ? "" : "group-hover:scale-105"}`}
             loading="lazy"
-            onError={e => { e.target.src = 'https://placehold.co/200x200?text=No+Image' }}
+            onError={(e) => {
+              e.target.src = "https://placehold.co/200x200?text=No+Image";
+            }}
           />
         ) : (
-          <div className="w-3/4 h-3/4 flex items-center justify-center bg-surface rounded-lg text-4xl">📦</div>
+          <div className="w-3/4 h-3/4 flex items-center justify-center bg-surface rounded-lg text-4xl">
+            📦
+          </div>
         )}
       </div>
 
       <div className="p-3.5">
         {product.brand && (
-          <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">{product.brand}</div>
+          <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">
+            {product.brand}
+          </div>
         )}
-        <div className="text-sm font-semibold text-body leading-snug line-clamp-2">{product.name}</div>
+        <div className="text-sm font-semibold text-body leading-snug line-clamp-2">
+          {product.name}
+        </div>
 
         {/* Còn X sản phẩm — nằm giữa tên và giá, không đẩy nút */}
         <div className="h-5 mb-1.5 mt-1">
           {!isOutOfStock && stockQty !== null && stockQty <= 5 && (
-            <span className="text-xs text-warning font-semibold">Còn {stockQty} sản phẩm</span>
+            <span className="text-xs text-warning font-semibold">
+              Còn {stockQty} sản phẩm
+            </span>
           )}
         </div>
 
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className={`text-xl font-black font-display ${isOutOfStock ? 'text-muted' : 'text-accent'}`}>{formatPrice(salePrice)}</span>
+            <span
+              className={`text-xl font-black font-display ${isOutOfStock ? "text-muted" : "text-accent"}`}
+            >
+              {formatPrice(salePrice)}
+            </span>
             {discount > 0 && !isOutOfStock && (
-              <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">-{discount}%</span>
+              <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">
+                -{discount}%
+              </span>
             )}
           </div>
           {discount > 0 && !isOutOfStock && (
-            <div className="text-xs text-muted line-through">{formatPrice(originalPrice)}</div>
+            <div className="text-xs text-muted line-through">
+              {formatPrice(originalPrice)}
+            </div>
           )}
         </div>
 
@@ -88,43 +113,47 @@ export function ProductCard({ product, showProgress = false }) {
           onClick={handleAdd}
           disabled={isOutOfStock}
           className={`w-full py-2.5 rounded-full text-sm font-semibold transition-colors
-            ${isOutOfStock
-              ? 'bg-shade text-muted cursor-not-allowed'
-              : 'bg-vnpt text-white hover:bg-vnpt-dark'
+            ${
+              isOutOfStock
+                ? "bg-shade text-muted cursor-not-allowed"
+                : "bg-vnpt text-white hover:bg-vnpt-dark"
             }`}
         >
-          {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}
+          {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ"}
         </button>
       </div>
     </Link>
-  )
+  );
 }
 
 // ── FlashSaleCard ─────────────────────────────────────────────────────────────
 export function FlashSaleCard({ product }) {
-  const addItem = useCartStore(s => s.addItem)
+  const addItem = useCartStore((s) => s.addItem);
 
-  // Nếu không có original_price → giả lập giá gốc cao hơn 15–40%
-  const salePrice = product.price
-  const rawOld = product.oldPrice || product.original_price
-  const originalPrice = rawOld && rawOld > salePrice
-    ? rawOld
-    : Math.round(salePrice * (1 + (0.15 + (((product.id || 1) * 7) % 26) / 100)))
-  const discount = Math.round((1 - salePrice / originalPrice) * 100)
+  const salePrice = product.sale_price ?? product.price;
+  const originalPrice = product.original_price ?? salePrice;
+  const discount = product.discount_percent ?? 0;
 
   // Progress bar "Còn X suất"
-  const stock   = product.stock  || 10
-  const sold    = product.sold   || Math.max(1, Math.round(stock * (0.3 + (((product.id || 1) * 3) % 60) / 100)))
-  const remain  = Math.max(0, stock - sold)
-  const soldPct = Math.min(100, Math.round(sold / stock * 100))
+  const stock = product.stock || 10;
+  const sold =
+    product.sold ||
+    Math.max(
+      1,
+      Math.round(stock * (0.3 + (((product.id || 1) * 3) % 60) / 100)),
+    );
+  const remain = Math.max(0, stock - sold);
+  const soldPct = Math.min(100, Math.round((sold / stock) * 100));
 
-  const img = resolveImageUrl(product.img || product.thumbnail || product.image_url || null)
+  const img = resolveImageUrl(
+    product.img || product.thumbnail || product.image_url || null,
+  );
 
   const handleAdd = (e) => {
-    e.preventDefault()
-    addItem(product)
-    toast.success(`Đã thêm ${product.name} vào giỏ!`)
-  }
+    e.preventDefault();
+    addItem(product);
+    toast.success(`Đã thêm ${product.name} vào giỏ!`);
+  };
 
   return (
     <Link
@@ -139,30 +168,45 @@ export function FlashSaleCard({ product }) {
             alt={product.name}
             className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
-            onError={e => { e.target.src = 'https://placehold.co/200x200?text=No+Image' }}
+            onError={(e) => {
+              e.target.src = "https://placehold.co/200x200?text=No+Image";
+            }}
           />
         ) : (
-          <div className="w-3/4 h-3/4 flex items-center justify-center bg-surface rounded-lg text-4xl">📦</div>
+          <div className="w-3/4 h-3/4 flex items-center justify-center bg-surface rounded-lg text-4xl">
+            📦
+          </div>
         )}
-
       </div>
 
       <div className="p-3.5">
         {product.brand && (
-          <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">{product.brand}</div>
+          <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">
+            {product.brand}
+          </div>
         )}
-        <div className="text-sm font-semibold text-body leading-snug mb-2.5 min-h-[38px] line-clamp-2">{product.name}</div>
+        <div className="text-sm font-semibold text-body leading-snug mb-2.5 min-h-[38px] line-clamp-2">
+          {product.name}
+        </div>
 
         {/* Giá — kiểu TGDĐ */}
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className="text-xl font-black text-accent font-display">{formatPrice(salePrice)}</span>
-            <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">-{discount}%</span>
+            <span className="text-xl font-black text-accent font-display">
+              {formatPrice(salePrice)}
+            </span>
+            {discount > 0 && (
+              <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">
+                -{discount}%
+              </span>
+            )}
           </div>
-          <div className="text-xs text-muted line-through">{formatPrice(originalPrice)}</div>
+          {discount > 0 && (
+            <div className="text-xs text-muted line-through">
+              {formatPrice(originalPrice)}
+            </div>
+          )}
         </div>
-
-
 
         <button
           onClick={handleAdd}
@@ -172,7 +216,7 @@ export function FlashSaleCard({ product }) {
         </button>
       </div>
     </Link>
-  )
+  );
 }
 
 // ── Breadcrumb ────────────────────────────────────────────────────────────────
@@ -184,7 +228,9 @@ export function Breadcrumb({ items }) {
           <span key={i} className="flex items-center gap-2">
             {i > 0 && <span>›</span>}
             {item.to ? (
-              <Link to={item.to} className="text-vnpt hover:underline">{item.label}</Link>
+              <Link to={item.to} className="text-vnpt hover:underline">
+                {item.label}
+              </Link>
             ) : (
               <span className="text-body">{item.label}</span>
             )}
@@ -192,21 +238,21 @@ export function Breadcrumb({ items }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // ── LoadingSpinner ────────────────────────────────────────────────────────────
-export function LoadingSpinner({ text = 'Đang tải...' }) {
+export function LoadingSpinner({ text = "Đang tải..." }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-4">
       <div className="w-10 h-10 border-4 border-vnpt-light border-t-vnpt rounded-full animate-spin" />
       <p className="text-muted text-sm">{text}</p>
     </div>
-  )
+  );
 }
 
 // ── EmptyState ────────────────────────────────────────────────────────────────
-export function EmptyState({ icon = '📭', title, desc, action }) {
+export function EmptyState({ icon = "📭", title, desc, action }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
       <div className="text-6xl">{icon}</div>
@@ -214,34 +260,50 @@ export function EmptyState({ icon = '📭', title, desc, action }) {
       {desc && <p className="text-muted max-w-sm">{desc}</p>}
       {action}
     </div>
-  )
+  );
 }
 
 // ── SectionHead ───────────────────────────────────────────────────────────────
 export function SectionHead({ label, title, sub }) {
   return (
     <div className="text-center mb-11">
-      {label && <div className="text-xs font-bold tracking-[2px] uppercase text-vnpt mb-2">{label}</div>}
-      <h2 className="font-display text-[34px] font-bold text-body mb-3">{title}</h2>
-      {sub && <p className="text-muted max-w-[520px] mx-auto text-sm leading-relaxed">{sub}</p>}
+      {label && (
+        <div className="text-xs font-bold tracking-[2px] uppercase text-vnpt mb-2">
+          {label}
+        </div>
+      )}
+      <h2 className="font-display text-[34px] font-bold text-body mb-3">
+        {title}
+      </h2>
+      {sub && (
+        <p className="text-muted max-w-[520px] mx-auto text-sm leading-relaxed">
+          {sub}
+        </p>
+      )}
     </div>
-  )
+  );
 }
 
 // ── TrustBand ─────────────────────────────────────────────────────────────────
 export function TrustBand() {
   const items = [
-    { icon: '🚚', title: 'Giao hàng tận nơi', sub: 'Hỗ trợ toàn quốc' },
-    { icon: '🛡️', title: 'Hàng chính hãng 100%', sub: 'Bảo hành theo hãng' },
-    { icon: '🔄', title: 'Đổi trả trong 30 ngày', sub: 'Trường hợp lỗi từ nhà sản xuất' },
-    { icon: '📞', title: 'Hỗ trợ 24/7', sub: '1800 1234 miễn phí' },
-  ]
+    { icon: "🚚", title: "Giao hàng tận nơi", sub: "Hỗ trợ toàn quốc" },
+    { icon: "🛡️", title: "Hàng chính hãng 100%", sub: "Bảo hành theo hãng" },
+    {
+      icon: "🔄",
+      title: "Đổi trả trong 30 ngày",
+      sub: "Trường hợp lỗi từ nhà sản xuất",
+    },
+    { icon: "📞", title: "Hỗ trợ 24/7", sub: "1800 1234 miễn phí" },
+  ];
   return (
     <div className="bg-vnpt py-8 px-10">
       <div className="max-w-[1200px] mx-auto grid grid-cols-4 gap-6">
         {items.map(({ icon, title, sub }) => (
           <div key={title} className="flex items-center gap-3.5 text-white">
-            <div className="w-11 h-11 bg-white/12 rounded-[10px] flex items-center justify-center text-xl flex-shrink-0">{icon}</div>
+            <div className="w-11 h-11 bg-white/12 rounded-[10px] flex items-center justify-center text-xl flex-shrink-0">
+              {icon}
+            </div>
             <div>
               <div className="text-sm font-bold mb-0.5">{title}</div>
               <div className="text-xs text-white/65">{sub}</div>
@@ -250,7 +312,7 @@ export function TrustBand() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // ── CountdownTimer ────────────────────────────────────────────────────────────
@@ -259,19 +321,21 @@ export function CountdownTimer({ h, m, s }) {
     <div className="flex items-center gap-2">
       {[h, m, s].map((val, i) => (
         <span key={i} className="flex items-center gap-2">
-          <span className="bg-accent text-white px-3.5 py-2 rounded-lg text-xl font-bold font-display min-w-[52px] text-center">{val}</span>
+          <span className="bg-accent text-white px-3.5 py-2 rounded-lg text-xl font-bold font-display min-w-[52px] text-center">
+            {val}
+          </span>
           {i < 2 && <span className="text-white text-xl font-bold">:</span>}
         </span>
       ))}
     </div>
-  )
+  );
 }
 
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
 export function ProtectedRoute({ children }) {
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  return children
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
 }
 
 // ── StarRating ────────────────────────────────────────────────────────────────
@@ -283,52 +347,53 @@ export function StarRating({ value = 0, max = 5, onChange }) {
           key={i}
           type="button"
           onClick={() => onChange && onChange(i + 1)}
-          className={`text-xl transition-colors ${i < value ? 'text-warning' : 'text-shade'} ${onChange ? 'cursor-pointer hover:text-warning' : 'cursor-default'}`}
+          className={`text-xl transition-colors ${i < value ? "text-warning" : "text-shade"} ${onChange ? "cursor-pointer hover:text-warning" : "cursor-default"}`}
         >
           ★
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 export function Pagination({ page, totalPages, goTo }) {
-  if (totalPages <= 1) return null
+  if (totalPages <= 1) return null;
 
   // Tạo danh sách trang với ellipsis: 1 … 4 5 6 … 55
   const getPages = () => {
-    const delta = 4 // số trang hiển thị mỗi bên trang hiện tại
-    const range = []
-    const rangeWithDots = []
+    const delta = 4; // số trang hiển thị mỗi bên trang hiện tại
+    const range = [];
+    const rangeWithDots = [];
 
-    const left = Math.max(2, page - delta)
-    const right = Math.min(totalPages - 1, page + delta)
+    const left = Math.max(2, page - delta);
+    const right = Math.min(totalPages - 1, page + delta);
 
     // Luôn có trang 1
-    range.push(1)
-    for (let i = left; i <= right; i++) range.push(i)
+    range.push(1);
+    for (let i = left; i <= right; i++) range.push(i);
     // Luôn có trang cuối
-    if (totalPages > 1) range.push(totalPages)
+    if (totalPages > 1) range.push(totalPages);
 
     // Thêm dấu ... vào giữa
-    let prev = null
+    let prev = null;
     for (const p of range) {
       if (prev !== null) {
         if (p - prev === 2) {
-          rangeWithDots.push(prev + 1) // chỉ 1 trang ở giữa, hiện luôn
+          rangeWithDots.push(prev + 1); // chỉ 1 trang ở giữa, hiện luôn
         } else if (p - prev > 2) {
-          rangeWithDots.push('...')
+          rangeWithDots.push("...");
         }
       }
-      rangeWithDots.push(p)
-      prev = p
+      rangeWithDots.push(p);
+      prev = p;
     }
 
-    return rangeWithDots
-  }
+    return rangeWithDots;
+  };
 
-  const btnBase = 'w-9 h-9 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center'
+  const btnBase =
+    "w-9 h-9 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center";
 
   return (
     <div className="flex items-center justify-center gap-1.5 py-8">
@@ -341,8 +406,11 @@ export function Pagination({ page, totalPages, goTo }) {
       </button>
 
       {getPages().map((p, i) =>
-        p === '...' ? (
-          <span key={`dots-${i}`} className="w-9 h-9 flex items-center justify-center text-sm text-muted select-none">
+        p === "..." ? (
+          <span
+            key={`dots-${i}`}
+            className="w-9 h-9 flex items-center justify-center text-sm text-muted select-none"
+          >
             …
           </span>
         ) : (
@@ -351,13 +419,13 @@ export function Pagination({ page, totalPages, goTo }) {
             onClick={() => goTo(p)}
             className={`${btnBase} ${
               p === page
-                ? 'bg-vnpt text-white'
-                : 'border border-shade text-muted hover:border-vnpt hover:text-vnpt'
+                ? "bg-vnpt text-white"
+                : "border border-shade text-muted hover:border-vnpt hover:text-vnpt"
             }`}
           >
             {p}
           </button>
-        )
+        ),
       )}
 
       <button
@@ -368,5 +436,5 @@ export function Pagination({ page, totalPages, goTo }) {
         ›
       </button>
     </div>
-  )
+  );
 }

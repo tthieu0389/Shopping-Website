@@ -18,6 +18,23 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
+// Danh sách sản phẩm đang được giảm giá (public, dùng cho trang KM / Flash Sale)
+exports.getDiscountedProducts = async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const offset = (page - 1) * limit;
+
+    const { data, total } = await service.getDiscountedProducts({
+      limit,
+      offset,
+    });
+    res.json({ data, total, page, limit });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getById = async (req, res, next) => {
   try {
     const data = await service.getPromotionById(req.params.id);

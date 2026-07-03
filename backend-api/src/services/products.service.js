@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const promotionService = require("./promotion.service");
 
 const generateSlug = (name) =>
   name
@@ -138,7 +139,9 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     .limit(safeLimit)
     .offset(safeOffset);
 
-  return { data, total };
+  const dataWithPromo = await promotionService.attachPromotionInfo(data);
+
+  return { data: dataWithPromo, total };
 };
 
 exports.getProductByIdOrSlug = async (idOrSlug) => {
@@ -156,7 +159,11 @@ exports.getProductByIdOrSlug = async (idOrSlug) => {
   product.details = await knex("product_details").where({
     product_id: product.id,
   });
-  return product;
+
+  const [productWithPromo] = await promotionService.attachPromotionInfo([
+    product,
+  ]);
+  return productWithPromo;
 };
 
 exports.getRelatedProducts = async (id) => {
@@ -166,7 +173,7 @@ exports.getRelatedProducts = async (id) => {
     .first();
   if (!product) return [];
 
-  return await knex("products as p")
+  const related = await knex("products as p")
     .select("p.*")
     .select(
       knex("product_images")
@@ -180,6 +187,8 @@ exports.getRelatedProducts = async (id) => {
     .where("p.is_deleted", false)
     .whereNot("p.id", id)
     .limit(8);
+
+  return await promotionService.attachPromotionInfo(related);
 };
 
 exports.updateProduct = async (id, data) => {

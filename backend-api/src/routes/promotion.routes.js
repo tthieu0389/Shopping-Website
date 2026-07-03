@@ -10,6 +10,7 @@ const {
   updatePromotionSchema,
 } = require("../schema/promotion.schema");
 
+router.get("/discounted-products", controller.getDiscountedProducts);
 router.get("/", controller.getAll);
 router.get("/:id", controller.getById);
 

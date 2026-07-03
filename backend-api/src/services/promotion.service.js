@@ -104,6 +104,88 @@ exports.getPromotionsForProducts = async (productIds, trx = knex) => {
   return map;
 };
 
+// Gắn thông tin khuyến mãi THẬT vào danh sách sản phẩm (dùng cho trang danh sách / flash sale)
+// Trả về sản phẩm kèm: original_price (giá gốc), sale_price (giá sau KM), discount_percent (% giảm thật)
+// Không đổi field "price" gốc để không ảnh hưởng các chỗ khác đang dùng product.price làm đơn giá.
+exports.attachPromotionInfo = async (products, trx = knex) => {
+  if (!products || products.length === 0) return products;
+
+  const productIds = products.map((p) => p.id);
+  const promotionsMap = await exports.getPromotionsForProducts(productIds, trx);
+
+  return products.map((product) => {
+    const promotions = exports.applyPromotionRules(
+      promotionsMap[product.id] || [],
+    );
+    const basePrice = Number(product.price);
+    const discountAmount = exports.calculateTotalDiscount(
+      basePrice,
+      promotions,
+    );
+    const salePrice = Math.max(0, basePrice - discountAmount);
+    const discountPercent =
+      basePrice > 0 ? Math.round((discountAmount / basePrice) * 100) : 0;
+
+    return {
+      ...product,
+      original_price: basePrice,
+      sale_price: salePrice,
+      discount_percent: discountPercent,
+    };
+  });
+};
+
+// Lấy danh sách sản phẩm ĐANG có khuyến mãi active (dùng cho trang "Khuyến mãi" / Flash Sale bên FE)
+// Không cần biết trước product_id — trả về chính những sản phẩm nào đang giảm giá thật.
+exports.getDiscountedProducts = async (
+  { limit = 20, offset = 0 } = {},
+  trx = knex,
+) => {
+  const now = new Date();
+
+  const baseQuery = trx("products as pr")
+    .join("product_promotions as pp", "pr.id", "pp.product_id")
+    .join("promotions as p", "pp.promotion_id", "p.id")
+    .where("pr.is_deleted", false)
+    .andWhere("pr.is_available", true)
+    .andWhere("p.is_active", true)
+    .andWhere("p.start_date", "<=", now)
+    .andWhere("p.end_date", ">=", now);
+
+  const countRow = await baseQuery
+    .clone()
+    .countDistinct("pr.id as count")
+    .first();
+
+  const products = await baseQuery
+    .clone()
+    .distinct(
+      "pr.id",
+      "pr.name",
+      "pr.slug",
+      "pr.price",
+      "pr.brand",
+      "pr.category_id",
+    )
+    .select(
+      trx("product_images")
+        .select("image_url")
+        .whereRaw("product_id = pr.id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("image_url"),
+    )
+    .orderBy("pr.id")
+    .limit(limit)
+    .offset(offset);
+
+  const withPromoInfo = await exports.attachPromotionInfo(products, trx);
+  // Sản phẩm giảm nhiều nhất lên đầu — đúng tinh thần trang khuyến mãi
+  withPromoInfo.sort((a, b) => b.discount_percent - a.discount_percent);
+
+  return { data: withPromoInfo, total: Number(countRow.count) };
+};
+
 // CÁC HÀM TÍNH TOÁN
 exports.calculateDiscount = (price, promotion) => {
   if (!promotion) return 0;
