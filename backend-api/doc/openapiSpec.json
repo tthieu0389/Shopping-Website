@@ -4299,6 +4299,31 @@
                 "cancelled"
               ]
             }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Lọc đơn hàng theo 1 ngày cụ thể (created_at), format YYYY-MM-DD",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo mã đơn hàng, tên/SĐT người nhận (và tên/email khách hàng nếu là admin/staff)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7475,6 +7500,31 @@
                 "completed",
                 "cancelled"
               ]
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Lọc đơn hàng theo 1 ngày cụ thể (created_at), format YYYY-MM-DD",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo mã đơn hàng, tên/SĐT người nhận (và tên/email khách hàng nếu là admin/staff)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
             }
           }
         ],
