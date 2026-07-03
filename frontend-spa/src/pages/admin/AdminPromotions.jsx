@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { promotionsApi, productPromotionsApi, productsApi, categoriesApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Select, FilterTabs, AdminPagination } from './ui.jsx'
-import { formatPrice, formatDate, toast, debounce } from '../../utils/index.js'
+import { formatPrice, formatDate, toast, debounce, resolveImageUrl, getInitials } from '../../utils/index.js'
 
 const PAGE_SIZE = 8
 
@@ -219,6 +219,25 @@ function PromotionFormModal({ modal, form, setForm, saving, onSave, onClose }) {
 }
 
 // ─── Modal gán khuyến mãi cho sản phẩm — có filter + search như trang Sản phẩm ─
+// Ghi chú: tab "Đã áp dụng" cần load hết sản phẩm khớp filter rồi tự phân trang ở
+// client (vì lọc theo assignedMap trên 1 trang nhỏ sẽ ra rỗng nếu SP đã gán không nằm
+// trong trang đó). Backend giới hạn limit tối đa 100/request (xem middlewares/pagination.js)
+// nên phải gọi lặp nhiều trang cho tới khi lấy đủ, không thể xin limit lớn trong 1 lần.
+const FETCH_ALL_PAGE_LIMIT = 100
+const FETCH_ALL_MAX_PAGES = 20 // chặn an toàn, tối đa 2000 sản phẩm
+
+function fetchAllProducts(filters) {
+  const collect = (page, acc) =>
+    productsApi.getAll({ page, limit: FETCH_ALL_PAGE_LIMIT, ...filters }).then(res => {
+      const data = res.data || []
+      const merged = acc.concat(data)
+      const total = res.total ?? merged.length
+      const hasMore = data.length > 0 && merged.length < total && page < FETCH_ALL_MAX_PAGES
+      return hasMore ? collect(page + 1, merged) : merged
+    })
+  return collect(1, [])
+}
+
 function AssignProductsModal({ promotion, onClose }) {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
@@ -229,6 +248,7 @@ function AssignProductsModal({ promotion, onClose }) {
   // Toàn bộ dòng gán sản phẩm hiện có (để biết SP nào đã áp dụng KM này + lấy id để xoá)
   const [assignedMap, setAssignedMap] = useState({}) // product_id -> product_promotion row id
   const [busyProductId, setBusyProductId] = useState(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -252,28 +272,43 @@ function AssignProductsModal({ promotion, onClose }) {
 
   const loadProducts = () => {
     setLoading(true)
-    productsApi.getAll({
-      page, limit: PAGE_SIZE,
+    const filters = {
       ...(search ? { q: search } : {}),
       ...(categoryId ? { category_id: categoryId } : {}),
       ...(productType ? { product_type: productType } : {}),
-    })
+    }
+    // Tab "Đã áp dụng": lấy hết SP khớp filter (gọi lặp nhiều trang) để lọc đúng
+    // toàn bộ SP đã gán, không chỉ 1 trang nhỏ.
+    const req = onlyAssigned
+      ? fetchAllProducts(filters).then(data => ({ data, total: data.length }))
+      : productsApi.getAll({ page, limit: PAGE_SIZE, ...filters })
+
+    req
       .then(res => { setProducts(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { loadAssigned() }, [])
-  useEffect(() => { loadProducts() }, [page, search, categoryId, productType])
+  useEffect(() => { loadProducts() }, [page, search, categoryId, productType, onlyAssigned])
 
   const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
+  const changeFilter = (setter) => (v) => { setPage(1); setter(v) }
 
-  const visibleProducts = useMemo(() => {
-    if (!onlyAssigned) return products
-    return products.filter(p => assignedMap[p.id] !== undefined)
-  }, [products, onlyAssigned, assignedMap])
+  // Khi ở tab "Đã áp dụng", products đã là full-list khớp filter → lọc theo assignedMap
+  // rồi tự phân trang ở client. Khi ở tab "Tất cả", products đã được server phân trang sẵn.
+  const assignedFiltered = useMemo(
+    () => products.filter(p => assignedMap[p.id] !== undefined),
+    [products, assignedMap]
+  )
+  const visibleProducts = onlyAssigned
+    ? assignedFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    : products
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const totalPages = onlyAssigned
+    ? Math.max(1, Math.ceil(assignedFiltered.length / PAGE_SIZE))
+    : Math.max(1, Math.ceil(total / PAGE_SIZE))
+
   const catOptions = [['', 'Tất cả danh mục'], ...categories.map(c => [String(c.id), c.name])]
 
   const toggleProduct = (product) => {
@@ -292,80 +327,146 @@ function AssignProductsModal({ promotion, onClose }) {
       .finally(() => setBusyProductId(null))
   }
 
+  // Chọn / bỏ chọn tất cả sản phẩm đang hiển thị trên trang hiện tại
+  const pageAllAssigned = visibleProducts.length > 0 && visibleProducts.every(p => assignedMap[p.id] !== undefined)
+  const togglePage = () => {
+    setBulkBusy(true)
+    const jobs = pageAllAssigned
+      ? visibleProducts.filter(p => assignedMap[p.id] !== undefined).map(p => productPromotionsApi.remove(assignedMap[p.id]))
+      : visibleProducts.filter(p => assignedMap[p.id] === undefined).map(p => productPromotionsApi.add({ product_id: p.id, promotion_id: promotion.id }))
+
+    Promise.allSettled(jobs)
+      .then(() => {
+        toast.success(pageAllAssigned ? 'Đã gỡ khuyến mãi khỏi trang này' : 'Đã áp dụng khuyến mãi cho trang này')
+        return loadAssigned()
+      })
+      .finally(() => setBulkBusy(false))
+  }
+
   const assignedCount = Object.keys(assignedMap).length
-  const discountLabel = promotion.discount_type === 'percent' ? `-${Number(promotion.discount_value)}%` : `-${formatPrice(promotion.discount_value)}`
+  const isPercent = promotion.discount_type === 'percent'
+  const discountLabel = isPercent ? `-${Number(promotion.discount_value)}%` : `-${formatPrice(promotion.discount_value)}`
 
   return (
-    <Modal title={`Gán sản phẩm — ${promotion.name}`} onClose={onClose} width="max-w-[880px]">
-      <div className="flex items-center gap-2 mb-4">
-        <Badge label={discountLabel} tone="info" />
-        <span className="text-xs text-muted">Đã áp dụng cho <strong className="text-body">{assignedCount}</strong> sản phẩm</span>
+    <Modal title={`Gán sản phẩm — ${promotion.name}`} onClose={onClose} maxWidth="min(94vw, 760px)">
+      {/* Banner tổng quan — tự xuống dòng khi hẹp, không tràn */}
+      <div className="flex flex-wrap items-center gap-3 mb-4 px-4 py-3 rounded-xl bg-vnpt-light border border-vnpt/15">
+        <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-vnpt text-white font-display font-bold text-sm flex-shrink-0">
+          {discountLabel}
+        </span>
+        <span className="text-sm text-muted">
+          Áp dụng cho <strong className="text-vnpt">{assignedCount}</strong> sản phẩm · {formatDate(promotion.start_date)} → {formatDate(promotion.end_date)}
+        </span>
       </div>
 
-      {/* Toolbar filter + search — cùng kiểu với trang Sản phẩm */}
-      <div className="flex flex-wrap items-center gap-2.5 mb-4">
+      {/* Toolbar filter + search — hàng 1 */}
+      <div className="flex flex-wrap items-center gap-2.5 mb-2.5">
         <input
           defaultValue={search}
           onChange={e => handleSearchChange(e.target.value)}
-          placeholder="🔍  Tìm theo tên hoặc slug..."
-          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-56 focus:border-vnpt"
+          placeholder="🔍  Tìm sản phẩm..."
+          className="flex-1 min-w-[140px] px-3.5 py-2 rounded-lg border border-shade text-sm outline-none focus:border-vnpt bg-canvas"
         />
         <select
           value={categoryId}
-          onChange={e => { setPage(1); setCategoryId(e.target.value) }}
-          className="px-3.5 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt bg-canvas"
+          onChange={e => changeFilter(setCategoryId)(e.target.value)}
+          className="flex-1 min-w-[120px] px-3 py-2 rounded-lg border border-shade text-sm outline-none focus:border-vnpt bg-canvas text-body"
         >
           {catOptions.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
         <select
           value={productType}
-          onChange={e => { setPage(1); setProductType(e.target.value) }}
-          className="px-3.5 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt bg-canvas"
+          onChange={e => changeFilter(setProductType)(e.target.value)}
+          className="flex-1 min-w-[120px] px-3 py-2 rounded-lg border border-shade text-sm outline-none focus:border-vnpt bg-canvas text-body"
         >
           {PRODUCT_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <div className="ml-auto">
-          <FilterTabs
-            options={[['all', 'Tất cả'], ['assigned', `Đã áp dụng (${assignedCount})`]]}
-            value={onlyAssigned ? 'assigned' : 'all'}
-            onChange={(k) => setOnlyAssigned(k === 'assigned')}
-          />
-        </div>
       </div>
 
-      <div className="border border-shade rounded-xl overflow-hidden">
-        <Table headers={['', 'Sản phẩm', 'Danh mục', 'Giá gốc', 'Giá sau giảm', '']} loading={loading} empty={!loading && 'Không tìm thấy sản phẩm phù hợp'}>
-          {visibleProducts.map((p, i) => {
-            const isAssigned = assignedMap[p.id] !== undefined
-            const discounted = promotion.discount_type === 'percent'
-              ? p.price * (1 - Number(promotion.discount_value) / 100)
-              : Math.max(0, p.price - Number(promotion.discount_value))
-            return (
-              <TR key={p.id} striped={i % 2 !== 0}>
-                <TD>
+      {/* Tab + chọn nhanh — hàng 2, tách riêng để hàng 1 không bị chật */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <FilterTabs
+          options={[['all', 'Tất cả'], ['assigned', `Đã áp dụng (${assignedCount})`]]}
+          value={onlyAssigned ? 'assigned' : 'all'}
+          onChange={(k) => { setPage(1); setOnlyAssigned(k === 'assigned') }}
+        />
+        {visibleProducts.length > 0 && (
+          <button
+            onClick={togglePage}
+            disabled={bulkBusy}
+            className="text-xs font-bold text-vnpt hover:text-vnpt-dark disabled:opacity-50 cursor-pointer whitespace-nowrap"
+          >
+            {bulkBusy ? 'Đang xử lý...' : pageAllAssigned ? 'Bỏ chọn trang này' : 'Chọn trang này'}
+          </button>
+        )}
+      </div>
+
+      {/* Danh sách sản phẩm — có min-height cố định để khung không co lại khi ít sản phẩm */}
+      <div className="border border-shade rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center text-muted text-sm">Đang tải...</div>
+        ) : visibleProducts.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-muted text-sm">
+            {onlyAssigned ? 'Chưa có sản phẩm nào được áp dụng' : 'Không tìm thấy sản phẩm phù hợp'}
+          </div>
+        ) : (
+          <div className="divide-y divide-shade max-h-[420px] overflow-y-auto">
+            {visibleProducts.map((p) => {
+              const isAssigned = assignedMap[p.id] !== undefined
+              const isBusy = busyProductId === p.id
+              const discounted = isPercent
+                ? p.price * (1 - Number(promotion.discount_value) / 100)
+                : Math.max(0, p.price - Number(promotion.discount_value))
+              const catName = categories.find(c => c.id === p.category_id)?.name
+
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => !isBusy && toggleProduct(p)}
+                  className={`flex items-center gap-3.5 px-4 py-3 cursor-pointer transition-colors
+                    ${isAssigned ? 'bg-vnpt-light/40' : 'hover:bg-cream/70'} ${isBusy ? 'opacity-50 pointer-events-none' : ''}`}
+                >
                   <input
                     type="checkbox"
                     checked={isAssigned}
-                    disabled={busyProductId === p.id}
-                    onChange={() => toggleProduct(p)}
-                    className="w-4 h-4 accent-vnpt cursor-pointer"
+                    readOnly
+                    className="w-4 h-4 accent-vnpt cursor-pointer flex-shrink-0"
                   />
-                </TD>
-                <TD bold>{p.name}</TD>
-                <TD muted>{categories.find(c => c.id === p.category_id)?.name || '—'}</TD>
-                <TD muted className="line-through">{formatPrice(p.price)}</TD>
-                <TD bold className={isAssigned ? 'text-accent' : ''}>{isAssigned ? formatPrice(discounted) : '—'}</TD>
-                <TD>{isAssigned && <Badge label="Đang áp dụng" tone="success" />}</TD>
-              </TR>
-            )
-          })}
-        </Table>
+
+                  {p.thumbnail_url ? (
+                    <img src={resolveImageUrl(p.thumbnail_url)} alt="" className="w-12 h-12 rounded-lg object-cover border border-shade flex-shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-cream border border-shade flex items-center justify-center text-xs font-bold text-muted flex-shrink-0">
+                      {getInitials(p.name)}
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-body truncate">{p.name}</div>
+                    <div className="text-xs text-muted truncate mt-0.5">{catName || 'Chưa phân loại'}</div>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    {isAssigned ? (
+                      <div className="flex items-baseline gap-2 justify-end">
+                        <span className="text-xs text-muted line-through">{formatPrice(p.price)}</span>
+                        <span className="text-sm font-bold text-accent whitespace-nowrap">{formatPrice(discounted)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-semibold text-body whitespace-nowrap">{formatPrice(p.price)}</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {!onlyAssigned && <div className="mt-3"><AdminPagination page={page} totalPages={totalPages} onChange={setPage} /></div>}
+      <div className="mt-3"><AdminPagination page={page} totalPages={totalPages} onChange={setPage} /></div>
 
-      <div className="flex justify-end mt-5 pt-4 border-t border-shade">
-        <Btn variant="ghost" onClick={onClose}>Đóng</Btn>
+      <div className="flex justify-end mt-4 pt-3 border-t border-shade">
+        <Btn onClick={onClose}>Xong</Btn>
       </div>
     </Modal>
   )
