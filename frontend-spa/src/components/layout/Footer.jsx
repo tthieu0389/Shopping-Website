@@ -31,7 +31,7 @@ export default function Footer() {
                 ['/products?product_type=tv',        'Máy tính bảng'],
                 ['/products?product_type=sim',       'Sim số đẹp'],
                 ['/products?product_type=accessory', 'Phụ kiện'],
-                ['/flash-sale',                      '🔥 Flash Sale'],
+                ['/flash-sale',                      'Flash Sale'],
               ].map(([to, label]) => (
                 <li key={to}>
                   <Link to={to} className="text-sm text-white/50 hover:text-white transition-colors">{label}</Link>
