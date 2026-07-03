@@ -21,15 +21,33 @@ export default function StaffContacts() {
 
   const handleSelect = (c) => {
     setSelected(c)
-    setReplyBody(`Kính gửi ${c.name},\n\nCảm ơn bạn đã liên hệ với VNPT Shop.\n\n`)
+    const quotedMessage = (c.message || '')
+      .split('\n')
+      .map(line => `> ${line}`)
+      .join('\n')
+    setReplyBody(
+`Kính gửi ${c.name},
+
+Cảm ơn bạn đã liên hệ với VNPT Shop. Chúng tôi đã nhận được yêu cầu của bạn và xin phản hồi như sau:
+
+[Nhập nội dung phản hồi tại đây]
+
+Nếu bạn có thêm câu hỏi, vui lòng liên hệ lại với chúng tôi.
+
+Trân trọng,
+Đội ngũ hỗ trợ VNPT Shop
+────────────────────────────
+Tin nhắn gốc từ ${c.name} (${formatDate(c.created_at)}):
+${quotedMessage}`
+    )
   }
 
-  const handleReply = () => {
-    if (!selected) return
+  const getMailtoLink = () => {
+    if (!selected) return '#'
+    const to      = encodeURIComponent(selected.email)
     const subject = encodeURIComponent(`[VNPT Shop] Phản hồi liên hệ của ${selected.name}`)
-    const body = encodeURIComponent(replyBody)
-    window.open(`mailto:${selected.email}?subject=${subject}&body=${body}`, '_blank')
-    toast.success('Đã mở ứng dụng email để gửi phản hồi')
+    const body    = encodeURIComponent(replyBody)
+    return `https://mail.google.com/mail/?view=cm&to=${to}&su=${subject}&body=${body}`
   }
 
   const filtered = filter === 'all'
@@ -138,13 +156,15 @@ export default function StaffContacts() {
                 <a href={`mailto:${selected.email}`} className="text-xs font-bold text-muted hover:text-vnpt transition-colors">
                   ✉️ {selected.email}
                 </a>
-                <button
-                  onClick={handleReply}
-                  disabled={!replyBody.trim()}
-                  className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                <a
+                  href={getMailtoLink()}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => replyBody.trim() && toast.success('Đã mở Gmail để gửi phản hồi')}
+                  className={`px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors inline-flex items-center gap-2 ${!replyBody.trim() ? 'opacity-50 pointer-events-none' : ''}`}
                 >
-                  📤 Gửi phản hồi
-                </button>
+                  📤 Gửi phản hồi qua Gmail
+                </a>
               </div>
             </>
           )}
