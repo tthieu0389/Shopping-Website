@@ -14,7 +14,17 @@ export function ProductCard({ product, showProgress = false }) {
 
   const salePrice = product.sale_price ?? product.price;
   const originalPrice = product.original_price ?? salePrice;
-  const discount = product.discount_percent ?? 0;
+  // Có giảm giá thật (áp dụng cho cả giảm theo % lẫn giảm theo số tiền cố định)
+  // khi giá gốc lớn hơn giá bán, không phụ thuộc vào discount_percent do backend trả về.
+  const hasDiscount = originalPrice > salePrice;
+  const discountPercent = hasDiscount
+    ? product.discount_percent ||
+      Math.round((1 - salePrice / originalPrice) * 100)
+    : 0;
+  // Giảm theo số tiền cố định nhỏ có thể làm tròn % về 0 -> chỉ hiện badge "-x%"
+  // khi thực sự >= 1%, tránh hiện "-0%" xấu. Giá gốc gạch ngang vẫn luôn hiện
+  // khi hasDiscount = true.
+  const discount = discountPercent > 0 ? discountPercent : 0;
 
   const img = resolveImageUrl(
     product.img || product.thumbnail || product.image_url || null,
@@ -102,7 +112,7 @@ export function ProductCard({ product, showProgress = false }) {
               </span>
             )}
           </div>
-          {discount > 0 && !isOutOfStock && (
+          {hasDiscount && !isOutOfStock && (
             <div className="text-xs text-muted line-through">
               {formatPrice(originalPrice)}
             </div>
@@ -132,7 +142,17 @@ export function FlashSaleCard({ product }) {
 
   const salePrice = product.sale_price ?? product.price;
   const originalPrice = product.original_price ?? salePrice;
-  const discount = product.discount_percent ?? 0;
+  // Có giảm giá thật (áp dụng cho cả giảm theo % lẫn giảm theo số tiền cố định)
+  // khi giá gốc lớn hơn giá bán, không phụ thuộc vào discount_percent do backend trả về.
+  const hasDiscount = originalPrice > salePrice;
+  const discountPercent = hasDiscount
+    ? product.discount_percent ||
+      Math.round((1 - salePrice / originalPrice) * 100)
+    : 0;
+  // Giảm theo số tiền cố định nhỏ có thể làm tròn % về 0 -> chỉ hiện badge "-x%"
+  // khi thực sự >= 1%, tránh hiện "-0%" xấu. Giá gốc gạch ngang vẫn luôn hiện
+  // khi hasDiscount = true.
+  const discount = discountPercent > 0 ? discountPercent : 0;
 
   // Progress bar "Còn X suất"
   const stock = product.stock || 10;
@@ -201,7 +221,7 @@ export function FlashSaleCard({ product }) {
               </span>
             )}
           </div>
-          {discount > 0 && (
+          {hasDiscount && (
             <div className="text-xs text-muted line-through">
               {formatPrice(originalPrice)}
             </div>

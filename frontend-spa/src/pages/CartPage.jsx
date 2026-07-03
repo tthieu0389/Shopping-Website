@@ -124,9 +124,16 @@ export default function CartPage() {
                 const originalPrice = hasRealDiscount
                   ? item.originalPrice
                   : null;
-                const discount = hasRealDiscount
+                const discountPercent = hasRealDiscount
                   ? Math.round((1 - salePrice / originalPrice) * 100)
                   : null;
+                // Giảm giá theo số tiền cố định nhỏ có thể làm tròn % về 0
+                // -> chỉ hiện badge "-x%" khi thực sự >= 1%, tránh hiện "-0%" xấu.
+                // Giá gốc gạch ngang vẫn luôn hiện khi có giảm giá thật.
+                const discount =
+                  hasRealDiscount && discountPercent > 0
+                    ? discountPercent
+                    : null;
                 return (
                   <div
                     key={item.id}
@@ -175,9 +182,11 @@ export default function CartPage() {
                           </span>
                           {hasRealDiscount && (
                             <>
-                              <span className="text-[10px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">
-                                -{discount}%
-                              </span>
+                              {discount > 0 && (
+                                <span className="text-[10px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">
+                                  -{discount}%
+                                </span>
+                              )}
                               <span className="text-xs text-muted line-through">
                                 {formatPrice(originalPrice)}
                               </span>
