@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi, productImagesApi } from '../api/index.js'
+import { productsApi, categoriesApi, blogsApi, reviewsApi, favoritesApi, ordersApi, userApi } from '../api/index.js'
 import useAuthStore from '../store/authStore.js'
 
 // ── useProducts ───────────────────────────────────────────────────────────────
@@ -14,31 +14,14 @@ export const useProducts = (params = {}) => {
     setLoading(true)
     setError(null)
     productsApi.getAll(params)
-      .then(async (res) => {
-        const list = res.data || []
+      .then((res) => {
         if (cancelled) return
-
-        // Hiển thị sản phẩm trước (chưa có ảnh) để người dùng thấy nội dung ngay
+        const list = (res.data || []).map(p =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
+        )
         setData(list)
         setTotal(res.total || 0)
         setLoading(false)
-
-        // Bổ sung ảnh đại diện cho từng sản phẩm (vì API danh sách không trả ảnh)
-        if (list.length > 0) {
-          const withImages = await Promise.all(
-            list.map(async (p) => {
-              try {
-                const imgRes = await productImagesApi.getByProduct(p.id)
-                const images = imgRes.data || []
-                const thumb = images.find(img => img.is_thumbnail) || images[0]
-                return thumb ? { ...p, thumbnail: thumb.image_url } : p
-              } catch (_) {
-                return p
-              }
-            })
-          )
-          if (!cancelled) setData(withImages)
-        }
       })
       .catch(err => {
         if (!cancelled) {
@@ -81,35 +64,13 @@ export const useRelatedProducts = (id) => {
     let cancelled = false
     setLoading(true)
     productsApi.getRelated(id)
-      .then(async (res) => {
+      .then((res) => {
+        if (cancelled) return
         const list = (res.data || []).map(p =>
           p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
         )
-        if (cancelled) return
-
-        // Hiển thị trước (có thể chưa có ảnh) rồi bổ sung ảnh sau
         setData(list)
         setLoading(false)
-
-        // Sản phẩm nào chưa có thumbnail (không có ảnh is_thumbnail=true)
-        // thì lấy tạm ảnh đầu tiên trong product_images, giống cách useProducts đang làm
-        const needsImage = list.filter(p => !p.thumbnail)
-        if (needsImage.length > 0) {
-          const withImages = await Promise.all(
-            list.map(async (p) => {
-              if (p.thumbnail) return p
-              try {
-                const imgRes = await productImagesApi.getByProduct(p.id)
-                const images = imgRes.data || []
-                const thumb = images.find(img => img.is_thumbnail) || images[0]
-                return thumb ? { ...p, thumbnail: thumb.image_url } : p
-              } catch (_) {
-                return p
-              }
-            })
-          )
-          if (!cancelled) setData(withImages)
-        }
       })
       .catch(() => setLoading(false))
     return () => { cancelled = true }
@@ -293,29 +254,12 @@ export const useSearch = (delay = 400) => {
     const timer = setTimeout(async () => {
       try {
         const res = await productsApi.getAll({ search: query, limit: 8 })
-        const list = res.data || []
         if (cancelled) return
-
-        // Hiển thị kết quả trước (chưa có ảnh) để người dùng thấy ngay
+        const list = (res.data || []).map(p =>
+          p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p
+        )
         setResults(list)
         setLoading(false)
-
-        // Bổ sung ảnh đại diện cho từng sản phẩm (vì API danh sách không trả ảnh)
-        if (list.length > 0) {
-          const withImages = await Promise.all(
-            list.map(async (p) => {
-              try {
-                const imgRes = await productImagesApi.getByProduct(p.id)
-                const images = imgRes.data || []
-                const thumb = images.find(img => img.is_thumbnail) || images[0]
-                return thumb ? { ...p, thumbnail: thumb.image_url } : p
-              } catch (_) {
-                return p
-              }
-            })
-          )
-          if (!cancelled) setResults(withImages)
-        }
       } catch (_) {
         if (!cancelled) {
           setResults([])
