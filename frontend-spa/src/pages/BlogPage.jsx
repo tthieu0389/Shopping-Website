@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useBlogs } from '../hooks/index.js'
 import { Breadcrumb, LoadingSpinner, EmptyState, Pagination } from '../components/common/index.jsx'
-import { formatDate, truncate } from '../utils/index.js'
+import { formatDate, truncate, resolveImageUrl } from '../utils/index.js'
 import { blogsApi } from '../api/index.js'
 
 const LIMIT = 9
@@ -65,9 +65,24 @@ function BlogList() {
                   className="bg-white border border-shade rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 group"
                 >
                   {/* Thumbnail */}
-                  <div className="aspect-video bg-gradient-to-br from-vnpt-light to-vnpt/20 flex items-center justify-center">
-                    <span className="text-5xl">📰</span>
-                  </div>
+                  {resolveImageUrl(blog.thumbnail_url) ? (
+                    <div className="aspect-video overflow-hidden bg-surface">
+                      <img
+                        src={resolveImageUrl(blog.thumbnail_url)}
+                        alt={blog.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={e => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.parentElement.classList.add('flex', 'items-center', 'justify-center')
+                          e.currentTarget.parentElement.innerHTML = '<span class="text-5xl">📰</span>'
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gradient-to-br from-vnpt-light to-vnpt/20 flex items-center justify-center">
+                      <span className="text-5xl">📰</span>
+                    </div>
+                  )}
                   <div className="p-5">
                     <h2 className="text-base font-bold text-body mb-2 line-clamp-2 group-hover:text-vnpt transition-colors">
                       {blog.title}
@@ -123,9 +138,19 @@ function BlogDetail() {
       ]} />
       <div className="max-w-[800px] mx-auto px-10 py-10">
         <h1 className="font-display text-3xl font-bold text-body mb-3 leading-tight">{blog.title}</h1>
-        <div className="text-sm text-muted mb-8 pb-8 border-b border-shade">
+        <div className="text-sm text-muted mb-6">
           {formatDate(blog.created_at)}
         </div>
+        {resolveImageUrl(blog.thumbnail_url) && (
+          <div className="rounded-xl overflow-hidden mb-8 border border-shade">
+            <img
+              src={resolveImageUrl(blog.thumbnail_url)}
+              alt={blog.title}
+              className="w-full object-cover max-h-[420px]"
+            />
+          </div>
+        )}
+        <div className="border-b border-shade mb-8" />
         <div className="prose max-w-none text-sm text-body leading-relaxed whitespace-pre-line">
           {blog.content}
         </div>
