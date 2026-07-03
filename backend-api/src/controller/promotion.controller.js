@@ -29,7 +29,7 @@ exports.getDiscountedProducts = async (req, res, next) => {
       limit,
       offset,
     });
-    res.json({ data, total, page, limit });
+    res.json({ success: true, data, meta: { page, limit, total } });
   } catch (err) {
     next(err);
   }

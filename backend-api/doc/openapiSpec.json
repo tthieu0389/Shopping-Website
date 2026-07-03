@@ -741,6 +741,49 @@
           }
         }
       },
+      "DiscountedProduct": {
+        "type": "object",
+        "description": "Sản phẩm đang có khuyến mãi active, kèm giá gốc/giá sau giảm/% giảm thật (tính từ promotion tốt nhất đang áp dụng).",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "description": "Giá gốc trong bảng products (giữ nguyên, không đổi)"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "category_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ảnh thumbnail của sản phẩm"
+          },
+          "original_price": {
+            "type": "number",
+            "description": "Giá gốc trước khi áp khuyến mãi"
+          },
+          "sale_price": {
+            "type": "number",
+            "description": "Giá sau khi áp khuyến mãi tốt nhất"
+          },
+          "discount_percent": {
+            "type": "integer",
+            "description": "% giảm giá thực tế, đã làm tròn"
+          }
+        }
+      },
       "ProductPromotion": {
         "type": "object",
         "properties": {
@@ -5240,6 +5283,52 @@
         },
         "operationId": "getLogsByProductId",
         "description": "**Yêu cầu quyền: admin.**"
+      }
+    },
+    "/api/promotions/discounted-products": {
+      "get": {
+        "tags": ["Promotions"],
+        "summary": "Lấy danh sách sản phẩm đang được khuyến mãi (Public)",
+        "description": "Trả về các sản phẩm đang có ít nhất một khuyến mãi active (còn hiệu lực theo thời gian), kèm giá sau giảm và % giảm thực tế. Dùng cho trang Khuyến mãi / Flash Sale. Sắp xếp theo % giảm giá cao nhất trước.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách sản phẩm khuyến mãi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DiscountedProduct"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "listDiscountedProducts"
       }
     },
     "/api/promotions": {
