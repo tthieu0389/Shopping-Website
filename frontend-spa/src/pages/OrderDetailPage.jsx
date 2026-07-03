@@ -94,7 +94,7 @@ function OrderTimeline({ status }) {
               {idx > 0 && (
                 <div
                   className={`absolute top-5 right-1/2 w-full h-0.5 -translate-y-1/2 ${
-                    done ? 'bg-vnpt' : 'bg-shade'
+                    done || active ? 'bg-vnpt' : 'bg-shade'
                   }`}
                   style={{ left: '-50%', right: '50%', width: '100%' }}
                 />
