@@ -51,6 +51,7 @@ export default function StaffProducts() {
       <Card>
         <Table
           headers={['Sản phẩm', 'Giá', 'Loại', 'Thương hiệu', 'Trạng thái']}
+          colWidths={['300px', '110px', '110px', '130px', '110px']}
           loading={loading}
           empty={!loading && (search ? 'Không tìm thấy sản phẩm nào' : 'Chưa có sản phẩm')}
         >
@@ -59,7 +60,7 @@ export default function StaffProducts() {
             const typeInfo = TYPE_LABEL[p.product_type] || { label: p.product_type || '—', tone: 'muted' }
             return (
               <TR key={p.id} striped={i % 2 !== 0}>
-                <TD>
+                <TD noTruncate>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-cream border border-shade flex items-center justify-center overflow-hidden flex-shrink-0">
                       {img
@@ -67,16 +68,16 @@ export default function StaffProducts() {
                         : <span className="text-lg">📦</span>
                       }
                     </div>
-                    <div>
-                      <div className="font-bold text-body text-[13px] line-clamp-1">{p.name}</div>
-                      <div className="text-[11px] text-muted">{p.slug}</div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-body text-[13px] truncate">{p.name}</div>
+                      <div className="text-[11px] text-muted truncate">{p.slug}</div>
                     </div>
                   </div>
                 </TD>
                 <TD bold>{formatPrice(p.price)}</TD>
-                <TD><Badge label={typeInfo.label} tone={typeInfo.tone} /></TD>
+                <TD noTruncate><Badge label={typeInfo.label} tone={typeInfo.tone} /></TD>
                 <TD muted>{p.brand || '—'}</TD>
-                <TD>
+                <TD noTruncate>
                   <Badge
                     label={p.is_available ? 'Đang bán' : 'Ngừng bán'}
                     tone={p.is_available ? 'success' : 'error'}

@@ -169,6 +169,7 @@ export default function StaffOrders() {
             "Ngày tạo",
             "",
           ]}
+          colWidths={['220px', '130px', '110px', '110px', '90px', '120px', '100px', '64px']}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
         >
@@ -183,11 +184,11 @@ export default function StaffOrders() {
               <TD muted className="uppercase text-[11px]">
                 {o.payment_method === "cod" ? "COD" : `PM #${o.payment_method}`}
               </TD>
-              <TD>
+              <TD noTruncate>
                 <Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} />
               </TD>
               <TD muted>{formatDate(o.created_at)}</TD>
-              <TD>
+              <TD noTruncate>
                 <span className="text-vnpt text-xs font-bold cursor-pointer">
                   Chi tiết
                 </span>

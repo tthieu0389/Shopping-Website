@@ -48,6 +48,7 @@ export default function StaffBlogs() {
       <Card>
         <Table
           headers={['Bài viết', 'Slug', 'Ngày tạo', '']}
+          colWidths={['360px', '200px', '110px', '72px']}
           loading={loading}
           empty={!loading && (search ? 'Không tìm thấy bài viết nào' : 'Chưa có bài viết nào')}
         >
@@ -68,7 +69,7 @@ export default function StaffBlogs() {
                 </TD>
                 <TD muted className="text-[11px]">{b.slug}</TD>
                 <TD muted>{formatDate(b.created_at)}</TD>
-                <TD>
+                <TD noTruncate>
                   <button
                     onClick={() => setPreview(b)}
                     className="text-vnpt text-xs font-bold hover:underline cursor-pointer"

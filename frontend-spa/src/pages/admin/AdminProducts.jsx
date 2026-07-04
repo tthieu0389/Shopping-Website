@@ -107,21 +107,26 @@ export default function AdminProducts() {
       </div>
 
       <Card>
-        <Table headers={['Tên sản phẩm', 'Danh mục', 'Thương hiệu', 'Giá bán', 'Tồn kho', 'Trạng thái', '']} loading={loading} empty={!loading && 'Không có sản phẩm nào'}>
+        <Table
+          headers={['Tên sản phẩm', 'Danh mục', 'Thương hiệu', 'Giá bán', 'Tồn kho', 'Trạng thái', '']}
+          colWidths={['280px', '140px', '130px', '110px', '100px', '110px', '120px']}
+          loading={loading}
+          empty={!loading && 'Không có sản phẩm nào'}
+        >
           {products.map((p, i) => (
             <TR key={p.id} striped={i % 2 !== 0}>
               <TD bold>{p.name}</TD>
               <TD muted>{categories.find(c => c.id === p.category_id)?.name || '—'}</TD>
               <TD muted>{p.brand}</TD>
               <TD bold>{formatPrice(p.price)}</TD>
-              <TD>
+              <TD noTruncate>
                 <Badge
                   label={p.stock === 0 ? 'Hết hàng' : p.stock <= 5 ? `⚠ ${p.stock} còn` : `${p.stock} còn`}
                   tone={p.stock === 0 ? 'error' : p.stock <= 5 ? 'warning' : 'success'}
                 />
               </TD>
-              <TD><Badge label={p.is_available ? 'Đang bán' : 'Tạm ẩn'} tone={p.is_available ? 'success' : 'muted'} /></TD>
-              <TD>
+              <TD noTruncate><Badge label={p.is_available ? 'Đang bán' : 'Tạm ẩn'} tone={p.is_available ? 'success' : 'muted'} /></TD>
+              <TD noTruncate>
                 <div className="flex gap-3">
                   <span className="text-muted font-bold cursor-pointer text-xs" onClick={() => setImageModal(p)}>Ảnh</span>
                   <span className="text-vnpt font-bold cursor-pointer text-xs" onClick={() => openEdit(p)}>Sửa</span>

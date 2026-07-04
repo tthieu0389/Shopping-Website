@@ -87,15 +87,20 @@ export default function AdminInventory() {
       </div>
 
       <Card>
-        <Table headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']} loading={loading} empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp trong trang này' : 'Chưa có dữ liệu kho')}>
+        <Table
+          headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']}
+          colWidths={['320px', '100px', '140px', '130px', '120px', '100px']}
+          loading={loading}
+          empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp trong trang này' : 'Chưa có dữ liệu kho')}
+        >
           {items.map((item, i) => (
             <TR key={item.id} striped={i % 2 !== 0}>
               <TD bold>{item.product_name || `Sản phẩm #${item.product_id}`}</TD>
               <TD bold className={item.quantity === 0 ? 'text-accent' : ''}>{item.quantity}</TD>
               <TD muted>{item.min_quantity}</TD>
-              <TD><Badge {...statusOf(item.quantity, item.min_quantity)} /></TD>
+              <TD noTruncate><Badge {...statusOf(item.quantity, item.min_quantity)} /></TD>
               <TD muted>{formatDate(item.updated_at)}</TD>
-              <TD><span className="text-vnpt text-xs font-bold cursor-pointer" onClick={() => openAdjust(item)}>Điều chỉnh</span></TD>
+              <TD noTruncate><span className="text-vnpt text-xs font-bold cursor-pointer" onClick={() => openAdjust(item)}>Điều chỉnh</span></TD>
             </TR>
           ))}
         </Table>

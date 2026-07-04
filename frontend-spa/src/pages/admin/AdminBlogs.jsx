@@ -108,20 +108,25 @@ export default function AdminBlogs() {
       </div>
 
       <Card>
-        <Table headers={['Ảnh', 'Tiêu đề', 'Slug', 'Ngày đăng', '']} loading={loading} empty={!loading && 'Chưa có bài viết nào'}>
+        <Table
+          headers={['Ảnh', 'Tiêu đề', 'Slug', 'Ngày đăng', '']}
+          colWidths={['80px', '320px', '200px', '110px', '100px']}
+          loading={loading}
+          empty={!loading && 'Chưa có bài viết nào'}
+        >
           {pageItems.map((b, i) => (
             <TR key={b.id} striped={i % 2 !== 0}>
-              <TD>
+              <TD noTruncate>
                 {b.thumbnail_url ? (
                   <img src={resolveImageUrl(b.thumbnail_url)} alt="" className="w-12 h-12 rounded-lg object-cover border border-shade" />
                 ) : (
                   <div className="w-12 h-12 rounded-lg bg-cream flex items-center justify-center text-muted text-lg">📰</div>
                 )}
               </TD>
-              <TD bold className="max-w-[320px]">{b.title}</TD>
-              <TD muted>{b.slug || <Badge label="Chưa có slug" tone="warning" />}</TD>
+              <TD bold>{b.title}</TD>
+              <TD muted noTruncate>{b.slug || <Badge label="Chưa có slug" tone="warning" />}</TD>
               <TD muted>{formatDate(b.created_at)}</TD>
-              <TD>
+              <TD noTruncate>
                 <div className="flex gap-3">
                   <span className="text-vnpt font-bold cursor-pointer text-xs" onClick={() => openEdit(b)}>Sửa</span>
                   <span className="text-accent font-bold cursor-pointer text-xs" onClick={() => handleDelete(b)}>Xoá</span>

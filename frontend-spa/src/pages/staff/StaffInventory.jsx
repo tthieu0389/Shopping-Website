@@ -68,6 +68,7 @@ export default function StaffInventory() {
       <Card>
         <Table
           headers={['Sản phẩm', 'Tồn kho', 'Tối thiểu', 'Trạng thái']}
+          colWidths={['360px', '100px', '110px', '130px']}
           loading={loading}
           empty={!loading && 'Không có dữ liệu kho'}
         >
@@ -80,7 +81,7 @@ export default function StaffInventory() {
                   {item.quantity}
                 </TD>
                 <TD muted>{item.min_quantity ?? 5}</TD>
-                <TD><Badge {...st} /></TD>
+                <TD noTruncate><Badge {...st} /></TD>
               </TR>
             )
           })}

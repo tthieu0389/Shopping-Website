@@ -187,6 +187,7 @@ export default function AdminPromotions() {
             "Cộng dồn",
             "",
           ]}
+          colWidths={['220px', '100px', '220px', '110px', '80px', '90px', '160px']}
           loading={loading}
           empty={!loading && "Chưa có chương trình khuyến mãi nào"}
         >
@@ -195,7 +196,7 @@ export default function AdminPromotions() {
             return (
               <TR key={p.id} striped={i % 2 !== 0}>
                 <TD bold>{p.name}</TD>
-                <TD>
+                <TD noTruncate>
                   <Badge
                     tone="info"
                     label={
@@ -205,15 +206,15 @@ export default function AdminPromotions() {
                     }
                   />
                 </TD>
-                <TD muted className="whitespace-nowrap">
+                <TD muted noTruncate>
                   {formatDate(p.start_date)} → {formatDate(p.end_date)}
                 </TD>
-                <TD>
+                <TD noTruncate>
                   <Badge label={status.label} tone={status.tone} />
                 </TD>
                 <TD muted>{p.priority ?? 0}</TD>
                 <TD muted>{p.stackable ? "Có" : "Không"}</TD>
-                <TD>
+                <TD noTruncate>
                   <div className="flex gap-3">
                     <span
                       className="text-vnpt font-bold cursor-pointer text-xs"

@@ -70,19 +70,24 @@ export default function AdminUsers() {
       </div>
 
       <Card>
-        <Table headers={['Tài khoản', 'Email', 'Vai trò', 'Ngày tạo', '']} loading={loading} empty={!loading && (search ? 'Không tìm thấy tài khoản nào phù hợp' : 'Không có tài khoản nào')}>
+        <Table
+          headers={['Tài khoản', 'Email', 'Vai trò', 'Ngày tạo', '']}
+          colWidths={['200px', '240px', '140px', '120px', '100px']}
+          loading={loading}
+          empty={!loading && (search ? 'Không tìm thấy tài khoản nào phù hợp' : 'Không có tài khoản nào')}
+        >
           {filtered.map((u, i) => (
             <TR key={u.id} striped={i % 2 !== 0}>
-              <TD>
+              <TD noTruncate>
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-vnpt-light flex items-center justify-center text-vnpt text-xs font-extrabold flex-shrink-0">{getInitials(u.name)}</div>
-                  <span className="font-bold text-body">{u.name}</span>
+                  <span className="font-bold text-body truncate">{u.name}</span>
                 </div>
               </TD>
               <TD muted>{u.email}</TD>
-              <TD><Badge label={u.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'} tone={u.role === 'admin' ? 'info' : 'muted'} /></TD>
+              <TD noTruncate><Badge label={u.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'} tone={u.role === 'admin' ? 'info' : 'muted'} /></TD>
               <TD muted>{formatDate(u.created_at)}</TD>
-              <TD>
+              <TD noTruncate>
                 <div className="flex gap-3">
                   <span className="text-vnpt font-bold cursor-pointer text-xs" onClick={() => openEdit(u)}>Sửa</span>
                   <span className="text-accent font-bold cursor-pointer text-xs" onClick={() => handleDelete(u)}>Xoá</span>
