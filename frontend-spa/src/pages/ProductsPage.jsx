@@ -59,10 +59,16 @@ export default function ProductsPage() {
   }
   const page = Number(searchParams.get('page')) || 1
 
-  // Fetch toàn bộ để frontend tự sort + paginate — tránh hết hàng bị đẩy sang trang sau do backend limit/offset
+  // Lấy đúng trang hiện tại từ backend (đã tự sort hết hàng xuống cuối +
+  // sort theo `sort` param, xem products.service.js -> orderByRaw is_available).
+  // Trước đây FE xin limit: 999 rồi tự slice ở client, nhưng backend luôn giới
+  // hạn tối đa 100 item/request (middlewares/pagination.js) nên nếu có > 100
+  // sản phẩm khớp filter, phần dư sẽ bị cắt mất và totalPages/total hiển thị
+  // sai (tính trên mảng đã bị cắt thay vì tổng thật). Gọi limit/offset đúng
+  // trang giúp phân trang chính xác dù danh sách sản phẩm lớn tới đâu.
   const apiParams = {
-    limit:  999,
-    offset: 0,
+    limit:  LIMIT,
+    offset: (page - 1) * LIMIT,
     ...(filters.search       && { search: filters.search }),
     ...(filters.category_id  && { category_id: filters.category_id }),
     ...(filters.product_type && { product_type: filters.product_type }),
@@ -71,21 +77,9 @@ export default function ProductsPage() {
     ...(filters.sort         && { sort: filters.sort }),
   }
 
-  const { data: rawProducts, loading, error } = useProducts(apiParams)
+  const { data: products, total, loading, error } = useProducts(apiParams)
 
-  // Sort: còn hàng lên trước, hết hàng xuống sau — trong mỗi nhóm giữ thứ tự sort backend
-  const isOOS = (p) =>
-    p.is_available === false || p.is_available === 0 || p.stock === 0 || p.stock_quantity === 0
-
-  const sortedProducts = [...rawProducts].sort((a, b) => {
-    const aOut = isOOS(a)
-    const bOut = isOOS(b)
-    return aOut === bOut ? 0 : aOut ? 1 : -1
-  })
-
-  const total = sortedProducts.length
   const totalPages = Math.ceil(total / LIMIT)
-  const products = sortedProducts.slice((page - 1) * LIMIT, page * LIMIT)
 
   // ── Local search state (tránh lỗi IME/telex gõ ra "aá") ──────────────────
   // Dùng local value để hiển thị trong input, chỉ commit vào URL khi IME xong.

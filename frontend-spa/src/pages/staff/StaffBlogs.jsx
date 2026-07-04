@@ -7,29 +7,25 @@ const LIMIT = 10
 
 export default function StaffBlogs() {
   const [blogs, setBlogs] = useState([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [preview, setPreview] = useState(null)
 
+  // Phân trang + tìm kiếm lấy trực tiếp từ backend (/blogs hỗ trợ page, limit, q)
   useEffect(() => {
     setLoading(true)
-    blogsApi.getAll()
-      .then(res => setBlogs(res.data || []))
+    blogsApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
+      .then(res => { setBlogs(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message || 'Không thể tải danh sách tin tức'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [page, search])
 
   const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
 
-  const filtered = search.trim()
-    ? blogs.filter(b =>
-        (b.title || '').toLowerCase().includes(search.trim().toLowerCase()) ||
-        (b.slug  || '').toLowerCase().includes(search.trim().toLowerCase()))
-    : blogs
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / LIMIT))
-  const pageItems = filtered.slice((page - 1) * LIMIT, page * LIMIT)
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT))
+  const pageItems = blogs
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,7 +38,7 @@ export default function StaffBlogs() {
           placeholder="🔍  Tìm tiêu đề bài viết..."
           className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-72 focus:border-vnpt bg-canvas"
         />
-        <span className="text-sm text-muted">Tổng: <strong className="text-body">{filtered.length}</strong> bài viết</span>
+        <span className="text-sm text-muted">Tổng: <strong className="text-body">{total}</strong> bài viết</span>
       </div>
 
       <Card>

@@ -18,6 +18,7 @@ function slugify(str = '') {
 
 export default function AdminBlogs() {
   const [blogs, setBlogs] = useState([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -27,27 +28,20 @@ export default function AdminBlogs() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
 
+  // Phân trang + tìm kiếm lấy trực tiếp từ backend (/blogs hỗ trợ page, limit, q)
   const load = () => {
     setLoading(true)
-    // Backend /blogs hiện trả về toàn bộ danh sách (chưa hỗ trợ phân trang
-    // thật sự ở BE cho admin), nên phân trang + tìm kiếm được xử lý ở client.
-    blogsApi.getAll()
-      .then(res => setBlogs(res.data || []))
+    blogsApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
+      .then(res => { setBlogs(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message || 'Không thể tải danh sách tin tức'))
       .finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [page, search])
 
   const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
 
-  const filtered = search.trim()
-    ? blogs.filter(b =>
-        (b.title || '').toLowerCase().includes(search.trim().toLowerCase()) ||
-        (b.slug || '').toLowerCase().includes(search.trim().toLowerCase()))
-    : blogs
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / LIMIT))
-  const pageItems = filtered.slice((page - 1) * LIMIT, page * LIMIT)
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT))
+  const pageItems = blogs
 
   const openAdd = () => { setForm(emptyForm); setSlugTouched(false); setModal('add') }
   const openEdit = (b) => {
