@@ -17,6 +17,7 @@ exports.createInventory = async (req, res, next) => {
 };
 
 // GET ALL
+// GET ALL
 exports.getAllInventory = async (req, res, next) => {
   try {
     const { page, limit, offset } = req.pagination || {
@@ -27,10 +28,15 @@ exports.getAllInventory = async (req, res, next) => {
     // Chấp nhận cả 2 tên query param: q (frontend hiện đang dùng) và search
     // (để tương thích nếu chỗ khác gọi bằng tên khác) — ưu tiên q nếu có cả 2.
     const keyword = (req.query.q || req.query.search || "").trim() || undefined;
+
+    // Lọc theo status ("active" | "inactive"), không truyền thì lấy cả hai
+    const status = req.query.status;
+
     const result = await inventoryService.getAllInventory({
       limit,
       offset,
       keyword,
+      status,
     });
     res.json({
       data: result.data,

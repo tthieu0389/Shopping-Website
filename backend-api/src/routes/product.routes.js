@@ -26,10 +26,20 @@ const productFieldLabels = {
   is_featured: "Sản phẩm nổi bật",
 };
 
-// Lấy danh sách toàn bộ sản phẩm
+// Lấy danh sách toàn bộ sản phẩm (public)
 router.get("/", pagination(), productController.getAllProducts);
 
-// Lấy sản phẩm liên quan (Xếp trên vì có hậu tố rõ ràng '/related')
+// Danh sách sản phẩm cho admin/staff (thấy cả inactive/archived) 
+// phải đặt trước "/:idOrSlug" để tránh bị route đó "nuốt" mất do cùng 1 segment.
+router.get(
+  "/admin/list",
+  verifyToken(),
+  checkRole("admin", "staff"),
+  pagination(),
+  productController.getAllProductsForAdmin,
+);
+
+// Lấy sản phẩm liên quan (xếp trên vì có hậu tố rõ ràng '/related')
 router.get("/:id/related", productController.getRelatedProducts);
 
 // Lấy chi tiết sản phẩm theo ID hoặc Slug (PHẢI XẾP DƯỚI CÙNG trong nhóm GET)

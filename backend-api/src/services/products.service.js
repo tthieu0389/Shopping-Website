@@ -21,64 +21,26 @@ exports.createProduct = async (data) => {
   return product;
 };
 
-exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
-  let countQuery = knex("products").where("is_deleted", false);
-
-  let query = knex("products as p")
-    .select("p.*")
-    .select(
-      knex("product_images")
-        .select("image_url")
-        .whereRaw("product_id = p.id")
-        .where("is_thumbnail", true)
-        .limit(1)
-        .as("thumbnail_url"),
-    )
-    .select(
-      knex("inventory")
-        .select("quantity")
-        .whereRaw("product_id = p.id")
-        .where("status", "active")
-        .limit(1)
-        .as("stock"),
-    )
-    .where("p.is_deleted", false);
-
-  // Ẩn hẳn khỏi danh sách sản phẩm nếu dòng tồn kho đang inactive/archived
-  // (tạm ngưng hoặc đã soft-delete), bất kể is_available đang lưu giá trị gì.
-  const hideInactiveInventory = (builder) => {
-    builder.whereNotExists(
-      knex("inventory")
-        .select(1)
-        .whereRaw("product_id = p.id")
-        .whereIn("status", ["inactive", "archived"]),
-    );
-  };
-  query = query.where(hideInactiveInventory);
-  countQuery = countQuery.where((builder) => {
-    builder.whereNotExists(
-      knex("inventory")
-        .select(1)
-        .whereRaw("product_id = products.id")
-        .whereIn("status", ["inactive", "archived"]),
-    );
-  });
-
+// Helper dùng chung cho getAllProducts (public) và getAllProductsForAdmin.
+const applyCommonFilters = (query, countQuery, filters) => {
   const {
     q,
     search,
-    limit: _l,
-    page: _p,
-    offset: _o,
     category_id,
     product_type,
     brand,
     model,
     is_available,
     featured,
-    sort,
     price_min,
     price_max,
+    // các field điều khiển riêng, không phải filter sản phẩm — loại bỏ khỏi
+    // dynamicFilters để không bị hiểu nhầm thành attribute JSONB
+    limit: _l,
+    page: _p,
+    offset: _o,
+    sort: _sort,
+    inventory_status: _invStatus,
     ...dynamicFilters
   } = filters;
 
@@ -135,7 +97,7 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     countQuery = countQuery.where("price", "<=", Number(price_max));
   }
 
-  //Sử dụng whereRaw với toán tử @> để tận dụng GIN Index
+  // Sử dụng whereRaw với toán tử @> để tận dụng GIN Index
   Object.keys(dynamicFilters).forEach((key) => {
     const val = dynamicFilters[key];
     if (val !== undefined && val !== "") {
@@ -147,6 +109,16 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     }
   });
 
+  return { query, countQuery };
+};
+
+const runQueryAndFormat = async ({
+  query,
+  countQuery,
+  limit,
+  offset,
+  sort,
+}) => {
   const [totalRow] = await countQuery.count("* as count");
   const total = Number(totalRow.count || 0);
 
@@ -172,6 +144,129 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   return { data: dataWithPromo, total };
 };
 
+// PUBLIC: danh sách sản phẩm cho user thường. Luôn ẩn sản phẩm có dòng tồn
+// kho đang inactive/archived, không quan tâm is_available lưu giá trị gì.
+exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
+  let countQuery = knex("products").where("is_deleted", false);
+
+  let query = knex("products as p")
+    .select("p.*")
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = p.id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
+    )
+    .select(
+      knex("inventory")
+        .select("quantity")
+        .whereRaw("product_id = p.id")
+        .where("status", "active")
+        .limit(1)
+        .as("stock"),
+    )
+    .where("p.is_deleted", false)
+    .whereNotExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = p.id")
+        .whereIn("status", ["inactive", "archived"]),
+    );
+
+  countQuery = countQuery.whereNotExists(
+    knex("inventory")
+      .select(1)
+      .whereRaw("product_id = products.id")
+      .whereIn("status", ["inactive", "archived"]),
+  );
+
+  ({ query, countQuery } = applyCommonFilters(query, countQuery, filters));
+
+  return runQueryAndFormat({
+    query,
+    countQuery,
+    limit,
+    offset,
+    sort: filters.sort,
+  });
+};
+
+// ADMIN/STAFF: thấy tất cả sản phẩm kể cả tồn kho inactive
+exports.getAllProductsForAdmin = async ({ limit, offset, filters = {} }) => {
+  let countQuery = knex("products").where("is_deleted", false);
+
+  let query = knex("products as p")
+    .select("p.*")
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = p.id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
+    )
+    .select(
+      knex("inventory")
+        .select("quantity")
+        .whereRaw("product_id = p.id")
+        .where("status", "active")
+        .limit(1)
+        .as("stock"),
+    )
+    .select(
+      knex("inventory")
+        .select("status")
+        .whereRaw("product_id = p.id")
+        .limit(1)
+        .as("inventory_status"),
+    )
+    .where("p.is_deleted", false)
+    .whereNotExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = p.id")
+        .where("status", "archived"),
+    );
+
+  countQuery = countQuery.whereNotExists(
+    knex("inventory")
+      .select(1)
+      .whereRaw("product_id = products.id")
+      .where("status", "archived"),
+  );
+
+  const { inventory_status } = filters;
+  const validStatuses = ["active", "inactive"];
+
+  if (inventory_status && validStatuses.includes(inventory_status)) {
+    query = query.whereExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = p.id")
+        .where("status", inventory_status),
+    );
+    countQuery = countQuery.whereExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = products.id")
+        .where("status", inventory_status),
+    );
+  }
+  // Không truyền hoặc truyền giá trị lạ giữ nguyên active + inactive
+
+  ({ query, countQuery } = applyCommonFilters(query, countQuery, filters));
+
+  return runQueryAndFormat({
+    query,
+    countQuery,
+    limit,
+    offset,
+    sort: filters.sort,
+  });
+};
+
 exports.getProductByIdOrSlug = async (idOrSlug) => {
   const product = await knex("products")
     .where(
@@ -179,9 +274,6 @@ exports.getProductByIdOrSlug = async (idOrSlug) => {
         ? { id: Number(idOrSlug), is_deleted: false }
         : { slug: idOrSlug, is_deleted: false },
     )
-    // Ẩn luôn nếu dòng tồn kho đang inactive/archived — đồng bộ với
-    // getAllProducts, tránh trường hợp bị loại khỏi danh sách nhưng vẫn
-    // truy cập được trực tiếp qua URL slug/id.
     .whereNotExists(
       knex("inventory")
         .select(1)
@@ -223,8 +315,6 @@ exports.getRelatedProducts = async (id) => {
     .where("p.category_id", product.category_id)
     .where("p.is_deleted", false)
     .whereNot("p.id", id)
-    // Đồng bộ với getAllProducts: không gợi ý sản phẩm mà dòng tồn kho
-    // đang inactive/archived.
     .whereNotExists(
       knex("inventory")
         .select(1)

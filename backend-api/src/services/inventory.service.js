@@ -72,11 +72,20 @@ exports.createInventory = async (
 };
 
 // GET ALL INVENTORY
-exports.getAllInventory = async ({ limit, offset, keyword }) => {
+exports.getAllInventory = async ({ limit, offset, keyword, status }) => {
   const baseQuery = () => {
-    const q = knex("inventory as i")
-      .leftJoin("products as p", "i.product_id", "p.id")
-      .whereIn("i.status", ["active", "inactive"]);
+    const q = knex("inventory as i").leftJoin(
+      "products as p",
+      "i.product_id",
+      "p.id",
+    );
+
+    if (status && ["active", "inactive"].includes(status)) {
+      q.where("i.status", status);
+    } else {
+      q.whereIn("i.status", ["active", "inactive"]);
+    }
+
     // Tìm theo tên sản phẩm (q hoặc search từ controller gộp lại thành keyword)
     if (keyword) {
       q.andWhere("p.name", "ilike", `%${keyword}%`);

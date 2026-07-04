@@ -388,6 +388,17 @@
             "nullable": true,
             "description": "URL ảnh đại diện (thumbnail) của sản phẩm, có ở danh sách và sản phẩm liên quan"
           },
+          "stock": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Số lượng tồn kho hiện tại, lấy từ dòng tồn kho đang active. Null nếu chưa có tồn kho hoặc tồn kho không active."
+          },
+          "inventory_status": {
+            "type": "string",
+            "enum": ["active", "inactive", "archived"],
+            "nullable": true,
+            "description": "Trạng thái dòng tồn kho tương ứng. Chỉ có ở GET /api/products/admin/list (dành cho admin/staff); null nếu sản phẩm chưa từng tạo tồn kho."
+          },
           "images": {
             "type": "array",
             "description": "Danh sách toàn bộ ảnh sản phẩm, chỉ có ở API chi tiết sản phẩm (GET /api/products/{idOrSlug})",
@@ -2947,14 +2958,60 @@
           {
             "name": "search",
             "in": "query",
+            "description": "Tìm theo tên/slug sản phẩm",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "price_min",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "price_max",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "is_available",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["newest", "price_asc", "price_desc", "name_asc"],
+              "default": "newest"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Danh sách sản phẩm",
+            "description": "Danh sách sản phẩm. Chỉ trả về sản phẩm có tồn kho đang active hoặc chưa từng tạo tồn kho — luôn ẩn sản phẩm có dòng tồn kho inactive/archived, bất kể is_available lưu giá trị gì.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3089,6 +3146,164 @@
           }
         },
         "operationId": "createProduct",
+        "description": "**Yêu cầu quyền: admin, staff.**"
+      }
+    },
+    "/api/products/admin/list": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lấy danh sách sản phẩm cho quản lý (Admin, Staff)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "product_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_featured",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "is_available",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "price_min",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "price_max",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm theo tên/slug sản phẩm",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inventory_status",
+            "in": "query",
+            "description": "Lọc theo trạng thái tồn kho. Chỉ nhận active hoặc inactive — sản phẩm có tồn kho archived (đã soft-delete) luôn bị ẩn khỏi API này, không có cách nào lọc ra được. Không truyền thì mặc định trả về cả active lẫn inactive.",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive"]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["newest", "price_asc", "price_desc", "name_asc"],
+              "default": "newest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách sản phẩm dùng cho trang quản lý, bao gồm cả sản phẩm có tồn kho inactive (trừ archived — luôn bị ẩn). Mỗi sản phẩm có thêm field inventory_status để FE hiển thị trạng thái tồn kho.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Product"
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "listProductsForAdmin",
         "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
@@ -4777,11 +4992,36 @@
           },
           {
             "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Tìm theo tên sản phẩm",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Alias của tham số q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Lọc riêng theo trạng thái tồn kho. Chỉ nhận active hoặc inactive — archived (đã soft-delete) luôn bị ẩn khỏi API này. Không truyền thì mặc định trả về cả active lẫn inactive.",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive"]
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Danh sách tồn kho",
+            "description": "Danh sách tồn kho (không bao gồm archived)",
             "content": {
               "application/json": {
                 "schema": {
