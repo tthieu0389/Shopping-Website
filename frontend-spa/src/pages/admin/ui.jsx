@@ -191,17 +191,27 @@ export function Modal({
 }
 
 // ─── Table ──────────────────────────────────────────────────────────────────
-export function Table({ headers, children, loading, empty }) {
+// colWidths: array of CSS width strings per column, e.g. ["220px","120px",...]
+// Providing colWidths locks column widths via <colgroup> so filters/data changes
+// never cause columns to shift or reflow.
+export function Table({ headers, children, loading, empty, colWidths }) {
   const hasRows = Children.count(children) > 0;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]">
+      <table className="w-full border-collapse text-[13px] table-fixed">
+        {colWidths && (
+          <colgroup>
+            {colWidths.map((w, i) => (
+              <col key={i} style={{ width: w, minWidth: w }} />
+            ))}
+          </colgroup>
+        )}
         <thead>
           <tr className="bg-cream">
             {headers.map((h, i) => (
               <th
                 key={i}
-                className="px-4 py-2.5 text-left text-muted font-bold text-xs whitespace-nowrap border-b border-shade"
+                className="px-4 py-2.5 text-left text-muted font-bold text-xs whitespace-nowrap border-b border-shade overflow-hidden"
               >
                 {h}
               </th>
@@ -249,12 +259,13 @@ export function TR({ children, onClick, striped }) {
   );
 }
 
-export function TD({ children, className = "", muted, bold }) {
+export function TD({ children, className = "", muted, bold, noTruncate }) {
   return (
     <td
-      className={`px-4 py-3 ${muted ? "text-muted" : "text-body"} ${bold ? "font-bold" : ""} ${className}`}
+      className={`px-4 py-3 ${muted ? "text-muted" : "text-body"} ${bold ? "font-bold" : ""} ${noTruncate ? "" : "overflow-hidden"} ${className}`}
     >
-      {children}
+      {/* Inner wrapper truncates long text so it never pushes the column wider */}
+      <div className={noTruncate ? "" : "truncate"}>{children}</div>
     </td>
   );
 }

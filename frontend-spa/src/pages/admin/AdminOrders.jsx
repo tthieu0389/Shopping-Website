@@ -301,6 +301,17 @@ export default function AdminOrders() {
             "Ngày tạo",
             "",
           ]}
+          colWidths={[
+            "220px",  // Mã đơn
+            "130px",  // Người nhận
+            "110px",  // SĐT
+            "110px",  // Tổng tiền
+            "90px",   // Thanh toán
+            "130px",  // TT Thanh toán
+            "120px",  // Trạng thái
+            "100px",  // Ngày tạo
+            "64px",   // Chi tiết
+          ]}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
         >
@@ -315,17 +326,17 @@ export default function AdminOrders() {
               <TD muted className="uppercase text-[11px]">
                 {o.payment_method === "cod" ? "COD" : `PM #${o.payment_method}`}
               </TD>
-              <TD>
+              <TD noTruncate>
                 <Badge
                   {...(PAYMENT_STATUS[o.payment_status] ||
                     PAYMENT_STATUS.unpaid)}
                 />
               </TD>
-              <TD>
+              <TD noTruncate>
                 <Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} />
               </TD>
               <TD muted>{formatDate(o.created_at)}</TD>
-              <TD>
+              <TD noTruncate>
                 <span className="text-vnpt text-xs font-bold">Chi tiết</span>
               </TD>
             </TR>
