@@ -108,13 +108,23 @@ export default function AdminProducts() {
 
       <Card>
         <Table
-          headers={['Tên sản phẩm', 'Danh mục', 'Thương hiệu', 'Giá bán', 'Tồn kho', 'Trạng thái', '']}
-          colWidths={['280px', '140px', '130px', '110px', '100px', '110px', '120px']}
+          headers={['', 'Tên sản phẩm', 'Danh mục', 'Thương hiệu', 'Giá bán', 'Tồn kho', 'Trạng thái', '']}
+          colWidths={['56px', '280px', '140px', '130px', '110px', '100px', '110px', '120px']}
           loading={loading}
           empty={!loading && 'Không có sản phẩm nào'}
         >
-          {products.map((p, i) => (
+          {products.map((p, i) => {
+            const img = resolveImageUrl(p.thumbnail_url || p.thumbnail || p.img || p.image_url || null)
+            return (
             <TR key={p.id} striped={i % 2 !== 0}>
+              <TD noTruncate>
+                <div className="w-9 h-9 rounded-lg bg-cream border border-shade flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {img
+                    ? <img src={img} alt={p.name} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none' }} />
+                    : <span className="text-base">📦</span>
+                  }
+                </div>
+              </TD>
               <TD bold>{p.name}</TD>
               <TD muted>{categories.find(c => c.id === p.category_id)?.name || '—'}</TD>
               <TD muted>{p.brand}</TD>
@@ -134,7 +144,8 @@ export default function AdminProducts() {
                 </div>
               </TD>
             </TR>
-          ))}
+            )
+          })}
         </Table>
       </Card>
 
