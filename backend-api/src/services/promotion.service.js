@@ -25,8 +25,12 @@ exports.createPromotion = async (data) => {
   return promo;
 };
 
-exports.getAllPromotions = async () => {
-  return knex("promotions").orderBy("id", "desc");
+exports.getAllPromotions = async ({ keyword } = {}) => {
+  const query = knex("promotions").orderBy("id", "desc");
+  if (keyword) {
+    query.andWhere("name", "ilike", `%${keyword}%`);
+  }
+  return query;
 };
 
 exports.getPromotionById = async (id) => {
@@ -104,7 +108,6 @@ exports.getPromotionsForProducts = async (productIds, trx = knex) => {
   return map;
 };
 
-// Gắn thông tin khuyến mãi THẬT vào danh sách sản phẩm (dùng cho trang danh sách / flash sale)
 // Trả về sản phẩm kèm: original_price (giá gốc), sale_price (giá sau KM), discount_percent (% giảm thật)
 // Không đổi field "price" gốc để không ảnh hưởng các chỗ khác đang dùng product.price làm đơn giá.
 exports.attachPromotionInfo = async (products, trx = knex) => {
@@ -146,8 +149,10 @@ exports.getDiscountedProducts = async (
   const baseQuery = trx("products as pr")
     .join("product_promotions as pp", "pr.id", "pp.product_id")
     .join("promotions as p", "pp.promotion_id", "p.id")
+    .join("inventory as inv", "pr.id", "inv.product_id")
     .where("pr.is_deleted", false)
     .andWhere("pr.is_available", true)
+    .andWhere("inv.status", "active")
     .andWhere("p.is_active", true)
     .andWhere("p.start_date", "<=", now)
     .andWhere("p.end_date", ">=", now);
@@ -166,6 +171,7 @@ exports.getDiscountedProducts = async (
       "pr.price",
       "pr.brand",
       "pr.category_id",
+      "pr.is_available",
     )
     .select(
       trx("product_images")
@@ -180,7 +186,8 @@ exports.getDiscountedProducts = async (
     .offset(offset);
 
   const withPromoInfo = await exports.attachPromotionInfo(products, trx);
-  // Sản phẩm giảm nhiều nhất lên đầu — đúng tinh thần trang khuyến mãi
+  // Query đã lọc is_available/status active/ ngay từ đầu nên ở
+  // đây chỉ cần sắp theo % giảm giá thật, không còn hàng hết/ngừng bán lọt qua.
   withPromoInfo.sort((a, b) => b.discount_percent - a.discount_percent);
 
   return { data: withPromoInfo, total: Number(countRow.count) };

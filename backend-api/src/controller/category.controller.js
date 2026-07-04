@@ -2,7 +2,9 @@ const categoryService = require("../services/category.service");
 
 exports.getAllCategories = async (req, res, next) => {
   try {
-    const categories = await categoryService.getAllCategories();
+    // Chấp nhận cả 2 tên query param: q (frontend đang dùng) và search
+    const keyword = (req.query.q || req.query.search || "").trim() || undefined;
+    const categories = await categoryService.getAllCategories({ keyword });
     res.json({ data: categories });
   } catch (err) {
     next(err);

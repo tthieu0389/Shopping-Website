@@ -44,6 +44,8 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     )
     .where("p.is_deleted", false);
 
+  // Ẩn hẳn khỏi danh sách sản phẩm nếu dòng tồn kho đang inactive/archived
+  // (tạm ngưng hoặc đã soft-delete), bất kể is_available đang lưu giá trị gì.
   const hideInactiveInventory = (builder) => {
     builder.whereNotExists(
       knex("inventory")
@@ -177,6 +179,15 @@ exports.getProductByIdOrSlug = async (idOrSlug) => {
         ? { id: Number(idOrSlug), is_deleted: false }
         : { slug: idOrSlug, is_deleted: false },
     )
+    // Ẩn luôn nếu dòng tồn kho đang inactive/archived — đồng bộ với
+    // getAllProducts, tránh trường hợp bị loại khỏi danh sách nhưng vẫn
+    // truy cập được trực tiếp qua URL slug/id.
+    .whereNotExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = products.id")
+        .whereIn("status", ["inactive", "archived"]),
+    )
     .first();
   if (!product) return null;
   product.images = await knex("product_images").where({
@@ -212,6 +223,14 @@ exports.getRelatedProducts = async (id) => {
     .where("p.category_id", product.category_id)
     .where("p.is_deleted", false)
     .whereNot("p.id", id)
+    // Đồng bộ với getAllProducts: không gợi ý sản phẩm mà dòng tồn kho
+    // đang inactive/archived.
+    .whereNotExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = p.id")
+        .whereIn("status", ["inactive", "archived"]),
+    )
     .limit(8);
 
   return await promotionService.attachPromotionInfo(related);
@@ -226,6 +245,23 @@ exports.updateProduct = async (id, data) => {
   if (data.attributes && typeof data.attributes === "object") {
     data.attributes = JSON.stringify(data.attributes);
   }
+
+  // Không cho phép bật bán (is_available = true) nếu dòng tồn kho tương ứng đang inactive/archived hoặc chưa từng được tạo
+  const wantsAvailable =
+    data.is_available === true ||
+    data.is_available === "true" ||
+    data.is_available === 1;
+  if (wantsAvailable) {
+    const inventory = await knex("inventory").where({ product_id: id }).first();
+    if (!inventory || inventory.status !== "active") {
+      const err = new Error(
+        "Không thể bật bán sản phẩm khi tồn kho chưa ở trạng thái active. Vui lòng kích hoạt lại tồn kho trước.",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
   const [product] = await knex("products")
     .where("id", id)
     .update(data)

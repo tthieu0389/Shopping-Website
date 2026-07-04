@@ -11,7 +11,9 @@ exports.create = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
-    const data = await service.getAllPromotions();
+    // Chấp nhận cả 2 tên query param: q (frontend đang dùng) và search
+    const keyword = (req.query.q || req.query.search || "").trim() || undefined;
+    const data = await service.getAllPromotions({ keyword });
     res.json({ data });
   } catch (err) {
     next(err);

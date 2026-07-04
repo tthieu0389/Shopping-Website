@@ -1,5 +1,18 @@
 const knex = require("../database/knex");
 
+// Kiểm tra sản phẩm có đơn hàng nào chưa xử lý xong (pending/confirmed/shipping)
+// hay không — dùng để chặn việc khoá/archive tồn kho giữa chừng khi còn đơn
+// đang chờ giao, tránh trường hợp huỷ đơn sau này không hoàn kho được đúng ý,
+// hoặc đơn confirmed/shipping rồi mà sản phẩm lại biến mất khỏi hệ thống quản lý.
+const hasUnresolvedOrders = async (trx, product_id) => {
+  const row = await trx("order_items as oi")
+    .join("orders as o", "oi.order_id", "o.id")
+    .where("oi.product_id", product_id)
+    .whereIn("o.status", ["pending", "confirmed", "shipping"])
+    .first();
+  return !!row;
+};
+
 // CREATE INVENTORY
 exports.createInventory = async (
   { product_id, quantity = 0, min_quantity = 5 },
@@ -59,9 +72,19 @@ exports.createInventory = async (
 };
 
 // GET ALL INVENTORY
-exports.getAllInventory = async ({ limit, offset }) => {
-  const data = await knex("inventory as i")
-    .leftJoin("products as p", "i.product_id", "p.id")
+exports.getAllInventory = async ({ limit, offset, keyword }) => {
+  const baseQuery = () => {
+    const q = knex("inventory as i")
+      .leftJoin("products as p", "i.product_id", "p.id")
+      .whereIn("i.status", ["active", "inactive"]);
+    // Tìm theo tên sản phẩm (q hoặc search từ controller gộp lại thành keyword)
+    if (keyword) {
+      q.andWhere("p.name", "ilike", `%${keyword}%`);
+    }
+    return q;
+  };
+
+  const data = await baseQuery()
     .select(
       "i.id",
       "i.product_id",
@@ -72,20 +95,13 @@ exports.getAllInventory = async ({ limit, offset }) => {
       "i.status",
       "i.updated_at",
     )
-    // Admin cần thấy cả dòng inactive để còn bấm kích hoạt lại (set về
-    // active) khi tới thời điểm bán lại. Chỉ ẩn dòng đã archived (soft-delete
-    // thật sự, coi như không còn tồn tại).
-    .whereIn("i.status", ["active", "inactive"])
-    // Đẩy các dòng hết hàng (quantity = 0) xuống cuối danh sách, để admin dễ
-    // thấy các sản phẩm còn hàng bình thường trước, hết hàng cần xử lý xem sau.
+    // Đẩy các dòng hết hàng (quantity = 0) xuống cuối danh sách
     .orderByRaw("CASE WHEN i.quantity = 0 THEN 1 ELSE 0 END ASC")
     .orderBy("i.id", "desc")
     .limit(limit)
     .offset(offset);
 
-  const [totalRow] = await knex("inventory")
-    .count("* as count")
-    .whereIn("status", ["active", "inactive"]);
+  const [totalRow] = await baseQuery().count("i.id as count");
   return { data, total: Number(totalRow.count) };
 };
 
@@ -94,6 +110,25 @@ exports.updateInventory = async (id, data, created_by = null) => {
   return await knex.transaction(async (trx) => {
     const old = await trx("inventory").where({ id }).forUpdate().first();
     if (!old) return null;
+
+    // Chặn khoá/archive tồn kho nếu đang chuyển từ active sang
+    // inactive/archived mà sản phẩm còn đơn hàng chưa xử lý xong (pending/
+    // confirmed/shipping) — tránh vướng khi huỷ đơn cần hoàn kho, hoặc đơn
+    // đang giao mà sản phẩm bị coi như ngừng quản lý giữa chừng.
+    if (
+      data.status !== undefined &&
+      data.status !== "active" &&
+      old.status === "active"
+    ) {
+      const blocked = await hasUnresolvedOrders(trx, old.product_id);
+      if (blocked) {
+        const err = new Error(
+          "Không thể khoá/xoá tồn kho khi sản phẩm còn đơn hàng chưa xử lý xong (pending/confirmed/shipping).",
+        );
+        err.statusCode = 409;
+        throw err;
+      }
+    }
 
     const updatedFields = { updated_at: trx.fn.now() };
     if (data.quantity !== undefined) {
@@ -201,9 +236,6 @@ exports.increaseStock = async (
     .first();
 
   if (!inventory) throw new Error("Inventory not found");
-  if (inventory.status !== "active") {
-    throw new Error("Inventory is not active");
-  }
   if (amount <= 0) throw new Error("Invalid amount");
 
   const newQty = inventory.quantity + amount;
@@ -225,9 +257,12 @@ exports.increaseStock = async (
     created_at: db.fn.now(), // Thống nhất dùng db
   });
 
+  // Nếu dòng kho đang inactive/archived (bị khoá sau khi đơn được đặt), hoàn
+  // kho không có nghĩa là "mở bán lại" — is_available vẫn phải là false cho
+  // tới khi ai đó chủ động set status về active, đúng invariant ở updateInventory.
   await db("products")
     .where({ id: product_id })
-    .update({ is_available: newQty > 0 });
+    .update({ is_available: inventory.status === "active" && newQty > 0 });
 
   return { quantity: newQty };
 };
@@ -238,6 +273,15 @@ exports.deleteInventory = async (id, created_by = null) => {
     const inventory = await trx("inventory").where({ id }).forUpdate().first();
 
     if (!inventory) return null;
+
+    const blocked = await hasUnresolvedOrders(trx, inventory.product_id);
+    if (blocked) {
+      const err = new Error(
+        "Không thể xoá tồn kho khi sản phẩm còn đơn hàng chưa xử lý xong (pending/confirmed/shipping).",
+      );
+      err.statusCode = 409;
+      throw err;
+    }
 
     await trx("inventory_logs").insert({
       inventory_id: id,

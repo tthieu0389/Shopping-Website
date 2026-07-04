@@ -5082,6 +5082,16 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "409": {
+            "description": "Không thể khoá/xoá tồn kho khi sản phẩm còn đơn hàng chưa xử lý xong (pending/confirmed/shipping)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -5124,6 +5134,16 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "Không thể xoá tồn kho khi sản phẩm còn đơn hàng chưa xử lý xong (pending/confirmed/shipping)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/InternalError"

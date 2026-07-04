@@ -7,8 +7,12 @@ const generateSlug = (name) =>
     .replace(/\s+/g, "-")
     .replace(/[^\w-]/g, "");
 
-exports.getAllCategories = async () => {
-  return await knex("categories").where({ is_deleted: false }).select();
+exports.getAllCategories = async ({ keyword } = {}) => {
+  const query = knex("categories").where({ is_deleted: false }).select();
+  if (keyword) {
+    query.andWhere("name", "ilike", `%${keyword}%`);
+  }
+  return await query;
 };
 
 exports.createCategory = async (data) => {

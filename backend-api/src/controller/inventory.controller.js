@@ -24,7 +24,14 @@ exports.getAllInventory = async (req, res, next) => {
       limit: 10,
       offset: 0,
     };
-    const result = await inventoryService.getAllInventory({ limit, offset });
+    // Chấp nhận cả 2 tên query param: q (frontend hiện đang dùng) và search
+    // (để tương thích nếu chỗ khác gọi bằng tên khác) — ưu tiên q nếu có cả 2.
+    const keyword = (req.query.q || req.query.search || "").trim() || undefined;
+    const result = await inventoryService.getAllInventory({
+      limit,
+      offset,
+      keyword,
+    });
     res.json({
       data: result.data,
       page,

@@ -114,6 +114,25 @@ export default function AdminInventory() {
     (parseInt(delta, 10) || 0) !== 0 ||
     (adjustItem && status !== (adjustItem.status || "active"));
 
+  // Soft delete (archive) dòng tồn kho — BE sẽ chặn (409) nếu sản phẩm còn
+  // đơn hàng chưa xử lý xong (pending/confirmed/shipping).
+  const handleDelete = (item) => {
+    if (
+      !confirm(
+        `Xoá tồn kho của "${item.product_name || `Sản phẩm #${item.product_id}`}"?`,
+      )
+    )
+      return;
+    inventoryApi
+      .remove(item.id)
+      .then(() => {
+        toast.success("Đã xoá tồn kho");
+        load();
+        loadStats();
+      })
+      .catch((err) => toast.error(err.message || "Không thể xoá"));
+  };
+
   const okCount = statsItems.filter((i) => i.quantity > i.min_quantity).length;
   const lowCount = statsItems.filter(
     (i) => i.quantity > 0 && i.quantity <= i.min_quantity,
@@ -161,7 +180,7 @@ export default function AdminInventory() {
             "110px",
             "120px",
             "110px",
-            "90px",
+            "130px",
           ]}
           loading={loading}
           empty={
@@ -191,12 +210,20 @@ export default function AdminInventory() {
               </TD>
               <TD muted>{formatDate(item.updated_at)}</TD>
               <TD noTruncate>
-                <span
-                  className="text-vnpt text-xs font-bold cursor-pointer"
-                  onClick={() => openAdjust(item)}
-                >
-                  Điều chỉnh
-                </span>
+                <div className="flex gap-3">
+                  <span
+                    className="text-vnpt text-xs font-bold cursor-pointer"
+                    onClick={() => openAdjust(item)}
+                  >
+                    Điều chỉnh
+                  </span>
+                  <span
+                    className="text-accent text-xs font-bold cursor-pointer"
+                    onClick={() => handleDelete(item)}
+                  >
+                    Xoá
+                  </span>
+                </div>
               </TD>
             </TR>
           ))}
