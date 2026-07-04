@@ -130,6 +130,7 @@ export const favoritesApi = {
 
 // ── REVIEWS ──────────────────────────────────────────────────────────────────
 export const reviewsApi = {
+  getFeatured: (limit) => api.get("/reviews/featured", { params: { limit } }),
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
   create: (data) => api.post("/reviews", data),
   delete: (id) => api.delete(`/reviews/${id}`),

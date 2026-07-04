@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { useCountdown, useProducts } from '../hooks/index.js'
+import { useCountdown, useProducts, useFeaturedReviews } from '../hooks/index.js'
 import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, FlashSaleCard } from '../components/common/index.jsx'
-import { formatPrice, resolveImageUrl } from '../utils/index.js'
+import { formatPrice, formatDate, getInitials, resolveImageUrl } from '../utils/index.js'
 import api from '../api/axiosInstance.js'
 
 const CATEGORIES = [
@@ -17,12 +17,6 @@ const SERVICES = [
   { icon: '🌐', name: 'Internet cáp quang',  desc: 'Kết nối tốc độ cao lên đến 1Gbps. Ổn định, không giật lag.',  price: '185.000₫/tháng', sub: 'Gói cơ bản 100Mbps' },
   { icon: '📺', name: 'MyTV — Truyền hình số',desc: '500+ kênh truyền hình trong nước và quốc tế. Xem lại 7 ngày.',price: '69.000₫/tháng',  sub: 'Gói cơ bản 150 kênh' },
   { icon: '☁️', name: 'VNPT Cloud',           desc: 'Lưu trữ và bảo mật dữ liệu doanh nghiệp trên cloud Việt Nam.',price: 'Miễn phí 3 tháng đầu', sub: 'Từ 200.000₫/tháng sau' },
-]
-
-const REVIEWS = [
-  { initials: 'TL', name: 'Trần Thị Lan',   date: '12/06/2024', rating: 5, text: 'Mua iPhone 16 Pro Max tại VNPT Shop, giá rẻ hơn, máy chính hãng, được tặng ốp lưng. Giao hàng chỉ 1.5 tiếng rất ấn tượng!' },
-  { initials: 'MH', name: 'Nguyễn Minh Hùng',date: '08/06/2024', rating: 5, text: 'Đăng ký sim số đẹp online rất tiện, nhân viên tư vấn nhiệt tình. Sim về nhanh, kích hoạt ngay được.' },
-  { initials: 'PV', name: 'Phạm Thùy Vân',   date: '03/06/2024', rating: 4, text: 'Gói Internet cáp quang tốt, tốc độ ổn định. Kỹ thuật viên lắp đặt chuyên nghiệp. Rất hài lòng.' },
 ]
 
 // ── HeroSlider ────────────────────────────────────────────────────────────────
@@ -152,6 +146,120 @@ function HeroSlider() {
           />
         ))}
       </div>
+    </div>
+  )
+}
+
+// ── ReviewsSlider ─────────────────────────────────────────────────────────────
+function ReviewsSlider() {
+  const { data: reviews, loading } = useFeaturedReviews(9)
+  const [page, setPage] = useState(0)
+  const [perView, setPerView] = useState(3)
+  const timerRef = useRef(null)
+  const touchStartX = useRef(0)
+
+  useEffect(() => {
+    const updatePerView = () => setPerView(window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : 3)
+    updatePerView()
+    window.addEventListener('resize', updatePerView)
+    return () => window.removeEventListener('resize', updatePerView)
+  }, [])
+
+  const pageCount = Math.max(1, Math.ceil(reviews.length / perView))
+
+  useEffect(() => {
+    if (page >= pageCount) setPage(0)
+  }, [pageCount, page])
+
+  const goTo = (idx) => {
+    setPage((idx + pageCount) % pageCount)
+    clearInterval(timerRef.current)
+    if (pageCount > 1) {
+      timerRef.current = setInterval(() => setPage(p => (p + 1) % pageCount), 5000)
+    }
+  }
+
+  useEffect(() => {
+    if (pageCount <= 1) return
+    timerRef.current = setInterval(() => setPage(p => (p + 1) % pageCount), 5000)
+    return () => clearInterval(timerRef.current)
+  }, [pageCount])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (reviews.length === 0) return null
+
+  const visible = reviews.slice(page * perView, page * perView + perView)
+
+  return (
+    <div
+      className="relative"
+      onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+      onTouchEnd={e => {
+        const diff = touchStartX.current - e.changedTouches[0].clientX
+        if (Math.abs(diff) > 40) diff > 0 ? goTo(page + 1) : goTo(page - 1)
+      }}
+    >
+      <div className="flex items-center gap-4">
+        {/* Prev */}
+        {pageCount > 1 && (
+          <button
+            onClick={() => goTo(page - 1)}
+            aria-label="Đánh giá trước"
+            className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white border border-shade hover:bg-vnpt-light hover:border-vnpt text-vnpt rounded-full items-center justify-center text-lg font-bold transition-colors"
+          >‹</button>
+        )}
+
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {visible.map((r) => (
+            <div key={r.id} className="bg-white rounded-xl p-6 border border-shade flex flex-col">
+              <div className="text-sm mb-3 text-warning">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
+              <p className="text-sm text-body leading-relaxed mb-4 flex-1">"{r.comment}"</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  {getInitials(r.user_name)}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-body">{r.user_name}</div>
+                  <div className="text-xs text-muted">{formatDate(r.created_at)}</div>
+                  <div className="text-[11px] text-success font-semibold">✅ Đã mua hàng</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Next */}
+        {pageCount > 1 && (
+          <button
+            onClick={() => goTo(page + 1)}
+            aria-label="Đánh giá tiếp theo"
+            className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white border border-shade hover:bg-vnpt-light hover:border-vnpt text-vnpt rounded-full items-center justify-center text-lg font-bold transition-colors"
+          >›</button>
+        )}
+      </div>
+
+      {/* Dot indicators */}
+      {pageCount > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {Array.from({ length: pageCount }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Trang đánh giá ${i + 1}`}
+              className={`rounded-full transition-all duration-300 ${
+                i === page ? 'w-6 h-2 bg-vnpt' : 'w-2 h-2 bg-shade hover:bg-vnpt-light'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -487,24 +595,7 @@ export default function HomePage() {
       <section className="bg-cream py-16 px-10">
         <div className="max-w-[1200px] mx-auto">
           <SectionHead label="Đánh giá khách hàng" title="Khách hàng nói gì?" />
-          <div className="grid grid-cols-3 gap-5">
-            {REVIEWS.map(({ initials, name, date, rating, text }) => (
-              <div key={name} className="bg-white rounded-xl p-6 border border-shade">
-                <div className="text-sm mb-3 text-warning">{'★'.repeat(rating)}</div>
-                <p className="text-sm text-body leading-relaxed mb-4">"{text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    {initials}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-body">{name}</div>
-                    <div className="text-xs text-muted">{date}</div>
-                    <div className="text-[11px] text-success font-semibold">✅ Đã mua hàng</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ReviewsSlider />
         </div>
       </section>
 
