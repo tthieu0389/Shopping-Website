@@ -80,16 +80,67 @@ export function Input({ label, required, ...props }) {
   );
 }
 
-export function Select({ label, required, options = [], ...props }) {
+// Dropdown tùy biến cho form field — thay cho <select> gốc vì trình duyệt
+// không cho bo góc phần list của native select. Cùng kiểu bo góc/màu sắc với
+// SelectPill (dùng cho filter) nhưng full-width và có label giống Input.
+// Giữ nguyên API (value, onChange nhận event giả `{ target: { value } }`,
+// options dạng [value, label]) để không phải sửa nơi gọi.
+export function Select({ label, required, options = [], value, onChange, disabled, className = "" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = options.find(([v]) => String(v) === String(value));
+  const selectedLabel = selected ? selected[1] : (options[0]?.[1] ?? "");
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handlePick = (v) => {
+    onChange?.({ target: { value: v } });
+    setOpen(false);
+  };
+
   return (
     <Field label={label} required={required}>
-      <select className={inputBase} {...props}>
-        {options.map(([val, lbl]) => (
-          <option key={val} value={val}>
-            {lbl}
-          </option>
-        ))}
-      </select>
+      <div ref={ref} className="relative">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setOpen((o) => !o)}
+          className={`${inputBase} flex items-center justify-between gap-2 text-left ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`}
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <svg
+            className={`w-4 h-4 text-muted flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute top-full left-0 mt-1.5 w-full bg-canvas border border-shade rounded-xl shadow-md z-50 overflow-hidden max-h-60 overflow-y-auto">
+            {options.map(([v, l]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => handlePick(v)}
+                className={`w-full text-left px-3.5 py-2.5 text-sm transition-colors whitespace-nowrap
+                  ${String(v) === String(value) ? "bg-vnpt-light text-vnpt font-bold" : "text-body hover:bg-cream"}`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </Field>
   );
 }
