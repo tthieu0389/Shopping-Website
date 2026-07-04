@@ -275,7 +275,7 @@ export default function AdminProducts() {
             "Thương hiệu",
             "Giá bán",
             "Tồn kho",
-            "Kho",
+            "Trạng thái kho",
             "Trạng thái",
             "",
           ]}
@@ -524,25 +524,22 @@ export default function AdminProducts() {
                   ]}
                 />
                 {modal !== "add" && (
-                  <div className="flex flex-col gap-1">
-                    <Select
-                      label="Trạng thái kho"
-                      value={form.inventory_status || "active"}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, inventory_status: e.target.value }))
+                  <Select
+                    label="Trạng thái kho"
+                    value={form.inventory_status || "active"}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "archived") {
+                        if (!confirm("Ẩn sản phẩm này khỏi kho?\nSản phẩm sẽ biến mất khỏi danh sách sau khi lưu.")) return;
                       }
-                      options={[
-                        ["active", "Active — đang kinh doanh"],
-                        ["inactive", "Inactive — tạm ngừng bán"],
-                        ["archived", "Archived — xoá khỏi kho"],
-                      ]}
-                    />
-                    {form.inventory_status === "archived" && (
-                      <p className="text-[11px] text-accent font-semibold leading-snug">
-                        ⚠ Sản phẩm sẽ biến mất khỏi danh sách sau khi lưu và không thể khôi phục từ trang này.
-                      </p>
-                    )}
-                  </div>
+                      setForm((p) => ({ ...p, inventory_status: val }));
+                    }}
+                    options={[
+                      ["active", "Đang mở kho"],
+                      ["inactive", "Tạm khóa kho"],
+                      ["archived", "Ẩn khỏi kho"],
+                    ]}
+                  />
                 )}
               </div>
             </section>
