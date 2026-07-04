@@ -257,7 +257,7 @@ export default function AdminOrders() {
         />
 
         <div className="relative flex-shrink-0">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none z-10">
             📅
           </span>
           <input
@@ -267,7 +267,7 @@ export default function AdminOrders() {
               setDate(e.target.value);
               setPage(1);
             }}
-            className="pl-9 pr-3 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt flex-shrink-0 w-[152px]"
+            className="pl-9 pr-2 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt flex-shrink-0 w-[168px]"
           />
         </div>
 
