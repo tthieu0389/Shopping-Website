@@ -631,9 +631,8 @@ exports.updatePaymentStatus = async (id, paymentStatus) => {
     refunded: [],
   };
 
-  // NULL/undefined coi như "unpaid" (đơn cũ tạo trước khi có field này, hoặc
-  // dữ liệu bị thiếu vì lý do khác) — tránh việc validTransitions[undefined]
-  // ra [] rồi chặn nhầm mọi transition hợp lệ
+  // NULL/undefined coi như "unpaid"
+  // tránh việc validTransitions[undefined] ra [] rồi chặn nhầm mọi transition hợp lệ
   const currentPaymentStatus = order.payment_status || "unpaid";
 
   if (currentPaymentStatus !== paymentStatus) {
