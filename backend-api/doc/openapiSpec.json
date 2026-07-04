@@ -3124,16 +3124,23 @@
                 "required": ["name", "price"],
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Tối đa 200 ký tự."
                   },
                   "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200
                   },
                   "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "Tối đa 5000 ký tự."
                   },
                   "price": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 9999999999.99,
+                    "description": "Tối đa 9,999,999,999.99 ₫."
                   },
                   "product_type": {
                     "type": "string",
@@ -3144,10 +3151,12 @@
                   },
                   "brand": {
                     "type": "string",
-                    "default": "VNPT"
+                    "default": "VNPT",
+                    "maxLength": 100
                   },
                   "model": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                   },
                   "attributes": {
                     "type": "object"
@@ -3475,16 +3484,23 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Tối đa 200 ký tự."
                   },
                   "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200
                   },
                   "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 5000,
+                    "description": "Tối đa 5000 ký tự."
                   },
                   "price": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 9999999999.99,
+                    "description": "Tối đa 9,999,999,999.99 ₫."
                   },
                   "product_type": {
                     "type": "string"
@@ -3493,10 +3509,12 @@
                     "type": "integer"
                   },
                   "brand": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                   },
                   "model": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                   },
                   "attributes": {
                     "type": "object"
@@ -5146,12 +5164,16 @@
                   "quantity": {
                     "type": "integer",
                     "minimum": 0,
-                    "default": 0
+                    "default": 0,
+                    "maximum": 2147483647,
+                    "description": "Tối đa 2,147,483,647."
                   },
                   "min_quantity": {
                     "type": "integer",
                     "minimum": 0,
-                    "default": 5
+                    "default": 5,
+                    "maximum": 2147483647,
+                    "description": "Tối đa 2,147,483,647."
                   },
                   "status": {
                     "type": "string",
@@ -5331,11 +5353,15 @@
                 "properties": {
                   "quantity": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 2147483647,
+                    "description": "Tối đa 2,147,483,647."
                   },
                   "min_quantity": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 2147483647,
+                    "description": "Tối đa 2,147,483,647."
                   },
                   "status": {
                     "type": "string",
