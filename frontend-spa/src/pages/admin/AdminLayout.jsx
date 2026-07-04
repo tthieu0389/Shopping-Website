@@ -9,7 +9,7 @@ const ADMIN_MENU = [
   { to: '/admin',            icon: '▦',  label: 'Dashboard', end: true },
   { section: 'Bán hàng' },
   { to: '/admin/orders',     icon: '📦', label: 'Đơn hàng' },
-  { section: 'Sản phẩm' },
+  { section: 'Quản lý hàng hoá' },
   { to: '/admin/products',   icon: '🛍️', label: 'Sản phẩm' },
   { to: '/admin/promotions', icon: '🏷️', label: 'Khuyến mãi' },
   { to: '/admin/categories', icon: '🗂️', label: 'Danh mục' },

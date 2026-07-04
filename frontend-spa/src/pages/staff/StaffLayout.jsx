@@ -8,7 +8,7 @@ const STAFF_MENU = [
   { to: '/staff',           icon: '▦',  label: 'Dashboard',   end: true },
   { section: 'Bán hàng' },
   { to: '/staff/orders',    icon: '📦', label: 'Đơn hàng' },
-  { section: 'Sản phẩm' },
+  { section: 'Quản lí hàng hóa' },
   { to: '/staff/products',  icon: '🛍️', label: 'Sản phẩm' },
   { to: '/staff/inventory', icon: '🏭', label: 'Kho hàng' },
   { section: 'Nội dung' },
