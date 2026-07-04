@@ -56,40 +56,57 @@ const getAllowedPaymentTargets = (order) => {
   return allowed;
 };
 
-// Dropdown gọn, bo tròn pill giống các input khác trong toolbar admin,
-// dùng cho các bộ lọc có nhiều lựa chọn (trạng thái đơn, phương thức thanh toán)
-// để tránh dàn hàng ngang quá nhiều nút như FilterTabs.
+// Custom dropdown bo tròn hoàn toàn — native <select> không thể bo góc list.
 function SelectPill({ value, onChange, options, icon }) {
-  const active = value !== "all";
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selectedLabel = options.find(([val]) => val === value)?.[1] ?? value;
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
-    <div className="relative flex-shrink-0">
-      {icon && (
-        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
-          {icon}
-        </span>
+    <div ref={ref} className="relative flex-shrink-0">
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 cursor-pointer rounded-full border border-shade bg-white text-sm font-semibold outline-none transition-colors hover:border-vnpt px-4 py-2 pr-3 whitespace-nowrap"
+      >
+        {icon && <span className="text-sm">{icon}</span>}
+        <span className="text-body">{selectedLabel}</span>
+        <svg
+          className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown list */}
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 bg-white border border-shade rounded-xl shadow-md z-50 overflow-hidden min-w-full">
+          {options.map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => { onChange(val); setOpen(false); }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors whitespace-nowrap
+                ${val === value
+                  ? "bg-vnpt-light text-vnpt font-semibold"
+                  : "text-body hover:bg-cream"
+                }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       )}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none cursor-pointer rounded-full border text-sm font-semibold outline-none transition-colors
-          ${icon ? "pl-9" : "pl-4"} pr-9 py-2
-          ${active ? "border-vnpt text-vnpt bg-vnpt-light" : "border-shade text-body bg-canvas hover:border-vnpt"}`}
-      >
-        {options.map(([val, label]) => (
-          <option key={val} value={val}>
-            {label}
-          </option>
-        ))}
-      </select>
-      <svg
-        className={`absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${active ? "text-vnpt" : "text-muted"}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2.5}
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
     </div>
   );
 }
@@ -267,7 +284,7 @@ export default function AdminOrders() {
               setDate(e.target.value);
               setPage(1);
             }}
-            className="pl-9 pr-2 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt flex-shrink-0 w-[168px]"
+            className="pl-9 pr-2 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt flex-shrink-0 w-[168px] bg-white"
           />
         </div>
 
