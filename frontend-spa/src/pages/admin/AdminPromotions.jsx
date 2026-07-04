@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   promotionsApi,
   productPromotionsApi,
@@ -421,8 +421,15 @@ function AssignProductsModal({ promotion, onClose }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Toàn bộ dòng gán sản phẩm hiện có (để biết SP nào đã áp dụng KM này + lấy id để xoá)
-  const [assignedMap, setAssignedMap] = useState({}); // product_id -> product_promotion row id
+  // Toàn bộ dòng gán sản phẩm hiện có (để biết SP nào đã áp dụng KM này + lấy id để xoá).
+  // Đây là dữ liệu THÔ từ API — backend hiện không lọc sản phẩm đã bị xoá mềm
+  // (is_deleted = true), nên có thể chứa cả những dòng "mồ côi" trỏ tới sản phẩm
+  // không còn tồn tại nữa.
+  const [rawAssignedMap, setRawAssignedMap] = useState({}); // product_id -> product_promotion row id
+  // Tập hợp id của các sản phẩm CÒN TỒN TẠI (chưa xoá) — lấy 1 lần từ /products
+  // (endpoint này tự lọc is_deleted ở backend rồi). Dùng để lọc rawAssignedMap
+  // ở phía frontend, không cần sửa backend.
+  const [validProductIds, setValidProductIds] = useState(null); // null = chưa load xong
   const [busyProductId, setBusyProductId] = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -431,8 +438,40 @@ function AssignProductsModal({ promotion, onClose }) {
   const [productType, setProductType] = useState("");
   const [onlyAssigned, setOnlyAssigned] = useState(false);
 
+  // assignedMap "sạch" — chỉ giữ lại sản phẩm còn tồn tại, loại bỏ các dòng mồ côi
+  // trỏ tới sản phẩm đã xoá mềm. Trước khi validProductIds load xong thì tạm dùng
+  // rawAssignedMap để không bị chớp nháy giao diện (đa số trường hợp không có sản
+  // phẩm nào bị xoá nên khác biệt là không đáng kể).
+  const assignedMap = useMemo(() => {
+    if (!validProductIds) return rawAssignedMap;
+    const cleaned = {};
+    Object.entries(rawAssignedMap).forEach(([productId, rowId]) => {
+      if (validProductIds.has(Number(productId))) cleaned[productId] = rowId;
+    });
+    return cleaned;
+  }, [rawAssignedMap, validProductIds]);
+
+  // Đánh số thứ tự mỗi lần loadProducts được gọi. Khi chuyển tab/filter liên tục,
+  // request "Tất cả" (nhỏ, nhanh) và request "Đã áp dụng" (fetchAllProducts, chậm
+  // hơn vì lặp nhiều trang) có thể chạy song song và trả về KHÔNG đúng thứ tự.
+  // Nếu không chặn lại, response đến trễ của request cũ sẽ ghi đè state của
+  // request mới hơn -> tab "Đã áp dụng" hiện sai (chỉ thấy đúng phần trùng với
+  // trang nhỏ của tab "Tất cả" trước đó). requestIdRef đảm bảo chỉ response của
+  // lần gọi MỚI NHẤT mới được phép cập nhật state.
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
     categoriesApi.getAll().then((res) => setCategories(res.data || []));
+  }, []);
+
+  // Lấy 1 lần toàn bộ id sản phẩm còn tồn tại (không filter gì) để làm "danh sách
+  // trắng" lọc rawAssignedMap phía trên.
+  useEffect(() => {
+    fetchAllProducts({})
+      .then((list) => setValidProductIds(new Set(list.map((p) => p.id))))
+      .catch(() => {
+        // Nếu lỗi thì thôi, giữ nguyên rawAssignedMap (không lọc được cũng không sao)
+      });
   }, []);
 
   const loadAssigned = () => {
@@ -447,7 +486,7 @@ function AssignProductsModal({ promotion, onClose }) {
           if (row.promotion_name === promotion.name)
             map[row.product_id] = row.id;
         });
-        setAssignedMap(map);
+        setRawAssignedMap(map);
       })
       .catch((err) =>
         toast.error(
@@ -458,6 +497,9 @@ function AssignProductsModal({ promotion, onClose }) {
 
   const loadProducts = () => {
     setLoading(true);
+    // Tăng requestId cho lần gọi này; dùng để nhận diện đây có còn là request
+    // mới nhất tại thời điểm response trả về hay không.
+    const myRequestId = ++requestIdRef.current;
     const filters = {
       ...(search ? { q: search } : {}),
       ...(categoryId ? { category_id: categoryId } : {}),
@@ -471,11 +513,20 @@ function AssignProductsModal({ promotion, onClose }) {
 
     req
       .then((res) => {
+        // Bỏ qua nếu đã có request mới hơn được gọi sau request này (stale response) —
+        // tránh ghi đè state đúng bằng dữ liệu cũ, sai tab/filter.
+        if (myRequestId !== requestIdRef.current) return;
         setProducts(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (myRequestId !== requestIdRef.current) return;
+        toast.error(err.message);
+      })
+      .finally(() => {
+        if (myRequestId !== requestIdRef.current) return;
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -675,6 +726,7 @@ function AssignProductsModal({ promotion, onClose }) {
             {visibleProducts.map((p) => {
               const isAssigned = assignedMap[p.id] !== undefined;
               const isBusy = busyProductId === p.id;
+              const isOutOfStock = p.is_available === false;
               const discounted = isPercent
                 ? p.price * (1 - Number(promotion.discount_value) / 100)
                 : Math.max(0, p.price - Number(promotion.discount_value));
@@ -687,7 +739,7 @@ function AssignProductsModal({ promotion, onClose }) {
                   key={p.id}
                   onClick={() => !isBusy && toggleProduct(p)}
                   className={`flex items-center gap-3.5 px-4 py-3 cursor-pointer transition-colors
-                    ${isAssigned ? "bg-vnpt-light/40" : "hover:bg-cream/70"} ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
+                    ${isAssigned ? "bg-vnpt-light/40" : "hover:bg-cream/70"} ${isBusy ? "opacity-50 pointer-events-none" : ""} ${isOutOfStock ? "opacity-50" : ""}`}
                 >
                   <input
                     type="checkbox"
@@ -709,8 +761,15 @@ function AssignProductsModal({ promotion, onClose }) {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-body truncate">
-                      {p.name}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="text-sm font-bold text-body truncate">
+                        {p.name}
+                      </div>
+                      {isOutOfStock && (
+                        <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide text-white bg-shade-50 rounded px-1.5 py-0.5">
+                          Hết hàng
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-muted truncate mt-0.5">
                       {catName || "Chưa phân loại"}
