@@ -21,7 +21,7 @@ exports.createProduct = async (data) => {
   return product;
 };
 
-// Helper dùng chung cho getAllProducts (public) và getAllProductsForAdmin.
+// Filter dùng chung cho cả 2 hàm list bên dưới (search, category, brand, giá...)
 const applyCommonFilters = (query, countQuery, filters) => {
   const {
     q,
@@ -34,8 +34,6 @@ const applyCommonFilters = (query, countQuery, filters) => {
     featured,
     price_min,
     price_max,
-    // các field điều khiển riêng, không phải filter sản phẩm — loại bỏ khỏi
-    // dynamicFilters để không bị hiểu nhầm thành attribute JSONB
     limit: _l,
     page: _p,
     offset: _o,
@@ -97,7 +95,7 @@ const applyCommonFilters = (query, countQuery, filters) => {
     countQuery = countQuery.where("price", "<=", Number(price_max));
   }
 
-  // Sử dụng whereRaw với toán tử @> để tận dụng GIN Index
+  // Dùng @> để tận dụng GIN Index trên cột attributes
   Object.keys(dynamicFilters).forEach((key) => {
     const val = dynamicFilters[key];
     if (val !== undefined && val !== "") {
@@ -112,6 +110,7 @@ const applyCommonFilters = (query, countQuery, filters) => {
   return { query, countQuery };
 };
 
+// Thực thi query + format kết quả, dùng chung cho cả 2 hàm list
 const runQueryAndFormat = async ({
   query,
   countQuery,
@@ -140,12 +139,10 @@ const runQueryAndFormat = async ({
     .offset(safeOffset);
 
   const dataWithPromo = await promotionService.attachPromotionInfo(data);
-
   return { data: dataWithPromo, total };
 };
 
-// PUBLIC: danh sách sản phẩm cho user thường. Luôn ẩn sản phẩm có dòng tồn
-// kho đang inactive/archived, không quan tâm is_available lưu giá trị gì.
+// PUBLIC: luôn ẩn sản phẩm có tồn kho inactive/archived
 exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   let countQuery = knex("products").where("is_deleted", false);
 
@@ -193,7 +190,7 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
   });
 };
 
-// ADMIN/STAFF: thấy tất cả sản phẩm kể cả tồn kho inactive
+// ADMIN/STAFF: thấy cả active + inactive (archived luôn bị ẩn, không filter ra được)
 exports.getAllProductsForAdmin = async ({ limit, offset, filters = {} }) => {
   let countQuery = knex("products").where("is_deleted", false);
 
@@ -208,10 +205,11 @@ exports.getAllProductsForAdmin = async ({ limit, offset, filters = {} }) => {
         .as("thumbnail_url"),
     )
     .select(
+      // Lấy quantity thật của cả active lẫn inactive.
       knex("inventory")
         .select("quantity")
         .whereRaw("product_id = p.id")
-        .where("status", "active")
+        .whereIn("status", ["active", "inactive"])
         .limit(1)
         .as("stock"),
     )
@@ -223,6 +221,7 @@ exports.getAllProductsForAdmin = async ({ limit, offset, filters = {} }) => {
         .as("inventory_status"),
     )
     .where("p.is_deleted", false)
+    // Archived = đã soft-delete tồn kho, luôn ẩn, không có filter nào lấy ra được
     .whereNotExists(
       knex("inventory")
         .select(1)
@@ -240,6 +239,7 @@ exports.getAllProductsForAdmin = async ({ limit, offset, filters = {} }) => {
   const { inventory_status } = filters;
   const validStatuses = ["active", "inactive"];
 
+  // Không truyền hoặc giá trị lạ - mặc định lấy cả active + inactive
   if (inventory_status && validStatuses.includes(inventory_status)) {
     query = query.whereExists(
       knex("inventory")
@@ -254,7 +254,6 @@ exports.getAllProductsForAdmin = async ({ limit, offset, filters = {} }) => {
         .where("status", inventory_status),
     );
   }
-  // Không truyền hoặc truyền giá trị lạ giữ nguyên active + inactive
 
   ({ query, countQuery } = applyCommonFilters(query, countQuery, filters));
 
@@ -336,7 +335,7 @@ exports.updateProduct = async (id, data) => {
     data.attributes = JSON.stringify(data.attributes);
   }
 
-  // Không cho phép bật bán (is_available = true) nếu dòng tồn kho tương ứng đang inactive/archived hoặc chưa từng được tạo
+  // Chặn bật bán nếu tồn kho chưa active
   const wantsAvailable =
     data.is_available === true ||
     data.is_available === "true" ||

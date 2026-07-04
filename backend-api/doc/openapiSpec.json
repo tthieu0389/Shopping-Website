@@ -1216,7 +1216,7 @@
     },
     "responses": {
       "Unauthorized": {
-        "description": "Chưa xác thực — thiếu hoặc token không hợp lệ",
+        "description": "Chưa xác thực — thiếu token, token không hợp lệ/hết hạn, hoặc tài khoản không còn tồn tại/đã bị vô hiệu hoá",
         "content": {
           "application/json": {
             "schema": {
@@ -1225,7 +1225,7 @@
             "example": {
               "success": false,
               "message": "Bad request",
-              "error": "No token provided"
+              "error": "Invalid or expired token"
             }
           }
         }
