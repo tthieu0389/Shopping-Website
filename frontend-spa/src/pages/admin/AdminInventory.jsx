@@ -20,36 +20,31 @@ export default function AdminInventory() {
   const [adjustItem, setAdjustItem] = useState(null)
   const [delta, setDelta] = useState('')
   const [saving, setSaving] = useState(false)
-  // Dữ liệu toàn bộ kho (không phân trang) — chỉ dùng để tính 3 thẻ thống kê phía trên
-  const [statsItems, setStatsItems] = useState([])
+  // Thống kê 3 thẻ trên đầu — lấy từ /inventory/stats (BE tự COUNT), không
+  // cần kéo hết dữ liệu kho về FE nữa.
+  const [stats, setStats] = useState({ inStock: 0, lowStock: 0, outOfStock: 0 })
 
   const load = () => {
     setLoading(true)
-    inventoryApi.getAll({ page, limit: LIMIT })
+    inventoryApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
       .then(res => { setAllItems(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
   }
 
   const loadStats = () => {
-    // Backend chưa có endpoint thống kê riêng nên tạm lấy toàn bộ bản ghi
-    // (limit lớn) để tính số liệu trên toàn bộ kho thay vì chỉ trang hiện tại.
-    inventoryApi.getAll({ page: 1, limit: 100000 })
-      .then(res => setStatsItems(res.data || []))
+    inventoryApi.getStats()
+      .then(res => setStats(res.data || { inStock: 0, lowStock: 0, outOfStock: 0 }))
       .catch(() => {})
   }
 
-  useEffect(() => { load() }, [page])
+  useEffect(() => { load() }, [page, search])
   useEffect(() => { loadStats() }, [])
 
-  // ⚠️ Backend /inventory hiện CHƯA hỗ trợ tham số tìm kiếm (q) như /products,
-  // nên search ở đây tạm thời lọc trên dữ liệu của trang hiện tại (client-side).
-  // Cần backend bổ sung filter theo tên sản phẩm + JOIN products để search đúng
-  // trên toàn bộ dữ liệu kèm phân trang chính xác (xem báo cáo cuối file).
-  const handleSearchChange = debounce((v) => setSearch(v), 400)
-  const items = search.trim()
-    ? allItems.filter(item => (item.product_name || '').toLowerCase().includes(search.trim().toLowerCase()))
-    : allItems
+  // Search giờ đã lấy trực tiếp từ backend (/inventory hỗ trợ q — search theo
+  // tên sản phẩm, join products), không còn giới hạn trong dữ liệu trang hiện tại.
+  const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
+  const items = allItems
 
   const openAdjust = (item) => { setDelta(''); setAdjustItem(item) }
 
@@ -64,9 +59,9 @@ export default function AdminInventory() {
       .finally(() => setSaving(false))
   }
 
-  const okCount  = statsItems.filter(i => i.quantity > i.min_quantity).length
-  const lowCount = statsItems.filter(i => i.quantity > 0 && i.quantity <= i.min_quantity).length
-  const outCount = statsItems.filter(i => i.quantity === 0).length
+  const okCount  = stats.inStock
+  const lowCount = stats.lowStock
+  const outCount = stats.outOfStock
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
 
   return (
@@ -91,7 +86,7 @@ export default function AdminInventory() {
           headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']}
           colWidths={['320px', '100px', '140px', '130px', '120px', '100px']}
           loading={loading}
-          empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp trong trang này' : 'Chưa có dữ liệu kho')}
+          empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp' : 'Chưa có dữ liệu kho')}
         >
           {items.map((item, i) => (
             <TR key={item.id} striped={i % 2 !== 0}>
