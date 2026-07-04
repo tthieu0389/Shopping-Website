@@ -66,7 +66,7 @@ export default function AdminProducts() {
   const load = () => {
     setLoading(true);
     productsApi
-      .getAll({ page, limit: LIMIT, ...(search ? { q: search } : {}) })
+      .getAllForAdmin({ page, limit: LIMIT, ...(search ? { q: search } : {}) })
       .then((res) => {
         setProducts(res.data || []);
         setTotal(res.total || 0);
@@ -99,6 +99,7 @@ export default function AdminProducts() {
       model: p.model || "",
       product_type: p.product_type || "device",
       is_available: !!p.is_available,
+      inventory_status: p.inventory_status || "active",
     });
     setModal(p);
   };
@@ -195,6 +196,11 @@ export default function AdminProducts() {
         })
         .then(() => productsApi.update(modal.id, payload))
         .then(() => {
+          if (form.inventory_status) {
+            return handleInvStatus(modal, form.inventory_status, true);
+          }
+        })
+        .then(() => {
           toast.success("Đã cập nhật sản phẩm");
           setModal(null);
           load();
@@ -215,14 +221,15 @@ export default function AdminProducts() {
       .catch((err) => toast.error(err.message || "Không thể xoá"));
   };
 
-  const handleInvStatus = async (p, newStatus) => {
-    if (!p.inv_id) { toast.error("Sản phẩm chưa có dòng tồn kho"); return; }
+  const handleInvStatus = async (p, newStatus, silent = false) => {
     try {
-      await inventoryApi.update(p.inv_id, { status: newStatus });
-      toast.success(`Đã chuyển kho → ${newStatus}`);
-      load();
+      const res = await inventoryApi.getByProduct(p.id);
+      const inv = res.data;
+      if (!inv?.id) { if (!silent) toast.error("Sản phẩm chưa có dòng tồn kho"); return; }
+      await inventoryApi.update(inv.id, { status: newStatus });
+      if (!silent) { toast.success(`Đã chuyển kho → ${newStatus}`); load(); }
     } catch (err) {
-      toast.error(err.message || "Không thể cập nhật trạng thái kho");
+      if (!silent) toast.error(err.message || "Không thể cập nhật trạng thái kho");
     }
   };
 
@@ -322,44 +329,20 @@ export default function AdminProducts() {
                   />
                 </TD>
                 <TD noTruncate>
-                  {p.inv_status == null ? (
-                    <Badge label="Chưa có" tone="muted" />
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      <Badge
-                        label={
-                          p.inv_status === "active" ? "Active"
-                          : p.inv_status === "inactive" ? "Inactive"
-                          : "Archived"
-                        }
-                        tone={
-                          p.inv_status === "active" ? "success"
-                          : p.inv_status === "inactive" ? "warning"
-                          : "error"
-                        }
-                      />
-                      <div className="flex gap-1.5 flex-wrap">
-                        {p.inv_status !== "active" && (
-                          <span
-                            className="text-[10px] font-semibold text-green-600 cursor-pointer hover:underline"
-                            onClick={() => handleInvStatus(p, "active")}
-                          >Active</span>
-                        )}
-                        {p.inv_status !== "inactive" && (
-                          <span
-                            className="text-[10px] font-semibold text-amber-600 cursor-pointer hover:underline"
-                            onClick={() => handleInvStatus(p, "inactive")}
-                          >Inactive</span>
-                        )}
-                        {p.inv_status !== "archived" && (
-                          <span
-                            className="text-[10px] font-semibold text-red-500 cursor-pointer hover:underline"
-                            onClick={() => handleInvStatus(p, "archived")}
-                          >Archive</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <Badge
+                    label={
+                      p.inventory_status == null ? "Chưa có"
+                      : p.inventory_status === "active" ? "Active"
+                      : p.inventory_status === "inactive" ? "Inactive"
+                      : "Archived"
+                    }
+                    tone={
+                      p.inventory_status == null ? "muted"
+                      : p.inventory_status === "active" ? "success"
+                      : p.inventory_status === "inactive" ? "warning"
+                      : "error"
+                    }
+                  />
                 </TD>
                 <TD noTruncate>
                   <Badge
@@ -510,20 +493,36 @@ export default function AdminProducts() {
 
             <section>
               <SectionLabel>Hiển thị</SectionLabel>
-              <Select
-                label="Trạng thái hiển thị"
-                value={form.is_available ? "true" : "false"}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    is_available: e.target.value === "true",
-                  }))
-                }
-                options={[
-                  ["true", "Đang bán"],
-                  ["false", "Tạm ẩn"],
-                ]}
-              />
+              <div className={`grid gap-x-3 ${modal !== "add" ? "grid-cols-2" : ""}`}>
+                <Select
+                  label="Trạng thái hiển thị"
+                  value={form.is_available ? "true" : "false"}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      is_available: e.target.value === "true",
+                    }))
+                  }
+                  options={[
+                    ["true", "Đang bán"],
+                    ["false", "Tạm ẩn"],
+                  ]}
+                />
+                {modal !== "add" && (
+                  <Select
+                    label="Trạng thái kho"
+                    value={form.inventory_status || ""}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, inventory_status: e.target.value }))
+                    }
+                    options={[
+                      ["active", "Active"],
+                      ["inactive", "Inactive"],
+                      ["archived", "Archived"],
+                    ]}
+                  />
+                )}
+              </div>
             </section>
           </div>
 

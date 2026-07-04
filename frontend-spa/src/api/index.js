@@ -9,6 +9,7 @@ export const authApi = {
 // ── PRODUCTS ─────────────────────────────────────────────────────────────────
 export const productsApi = {
   getAll: (params) => api.get("/products", { params }),
+  getAllForAdmin: (params) => api.get("/products/admin/list", { params }),
   getBySlug: (slug) => api.get(`/products/${slug}`),
   getById: (id) => api.get(`/products/${id}`),
   getRelated: (id) => api.get(`/products/${id}/related`),
