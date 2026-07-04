@@ -132,6 +132,24 @@ export default function AdminProducts() {
 
   const handleSave = () => {
     if (!form.name || !form.price) return;
+    if (
+      modal !== "add" &&
+      form.is_available &&
+      form.inventory_status &&
+      form.inventory_status !== "active"
+    ) {
+      toast.error(
+        "Không thể bật \"Đang bán\" khi Trạng thái kho chưa ở \"Đang mở kho\". Vui lòng mở kho trước hoặc chọn lại Trạng thái hiển thị.",
+      );
+      return;
+    }
+    if (
+      modal !== "add" &&
+      form.inventory_status === "archived" &&
+      !confirm("Ẩn sản phẩm này khỏi kho?\nSản phẩm sẽ biến mất khỏi danh sách sau khi lưu.")
+    ) {
+      return;
+    }
     setSaving(true);
     // "stock" KHÔNG phải cột của bảng products (tồn kho nằm ở bảng inventory
     // riêng) -> không gửi field này vào productsApi, chỉ dùng nó để gọi
@@ -180,9 +198,10 @@ export default function AdminProducts() {
         .catch((err) => toast.error(err.message || "Không thể lưu sản phẩm"))
         .finally(() => setSaving(false));
     } else {
-      // Thứ tự: 1) sync quantity kho  2) update product  3) update status kho
-      // Bước 3 chạy SAU cùng vì BE updateInventory() tự điều chỉnh is_available
-      // theo quantity — chạy sau để status kho cuối cùng luôn theo ý admin.
+      // Thứ tự: 1) sync quantity kho  2) ép status kho theo ý admin  3) update product
+      // Bước 2 phải chạy TRƯỚC bước 3 vì BE chặn is_available=true nếu inventory
+      // chưa ở trạng thái "active" — nếu update product trước, ta sẽ bị 400 dù
+      // admin đã chọn "Đang mở kho" trong cùng lần lưu này.
       (async () => {
         try {
           // Bước 1: đồng bộ số lượng tồn kho
@@ -193,10 +212,7 @@ export default function AdminProducts() {
             // Không dừng lại, vẫn tiếp tục cập nhật sản phẩm
           }
 
-          // Bước 2: cập nhật thông tin sản phẩm
-          await productsApi.update(modal.id, payload);
-
-          // Bước 3: cập nhật status kho (sau cùng để không bị bước 1 ghi đè)
+          // Bước 2: ép trạng thái kho theo lựa chọn của admin (trước khi update product)
           if (form.inventory_status) {
             try {
               await updateInvStatus(modal.id, form.inventory_status);
@@ -204,6 +220,9 @@ export default function AdminProducts() {
               toast.error("Không thể cập nhật trạng thái kho: " + (err.message || "Lỗi không xác định"));
             }
           }
+
+          // Bước 3: cập nhật thông tin sản phẩm (is_available giờ đã khớp với inventory)
+          await productsApi.update(modal.id, payload);
 
           toast.success("Đã cập nhật sản phẩm");
           setModal(null);
@@ -347,9 +366,9 @@ export default function AdminProducts() {
                   <Badge
                     label={
                       p.inventory_status == null ? "Chưa có"
-                      : p.inventory_status === "active" ? "Active"
-                      : p.inventory_status === "inactive" ? "Inactive"
-                      : "Archived"
+                      : p.inventory_status === "active" ? "Đang mở kho"
+                      : p.inventory_status === "inactive" ? "Tạm khóa kho"
+                      : "Ẩn khỏi kho"
                     }
                     tone={
                       p.inventory_status == null ? "muted"
@@ -529,9 +548,6 @@ export default function AdminProducts() {
                     value={form.inventory_status || "active"}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === "archived") {
-                        if (!confirm("Ẩn sản phẩm này khỏi kho?\nSản phẩm sẽ biến mất khỏi danh sách sau khi lưu.")) return;
-                      }
                       setForm((p) => ({ ...p, inventory_status: val }));
                     }}
                     options={[
