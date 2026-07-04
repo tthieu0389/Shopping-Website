@@ -135,6 +135,7 @@ const runQueryAndFormat = async ({
   const data = await query
     .orderByRaw("CASE WHEN is_available = false THEN 1 ELSE 0 END ASC")
     .orderBy(currentSort.column, currentSort.direction)
+    .orderBy("p.id", "asc")
     .limit(safeLimit)
     .offset(safeOffset);
 
