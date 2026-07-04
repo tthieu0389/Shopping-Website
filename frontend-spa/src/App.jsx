@@ -40,7 +40,12 @@ import StaffContacts    from './pages/staff/StaffContacts.jsx'
 
 export default function App() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const checkSession = useAuthStore(s => s.checkSession)
   const fetchCart = useCartStore(s => s.fetchCart)
+
+  // Kiểm tra ngay khi app khởi động: nếu token đã hết hạn từ trước (session cũ)
+  // thì dọn sạch trạng thái đăng nhập đã persist, coi như một khách vãng lai.
+  useEffect(() => { checkSession() }, [])
 
   // Dọn dẹp localStorage cart cũ (từ phiên bản trước dùng persist)
   useEffect(() => { localStorage.removeItem('vnpt_cart') }, [])

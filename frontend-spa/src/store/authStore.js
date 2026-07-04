@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '../api/index.js'
+import { isTokenExpired } from '../utils/index.js'
 
 // Import lazily để tránh circular dependency
 const getCartStore = () => import('./cartStore.js').then(m => m.default)
@@ -54,6 +55,15 @@ const useAuthStore = create(
       },
 
       clearError: () => set({ error: null }),
+
+      // Gọi khi app khởi động: nếu token đã hết hạn (dù state persist vẫn còn
+      // isAuthenticated: true từ trước) thì dọn sạch, coi như chưa đăng nhập.
+      checkSession: () => {
+        const { token, isAuthenticated } = get()
+        if (isAuthenticated && isTokenExpired(token)) {
+          get().logout()
+        }
+      },
     }),
     {
       name: 'vnpt_auth',

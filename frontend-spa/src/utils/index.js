@@ -56,6 +56,22 @@ export const resolveImageUrl = (url) => {
   return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
+// ── KIỂM TRA JWT HẾT HẠN ──────────────────────────────────────────────────────
+// Giải mã phần payload của JWT (base64url) để đọc "exp" mà không cần verify chữ ký
+// (verify chữ ký là việc của backend) — chỉ dùng để quyết định có nên coi phiên
+// đăng nhập ở client là còn hiệu lực hay không.
+export const isTokenExpired = (token) => {
+  if (!token) return true
+  try {
+    const payload = token.split('.')[1]
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    if (!decoded.exp) return false // không có exp thì coi như không hết hạn
+    return decoded.exp * 1000 <= Date.now()
+  } catch {
+    return true // token không hợp lệ/không đọc được -> coi như đã hết hạn
+  }
+}
+
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 export const toast = {
   success: (msg) => window.dispatchEvent(new CustomEvent('vnpt:toast', { detail: { msg, type: 'success' } })),

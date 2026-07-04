@@ -29,7 +29,8 @@ api.interceptors.response.use(
       localStorage.removeItem('vnpt_token')
       // Xóa đúng key Zustand persist (vnpt_auth) thay vì vnpt_user
       localStorage.removeItem('vnpt_auth')
-      window.location.href = '/login'
+      // Hết phiên đăng nhập -> về trang chủ với vai trò khách, không ép về /login
+      window.location.href = '/'
     }
 
     if (status === 403) {
