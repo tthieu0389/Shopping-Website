@@ -32,6 +32,12 @@ const {
 
 const app = express();
 
+app.disable("etag");
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 // MIDDLEWARE BAO MAT
 app.use(
   helmet({
