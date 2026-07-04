@@ -39,6 +39,67 @@ function SearchResultItem({ product: p, onSelect }) {
   )
 }
 
+// Component search dùng chung cho thanh nav (desktop) và panel mobile.
+// Được định nghĩa ở top-level (không lồng trong Navbar) để tránh bị tạo lại
+// component type mới mỗi lần Navbar re-render — nếu không, input sẽ bị
+// unmount/mount lại mỗi lần gõ khiến mất focus/cursor.
+function SearchBox({
+  className = '',
+  searchRef,
+  query,
+  onInputChange,
+  onFocus,
+  onClear,
+  showDropdown,
+  loading,
+  results,
+  onSelectResult,
+}) {
+  return (
+    <div
+      ref={searchRef}
+      className={`relative flex items-center bg-cream border border-shade rounded-full px-4 py-1.5 gap-2 focus-within:border-vnpt transition-colors ${className}`}
+    >
+      <svg className="w-4 h-4 text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        type="text"
+        placeholder="Tìm sản phẩm..."
+        className="bg-transparent border-none outline-none text-sm font-body w-full min-w-0 text-body"
+        value={query}
+        onChange={onInputChange}
+        onFocus={onFocus}
+        autoComplete="off"
+      />
+      {/* Nút X xóa nhanh */}
+      {query && (
+        <button
+          onClick={onClear}
+          className="text-muted hover:text-body transition-colors flex-shrink-0 text-base leading-none"
+        >
+          ✕
+        </button>
+      )}
+
+      {/* Dropdown kết quả */}
+      {showDropdown && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-shade rounded-xl shadow-lg z-50 overflow-y-auto overflow-x-hidden max-h-96">
+          {loading && (
+            <div className="p-4 text-sm text-muted text-center">Đang tìm...</div>
+          )}
+          {!loading && results.length === 0 && (
+            <div className="p-4 text-sm text-muted text-center">Không tìm thấy kết quả cho &ldquo;{query}&rdquo;</div>
+          )}
+          {!loading && results.length > 0 && results.map(p => (
+            <SearchResultItem key={p.id} product={p} onSelect={onSelectResult} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
   const avatarUrl = useAvatarUrl()
@@ -92,51 +153,6 @@ export default function Navbar() {
 
   const showDropdown = searchOpen && query.trim().length > 0
 
-  // Component search dùng chung cho thanh nav (desktop) và panel mobile —
-  // truyền className để tuỳ biến kích thước/bo góc theo từng nơi dùng.
-  const SearchBox = ({ className = '' }) => (
-    <div
-      ref={searchRef}
-      className={`relative flex items-center bg-cream border border-shade rounded-full px-4 py-1.5 gap-2 focus-within:border-vnpt transition-colors ${className}`}
-    >
-      <svg className="w-4 h-4 text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-      </svg>
-      <input
-        type="text"
-        placeholder="Tìm sản phẩm..."
-        className="bg-transparent border-none outline-none text-sm font-body w-full min-w-0 text-body"
-        value={query}
-        onChange={handleInputChange}
-        onFocus={() => { if (query.trim()) setSearchOpen(true) }}
-        autoComplete="off"
-      />
-      {/* Nút X xóa nhanh */}
-      {query && (
-        <button
-          onClick={handleClearSearch}
-          className="text-muted hover:text-body transition-colors flex-shrink-0 text-base leading-none"
-        >
-          ✕
-        </button>
-      )}
-
-      {/* Dropdown kết quả */}
-      {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-shade rounded-xl shadow-lg z-50 overflow-y-auto overflow-x-hidden max-h-96">
-          {loading && (
-            <div className="p-4 text-sm text-muted text-center">Đang tìm...</div>
-          )}
-          {!loading && results.length === 0 && (
-            <div className="p-4 text-sm text-muted text-center">Không tìm thấy kết quả cho &ldquo;{query}&rdquo;</div>
-          )}
-          {!loading && results.length > 0 && results.map(p => (
-            <SearchResultItem key={p.id} product={p} onSelect={handleSelectResult} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
 
   const navLinkClass = (to, isActive, extra = '') => {
     // Với link có query params, kiểm tra pathname + search khớp
@@ -192,7 +208,18 @@ export default function Navbar() {
           </div>
 
           {/* Search — cùng breakpoint với nav links */}
-          <SearchBox className="hidden lg:flex min-w-[200px] xl:min-w-[240px] flex-shrink" />
+          <SearchBox
+            className="hidden lg:flex min-w-[200px] xl:min-w-[240px] flex-shrink"
+            searchRef={searchRef}
+            query={query}
+            onInputChange={handleInputChange}
+            onFocus={() => { if (query.trim()) setSearchOpen(true) }}
+            onClear={handleClearSearch}
+            showDropdown={showDropdown}
+            loading={loading}
+            results={results}
+            onSelectResult={handleSelectResult}
+          />
 
           {/* Right side — không bao giờ được co lại hay xuống dòng */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto flex-shrink-0">
@@ -273,7 +300,18 @@ export default function Navbar() {
         {/* Mobile menu panel — chứa tìm kiếm + nav links, chỉ hiện dưới lg */}
         {mobileOpen && (
           <div className="lg:hidden border-t border-shade px-4 sm:px-6 py-3 flex flex-col gap-3">
-            <SearchBox className="w-full" />
+            <SearchBox
+              className="w-full"
+              searchRef={searchRef}
+              query={query}
+              onInputChange={handleInputChange}
+              onFocus={() => { if (query.trim()) setSearchOpen(true) }}
+              onClear={handleClearSearch}
+              showDropdown={showDropdown}
+              loading={loading}
+              results={results}
+              onSelectResult={handleSelectResult}
+            />
             <div className="flex flex-col gap-0.5">
               {navLinks.map(({ to, label }) => (
                 <NavLink
