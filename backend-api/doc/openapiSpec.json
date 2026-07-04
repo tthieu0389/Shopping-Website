@@ -1435,9 +1435,6 @@
                             "$ref": "#/components/schemas/UserSearchResult"
                           }
                         },
-                        "meta": {
-                          "$ref": "#/components/schemas/PaginationMeta"
-                        },
                         "total": {
                           "type": "integer",
                           "example": 100
@@ -2973,8 +2970,17 @@
                             "$ref": "#/components/schemas/Product"
                           }
                         },
-                        "meta": {
-                          "$ref": "#/components/schemas/PaginationMeta"
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -4454,8 +4460,17 @@
                             "$ref": "#/components/schemas/Order"
                           }
                         },
-                        "meta": {
-                          "$ref": "#/components/schemas/PaginationMeta"
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -4782,8 +4797,17 @@
                             "$ref": "#/components/schemas/Inventory"
                           }
                         },
-                        "meta": {
-                          "$ref": "#/components/schemas/PaginationMeta"
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -5144,8 +5168,17 @@
                             "$ref": "#/components/schemas/InventoryLog"
                           }
                         },
-                        "meta": {
-                          "$ref": "#/components/schemas/PaginationMeta"
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -5321,8 +5354,27 @@
                         "$ref": "#/components/schemas/DiscountedProduct"
                       }
                     },
+                    "total": {
+                      "type": "integer",
+                      "description": "Tổng số sản phẩm khuyến mãi phù hợp (không tính riêng theo trang). Đặt ở root để đồng nhất với GET /api/products.",
+                      "example": 42
+                    },
+                    "page": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 20
+                    },
                     "meta": {
-                      "$ref": "#/components/schemas/PaginationMeta"
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/PaginationMeta"
+                        }
+                      ],
+                      "deprecated": true,
+                      "description": "Deprecated — giữ tạm để tương thích ngược với client cũ đang đọc meta.total. Dùng total/page/limit ở root thay thế."
                     }
                   }
                 }
@@ -7702,8 +7754,17 @@
                             "$ref": "#/components/schemas/Order"
                           }
                         },
-                        "meta": {
-                          "$ref": "#/components/schemas/PaginationMeta"
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
