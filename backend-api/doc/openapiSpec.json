@@ -835,6 +835,15 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "user_name": {
+            "type": "string",
+            "description": "Tên người đánh giá (join từ bảng users)"
+          },
+          "user_avatar": {
+            "type": "string",
+            "nullable": true,
+            "description": "Avatar của người đánh giá (join từ user_profiles, có thể null nếu user chưa cập nhật avatar)"
           }
         }
       },
@@ -1125,7 +1134,20 @@
               "items": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/OrderItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/OrderItem"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "has_reviewed": {
+                          "type": "boolean",
+                          "description": "Chỉ có ý nghĩa khi đơn ở trạng thái completed — true nếu user đã đánh giá sản phẩm này (ở bất kỳ đơn nào, không riêng đơn hiện tại). Mặc định false."
+                        }
+                      }
+                    }
+                  ]
                 },
                 "description": "Danh sách sản phẩm đã lưu trong đơn"
               },
@@ -6178,7 +6200,14 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listReviews"
+        "operationId": "listReviews",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "description": "Route public, không bắt buộc đăng nhập. Nếu gửi kèm Bearer token hợp lệ, review của chính người dùng đang xem sẽ được ưu tiên hiển thị lên đầu danh sách (bất kể rating hay có comment hay không); các review còn lại sắp theo created_at mới nhất trước."
       },
       "post": {
         "tags": ["Reviews"],
@@ -6353,7 +6382,14 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "getReviewsByProduct"
+        "operationId": "getReviewsByProduct",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "description": "Route public, không bắt buộc đăng nhập. Nếu gửi kèm Bearer token hợp lệ, review của chính người dùng đang xem sẽ được ưu tiên hiển thị lên đầu danh sách."
       }
     },
     "/api/reviews/{id}": {

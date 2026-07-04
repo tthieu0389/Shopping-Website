@@ -507,6 +507,26 @@ exports.getOrderById = async (id) => {
     }),
   ]);
 
+  // Gắn cờ has_reviewed cho từng item
+  // chỉ có khi đơn đã hoàn tất, vì đó là điều kiện bắt buộc để được đánh giá sản phẩm
+  // Lưu ý: reviews là UNIQUE(user_id, product_id) — không phân biệt theo đơn hàng,
+  //        nên has_reviewed = true nếu user đã review sản phẩm này ở BẤT KỲ đơn nào.
+  if (order.status === "completed" && order.user_id && items.length > 0) {
+    const productIds = [...new Set(items.map((it) => it.product_id))];
+    const reviewed = await knex("reviews")
+      .where({ user_id: order.user_id, is_deleted: false })
+      .whereIn("product_id", productIds)
+      .pluck("product_id");
+    const reviewedSet = new Set(reviewed);
+    items.forEach((it) => {
+      it.has_reviewed = reviewedSet.has(it.product_id);
+    });
+  } else {
+    items.forEach((it) => {
+      it.has_reviewed = false;
+    });
+  }
+
   order.items = items;
   order.contacts = contacts;
   return order;
