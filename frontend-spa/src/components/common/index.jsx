@@ -1,12 +1,165 @@
+import { useRef, useState, useEffect } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   formatPrice,
   calcDiscount,
   resolveImageUrl,
+  notifyAvatarUpdated,
 } from "../../utils/index.js";
 import useCartStore from "../../store/cartStore.js";
 import useAuthStore from "../../store/authStore.js";
 import { toast } from "../../utils/index.js";
+import { userApi } from "../../api/index.js";
+
+// ── AvatarUploadModal ────────────────────────────────────────────────────────
+// Modal đổi ảnh đại diện: chọn ảnh -> preview tại chỗ -> xác nhận mới upload.
+const MAX_AVATAR_SIZE = 4 * 1024 * 1024; // khớp giới hạn 4MB của backend (multer)
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+export function AvatarUploadModal({ currentAvatarUrl, onClose, onSuccess }) {
+  const fileInputRef = useRef(null);
+  const overlayRef = useRef(null);
+  const objectUrlRef = useRef(null);
+
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Dọn object URL tạm khi đổi ảnh khác hoặc unmount, tránh leak bộ nhớ
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
+
+  const handleOverlayClick = (e) => {
+    if (e.target === overlayRef.current && !uploading) onClose();
+  };
+
+  const handlePickFile = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // cho phép chọn lại cùng 1 file lần nữa nếu cần
+    if (!file) return;
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      setError("Chỉ chấp nhận ảnh định dạng JPG, PNG hoặc WEBP.");
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      setError("Ảnh quá lớn. Vui lòng chọn ảnh tối đa 4MB.");
+      return;
+    }
+
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    const url = URL.createObjectURL(file);
+    objectUrlRef.current = url;
+
+    setError("");
+    setSelectedFile(file);
+    setPreviewUrl(url);
+  };
+
+  const handleSave = async () => {
+    if (!selectedFile) return;
+    setUploading(true);
+    setError("");
+    try {
+      const res = await userApi.uploadAvatar(selectedFile);
+      toast.success("Cập nhật ảnh đại diện thành công!");
+      notifyAvatarUpdated(res.data?.avatar);
+      onSuccess?.(res.data);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Tải ảnh lên thất bại, vui lòng thử lại.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const displayUrl = previewUrl || currentAvatarUrl;
+
+  return (
+    <div
+      ref={overlayRef}
+      onClick={handleOverlayClick}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+      style={{ background: "rgba(10,10,10,0.55)", backdropFilter: "blur(4px)" }}
+    >
+      <div className="w-full sm:max-w-[420px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-[fadeSlideUp_0.22s_ease]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-shade">
+          <h2 className="font-display text-lg font-bold text-body">Đổi ảnh đại diện</h2>
+          <button
+            onClick={onClose}
+            disabled={uploading}
+            className="w-9 h-9 rounded-full hover:bg-surface flex items-center justify-center text-muted hover:text-body transition-colors text-lg disabled:opacity-50"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Preview */}
+        <div className="px-6 pt-6 pb-2 flex flex-col items-center">
+          <div className="w-40 h-40 rounded-full overflow-hidden bg-vnpt-light border-4 border-shade flex items-center justify-center">
+            {displayUrl ? (
+              <img src={displayUrl} alt="Avatar preview" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-5xl">🧑</span>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={handlePickFile}
+            disabled={uploading}
+            className="mt-4 px-5 py-2 border border-vnpt text-vnpt rounded-full text-sm font-semibold hover:bg-vnpt hover:text-white transition-colors disabled:opacity-60"
+          >
+            📷 {selectedFile ? "Chọn ảnh khác" : "Chọn ảnh"}
+          </button>
+
+          <p className="text-xs text-muted mt-3 text-center">
+            Hỗ trợ JPG, PNG, WEBP · Tối đa 4MB
+          </p>
+
+          {error && (
+            <p className="text-xs text-accent font-medium mt-2 text-center">{error}</p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 px-6 py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={uploading}
+            className="flex-1 px-4 py-2.5 border border-shade text-muted rounded-full text-sm font-semibold hover:border-body transition-colors disabled:opacity-60"
+          >
+            Huỷ
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!selectedFile || uploading}
+            className="flex-1 px-4 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {uploading ? "Đang lưu..." : "Lưu thay đổi"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── ProductCard ───────────────────────────────────────────────────────────────
 export function ProductCard({ product, showProgress = false }) {
