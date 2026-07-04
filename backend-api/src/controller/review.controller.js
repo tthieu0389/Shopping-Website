@@ -13,8 +13,10 @@ exports.getByProduct = async (req, res, next) => {
   try {
     // Supports both query (?product_id=xxx) and param (:productId)
     const productId = req.query.product_id || req.params.productId;
-
-    const data = await service.getProductReviews(productId);
+    // Route này không bắt buộc đăng nhập nên req.user có thể không tồn tại.
+    // Nếu đã đăng nhập, truyền userId để review của bản thân được ưu tiên lên đầu.
+    const currentUserId = req.user?.id ?? null;
+    const data = await service.getProductReviews(productId, currentUserId);
     res.json({ data });
   } catch (err) {
     next(err);
