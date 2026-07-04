@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { useCountdown, useProducts, useFeaturedReviews } from '../hooks/index.js'
+import { useCountdown, useProducts, useFeaturedReviews, useDiscountedProducts } from '../hooks/index.js'
 import { ProductCard, TrustBand, SectionHead, CountdownTimer, LoadingSpinner, FlashSaleCard } from '../components/common/index.jsx'
 import { formatPrice, formatDate, getInitials, resolveImageUrl } from '../utils/index.js'
 import api from '../api/axiosInstance.js'
@@ -243,6 +243,90 @@ function ReviewsSlider() {
   )
 }
 
+// ── FlashSaleSlider ───────────────────────────────────────────────────────────
+function FlashSaleSlider({ products, loading }) {
+  const [index, setIndex] = useState(0)
+  const [perView, setPerView] = useState(4)
+  const timerRef = useRef(null)
+  const touchStartX = useRef(0)
+
+  useEffect(() => {
+    const update = () => setPerView(window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : window.innerWidth < 1280 ? 3 : 4)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  const n = products.length
+
+  const startTimer = (cur) => {
+    clearInterval(timerRef.current)
+    if (n <= perView) return
+    timerRef.current = setInterval(() => {
+      setIndex(i => (i + 1) % n)
+    }, 5000)
+  }
+
+  useEffect(() => {
+    if (n <= perView) return
+    timerRef.current = setInterval(() => setIndex(i => (i + 1) % n), 5000)
+    return () => clearInterval(timerRef.current)
+  }, [n, perView])
+
+  const goTo = (next) => {
+    const clamped = ((next % n) + n) % n
+    setIndex(clamped)
+    startTimer(clamped)
+  }
+
+  if (loading) return <LoadingSpinner text="Đang tải sản phẩm..." />
+
+  if (n === 0) {
+    return (
+      <div className="text-center text-white/60 py-12 text-sm">
+        Chưa có sản phẩm Flash Sale ·{' '}
+        <Link to="/products" className="text-blue-300 underline">Xem tất cả sản phẩm</Link>
+      </div>
+    )
+  }
+
+  // Lấy perView card bắt đầu từ index, lặp vòng
+  const visible = Array.from({ length: Math.min(perView, n) }, (_, i) => products[(index + i) % n])
+
+  return (
+    <div
+      className="relative"
+      onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+      onTouchEnd={e => {
+        const diff = touchStartX.current - e.changedTouches[0].clientX
+        if (Math.abs(diff) > 40) diff > 0 ? goTo(index + 1) : goTo(index - 1)
+      }}
+    >
+      <div className="flex items-center gap-4">
+        {/* Prev */}
+        <button
+          onClick={() => goTo(index - 1)}
+          aria-label="Sản phẩm trước"
+          className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white/10 border border-white/25 hover:bg-white/20 hover:border-white/50 text-white rounded-full items-center justify-center text-lg font-bold transition-colors"
+        >‹</button>
+
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+          {visible.map((p, i) => (
+            <FlashSaleCard key={`${p.id}-${i}`} product={p} />
+          ))}
+        </div>
+
+        {/* Next */}
+        <button
+          onClick={() => goTo(index + 1)}
+          aria-label="Sản phẩm tiếp theo"
+          className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white/10 border border-white/25 hover:bg-white/20 hover:border-white/50 text-white rounded-full items-center justify-center text-lg font-bold transition-colors"
+        >›</button>
+      </div>
+    </div>
+  )
+}
+
 // ── PromoBanners ──────────────────────────────────────────────────────────────
 function RollingBanner({ products, loading, label, linkTo, linkLabel, gradient, textColor }) {
   const [idx, setIdx] = useState(0)
@@ -412,7 +496,7 @@ function NewsletterSection() {
 
 export default function HomePage() {
   const { h, m, s } = useCountdown(6443)
-  const { data: flashProducts, loading: flashLoading } = useProducts({ limit: 8 })
+  const { data: flashProducts, loading: flashLoading } = useDiscountedProducts({ limit: 8 })
   const { data: simProducts, loading: simLoading } = useProducts({ product_type: 'sim', limit: 50 })
   const { data: internetProducts, loading: internetLoading } = useProducts({ product_type: 'internet', limit: 50 })
   const [promotionMap, setPromotionMap] = useState({})
@@ -523,21 +607,7 @@ export default function HomePage() {
             </div>
             <CountdownTimer h={h} m={m} s={s} />
           </div>
-          {flashLoading ? (
-            <LoadingSpinner text="Đang tải sản phẩm..." />
-          ) : (
-            <div className="grid grid-cols-4 gap-4">
-              {flashProducts.slice(0, 4).map(p => (
-                <FlashSaleCard key={p.id} product={p} />
-              ))}
-              {flashProducts.length === 0 && (
-                <div className="col-span-4 text-center text-white/60 py-12 text-sm">
-                  Chưa có sản phẩm Flash Sale ·{' '}
-                  <Link to="/products" className="text-blue-300 underline">Xem tất cả sản phẩm</Link>
-                </div>
-              )}
-            </div>
-          )}
+          <FlashSaleSlider products={flashProducts} loading={flashLoading} />
           {flashProducts.length > 0 && (
             <div className="text-center mt-8">
               <Link to="/flash-sale" className="inline-block px-8 py-3 border-2 border-white/60 text-white! rounded-full font-semibold hover:bg-white/10 hover:border-white transition-all">
