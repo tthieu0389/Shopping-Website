@@ -20,9 +20,8 @@ export default function AdminInventory() {
   const [adjustItem, setAdjustItem] = useState(null)
   const [delta, setDelta] = useState('')
   const [saving, setSaving] = useState(false)
-  // Thống kê 3 thẻ trên đầu — lấy từ /inventory/stats (BE tự COUNT), không
-  // cần kéo hết dữ liệu kho về FE nữa.
-  const [stats, setStats] = useState({ inStock: 0, lowStock: 0, outOfStock: 0 })
+  // Dữ liệu toàn bộ kho (không phân trang) — chỉ dùng để tính 3 thẻ thống kê phía trên
+  const [statsItems, setStatsItems] = useState([])
 
   const load = () => {
     setLoading(true)
@@ -33,8 +32,10 @@ export default function AdminInventory() {
   }
 
   const loadStats = () => {
-    inventoryApi.getStats()
-      .then(res => setStats(res.data || { inStock: 0, lowStock: 0, outOfStock: 0 }))
+    // Backend chưa có endpoint thống kê riêng nên tạm lấy toàn bộ bản ghi
+    // (limit lớn) để tính số liệu trên toàn bộ kho thay vì chỉ trang hiện tại.
+    inventoryApi.getAll({ page: 1, limit: 100000 })
+      .then(res => setStatsItems(res.data || []))
       .catch(() => {})
   }
 
@@ -59,9 +60,9 @@ export default function AdminInventory() {
       .finally(() => setSaving(false))
   }
 
-  const okCount  = stats.inStock
-  const lowCount = stats.lowStock
-  const outCount = stats.outOfStock
+  const okCount  = statsItems.filter(i => i.quantity > i.min_quantity).length
+  const lowCount = statsItems.filter(i => i.quantity > 0 && i.quantity <= i.min_quantity).length
+  const outCount = statsItems.filter(i => i.quantity === 0).length
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
 
   return (
@@ -86,7 +87,7 @@ export default function AdminInventory() {
           headers={['Sản phẩm', 'Tồn kho', 'Ngưỡng tối thiểu', 'Trạng thái', 'Cập nhật', '']}
           colWidths={['320px', '100px', '140px', '130px', '120px', '100px']}
           loading={loading}
-          empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp' : 'Chưa có dữ liệu kho')}
+          empty={!loading && (search.trim() ? 'Không tìm thấy sản phẩm phù hợp trong trang này' : 'Chưa có dữ liệu kho')}
         >
           {items.map((item, i) => (
             <TR key={item.id} striped={i % 2 !== 0}>

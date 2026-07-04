@@ -17,42 +17,40 @@ export default function StaffInventory() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
-  // Thống kê 3 thẻ trên đầu — lấy từ /inventory/stats (BE tự COUNT), không
-  // cần kéo hết dữ liệu kho về FE nữa.
-  const [stats, setStats] = useState({ inStock: 0, lowStock: 0, outOfStock: 0, total: 0 })
+  const [statsItems, setStatsItems] = useState([])
 
   const load = () => {
     setLoading(true)
-    inventoryApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
+    inventoryApi.getAll({ page, limit: LIMIT })
       .then(res => { setAllItems(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
   }
 
   const loadStats = () => {
-    inventoryApi.getStats()
-      .then(res => setStats(res.data || { inStock: 0, lowStock: 0, outOfStock: 0, total: 0 }))
+    inventoryApi.getAll({ page: 1, limit: 100000 })
+      .then(res => setStatsItems(res.data || []))
       .catch(() => {})
   }
 
-  useEffect(() => { load() }, [page, search])
+  useEffect(() => { load() }, [page])
   useEffect(() => { loadStats() }, [])
 
-  // Search giờ đã lấy trực tiếp từ backend (/inventory hỗ trợ q), không còn
-  // giới hạn trong dữ liệu trang hiện tại.
-  const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
-  const items = allItems
+  const handleSearchChange = debounce((v) => setSearch(v), 400)
+  const items = search.trim()
+    ? allItems.filter(item => (item.product_name || '').toLowerCase().includes(search.trim().toLowerCase()))
+    : allItems
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
-  const outOfStock = stats.outOfStock
-  const lowStock = stats.lowStock
+  const outOfStock = statsItems.filter(i => i.quantity === 0).length
+  const lowStock = statsItems.filter(i => i.quantity > 0 && i.quantity <= (i.min_quantity || 5)).length
 
   return (
     <div className="flex flex-col gap-5">
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard icon="📦" label="Tổng sản phẩm trong kho" value={stats.total} />
+        <StatCard icon="📦" label="Tổng sản phẩm trong kho" value={statsItems.length} />
         <StatCard icon="⚠️" label="Sắp hết hàng" value={lowStock} tone="warning" />
         <StatCard icon="❌" label="Đã hết hàng" value={outOfStock} tone="error" />
       </div>
@@ -70,7 +68,6 @@ export default function StaffInventory() {
       <Card>
         <Table
           headers={['Sản phẩm', 'Tồn kho', 'Tối thiểu', 'Trạng thái']}
-          colWidths={['360px', '100px', '110px', '130px']}
           loading={loading}
           empty={!loading && 'Không có dữ liệu kho'}
         >
@@ -83,7 +80,7 @@ export default function StaffInventory() {
                   {item.quantity}
                 </TD>
                 <TD muted>{item.min_quantity ?? 5}</TD>
-                <TD noTruncate><Badge {...st} /></TD>
+                <TD><Badge {...st} /></TD>
               </TR>
             )
           })}
