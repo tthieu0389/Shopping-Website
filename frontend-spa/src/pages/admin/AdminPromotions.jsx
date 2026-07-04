@@ -18,6 +18,7 @@ import {
   FilterTabs,
   AdminPagination,
   SearchInput,
+  SelectPill,
 } from "./ui.jsx";
 import {
   formatPrice,
