@@ -31,6 +31,14 @@ const PAYMENT_STATUS = {
   failed: { label: "Thất bại", tone: "error" },
   refunded: { label: "Đã hoàn tiền", tone: "info" },
 };
+
+// Nhãn hiển thị dễ đọc cho phương thức thanh toán (thay vì "PM #WALLET" khó hiểu)
+const PAYMENT_METHOD_LABELS = {
+  cod: "COD",
+  wallet: "Ví điện tử",
+  card: "Thẻ ngân hàng",
+  bank_transfer: "Chuyển khoản",
+};
 // Ràng buộc chuyển trạng thái thanh toán hợp lệ (đồng bộ với backend)
 const PAYMENT_TRANSITIONS = {
   unpaid: ["paid", "failed"],
@@ -258,18 +266,16 @@ export default function AdminOrders() {
             "TT Thanh toán",
             "Trạng thái",
             "Ngày tạo",
-            "",
           ]}
           colWidths={[
             "220px",  // Mã đơn
-            "130px",  // Người nhận
-            "110px",  // SĐT
-            "110px",  // Tổng tiền
-            "90px",   // Thanh toán
-            "130px",  // TT Thanh toán
-            "120px",  // Trạng thái
-            "100px",  // Ngày tạo
-            "64px",   // Chi tiết
+            "150px",  // Người nhận
+            "120px",  // SĐT
+            "130px",  // Tổng tiền
+            "100px",  // Thanh toán
+            "140px",  // TT Thanh toán
+            "130px",  // Trạng thái
+            "110px",  // Ngày tạo
           ]}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
@@ -282,8 +288,10 @@ export default function AdminOrders() {
               <TD bold>{o.receiver_name || "—"}</TD>
               <TD muted>{o.receiver_phone || "—"}</TD>
               <TD bold>{formatPrice(o.total_amount)}</TD>
-              <TD muted className="uppercase text-[11px]">
-                {o.payment_method === "cod" ? "COD" : `PM #${o.payment_method}`}
+              <TD muted className="text-[12px]">
+                {PAYMENT_METHOD_LABELS[o.payment_method] ||
+                  o.payment_method?.toUpperCase() ||
+                  "—"}
               </TD>
               <TD noTruncate>
                 <Badge
@@ -295,9 +303,6 @@ export default function AdminOrders() {
                 <Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} />
               </TD>
               <TD muted>{formatDate(o.created_at)}</TD>
-              <TD noTruncate>
-                <span className="text-vnpt text-xs font-bold">Chi tiết</span>
-              </TD>
             </TR>
           ))}
         </Table>
