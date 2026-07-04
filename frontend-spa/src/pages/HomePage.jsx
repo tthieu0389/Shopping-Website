@@ -153,49 +153,45 @@ function HeroSlider() {
 // ── ReviewsSlider ─────────────────────────────────────────────────────────────
 function ReviewsSlider() {
   const { data: reviews, loading } = useFeaturedReviews(9)
-  const [page, setPage] = useState(0)
+  const [index, setIndex] = useState(0)
   const [perView, setPerView] = useState(3)
   const timerRef = useRef(null)
   const touchStartX = useRef(0)
 
   useEffect(() => {
-    const updatePerView = () => setPerView(window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : 3)
-    updatePerView()
-    window.addEventListener('resize', updatePerView)
-    return () => window.removeEventListener('resize', updatePerView)
+    const update = () => setPerView(window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : 3)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
   }, [])
 
-  const pageCount = Math.max(1, Math.ceil(reviews.length / perView))
+  const n = reviews.length
 
-  useEffect(() => {
-    if (page >= pageCount) setPage(0)
-  }, [pageCount, page])
-
-  const goTo = (idx) => {
-    setPage((idx + pageCount) % pageCount)
+  const startTimer = (cur) => {
     clearInterval(timerRef.current)
-    if (pageCount > 1) {
-      timerRef.current = setInterval(() => setPage(p => (p + 1) % pageCount), 5000)
-    }
+    if (n <= perView) return
+    timerRef.current = setInterval(() => {
+      setIndex(i => (i + 1) % n)
+    }, 5000)
   }
 
   useEffect(() => {
-    if (pageCount <= 1) return
-    timerRef.current = setInterval(() => setPage(p => (p + 1) % pageCount), 5000)
+    if (n <= perView) return
+    timerRef.current = setInterval(() => setIndex(i => (i + 1) % n), 5000)
     return () => clearInterval(timerRef.current)
-  }, [pageCount])
+  }, [n, perView])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-10">
-        <LoadingSpinner />
-      </div>
-    )
+  const goTo = (next) => {
+    const clamped = ((next % n) + n) % n
+    setIndex(clamped)
+    startTimer(clamped)
   }
 
-  if (reviews.length === 0) return null
+  if (loading) return <div className="flex items-center justify-center py-10"><LoadingSpinner /></div>
+  if (n === 0) return null
 
-  const visible = reviews.slice(page * perView, page * perView + perView)
+  // Lấy perView card bắt đầu từ index, lặp vòng
+  const visible = Array.from({ length: perView }, (_, i) => reviews[(index + i) % n])
 
   return (
     <div
@@ -203,24 +199,22 @@ function ReviewsSlider() {
       onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
       onTouchEnd={e => {
         const diff = touchStartX.current - e.changedTouches[0].clientX
-        if (Math.abs(diff) > 40) diff > 0 ? goTo(page + 1) : goTo(page - 1)
+        if (Math.abs(diff) > 40) diff > 0 ? goTo(index + 1) : goTo(index - 1)
       }}
     >
       <div className="flex items-center gap-4">
         {/* Prev */}
-        {pageCount > 1 && (
-          <button
-            onClick={() => goTo(page - 1)}
-            aria-label="Đánh giá trước"
-            className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white border border-shade hover:bg-vnpt-light hover:border-vnpt text-vnpt rounded-full items-center justify-center text-lg font-bold transition-colors"
-          >‹</button>
-        )}
+        <button
+          onClick={() => goTo(index - 1)}
+          aria-label="Đánh giá trước"
+          className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white border border-shade hover:bg-vnpt-light hover:border-vnpt text-vnpt rounded-full items-center justify-center text-lg font-bold transition-colors"
+        >‹</button>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {visible.map((r) => (
-            <div key={r.id} className="bg-white rounded-xl p-6 border border-shade flex flex-col">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+          {visible.map((r, i) => (
+            <div key={`${r.id}-${i}`} className="bg-white rounded-xl p-6 border border-shade flex flex-col h-48 overflow-hidden">
               <div className="text-sm mb-3 text-warning">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
-              <p className="text-sm text-body leading-relaxed mb-4 flex-1">"{r.comment}"</p>
+              <p className="text-sm text-body leading-relaxed mb-4 flex-1 line-clamp-3 overflow-hidden">"{r.comment}"</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {getInitials(r.user_name)}
@@ -236,30 +230,12 @@ function ReviewsSlider() {
         </div>
 
         {/* Next */}
-        {pageCount > 1 && (
-          <button
-            onClick={() => goTo(page + 1)}
-            aria-label="Đánh giá tiếp theo"
-            className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white border border-shade hover:bg-vnpt-light hover:border-vnpt text-vnpt rounded-full items-center justify-center text-lg font-bold transition-colors"
-          >›</button>
-        )}
+        <button
+          onClick={() => goTo(index + 1)}
+          aria-label="Đánh giá tiếp theo"
+          className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white border border-shade hover:bg-vnpt-light hover:border-vnpt text-vnpt rounded-full items-center justify-center text-lg font-bold transition-colors"
+        >›</button>
       </div>
-
-      {/* Dot indicators */}
-      {pageCount > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          {Array.from({ length: pageCount }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              aria-label={`Trang đánh giá ${i + 1}`}
-              className={`rounded-full transition-all duration-300 ${
-                i === page ? 'w-6 h-2 bg-vnpt' : 'w-2 h-2 bg-shade hover:bg-vnpt-light'
-              }`}
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }
