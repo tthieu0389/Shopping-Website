@@ -1,17 +1,34 @@
-require("dotenv").config(); // Tự động đọc file .env
+require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
-// Lấy secret từ biến môi trường (ví dụ: JWT_SECRET)
-// Thay 'JWT_SECRET' bằng tên biến chính xác bạn thấy trong file .env
 const secret = process.env.JWT_SECRET || "fallback_secret_if_env_not_found";
 
-const payload = {
-  id: 1,
-  email: "hieu@example.com",
-  role: "admin", // Thêm role nếu server của bạn yêu cầu
-};
+const ACCOUNTS = [
+  { id: 11, email: "admin@gmail.com", role: "admin" },
+  { id: 12, email: "staff@gmail.com", role: "staff" },
+  { id: 13, email: "user@example.com", role: "user" },
+];
 
-const token = jwt.sign(payload, secret, { expiresIn: "1h" });
+const EXPIRES_IN = "4h";
 
-console.log("Token mới của bạn là:");
-console.log(token);
+// In cho đẹp
+const LINE = "-".repeat(70);
+
+console.log(LINE);
+console.log("JWT TEST TOKENS");
+console.log(`Expires in: ${EXPIRES_IN}`);
+console.log(LINE);
+
+ACCOUNTS.forEach(({ id, email, role }, index) => {
+  const payload = { id, email, role };
+  const token = jwt.sign(payload, secret, { expiresIn: EXPIRES_IN });
+
+  console.log(`\n[${index + 1}] Role: ${role.toUpperCase()}`);
+  console.log(`    id:    ${id}`);
+  console.log(`    email: ${email}`);
+  console.log(`    token: ${token}`);
+});
+
+console.log(`\n${LINE}`);
+console.log("Usage: Authorization: Bearer <token>");
+console.log(LINE);
