@@ -166,12 +166,29 @@ export default function ProductDetailPage() {
             )}
 
             {/* Price */}
-            <div className="flex items-baseline gap-3 flex-wrap mb-6">
-              <span className="text-4xl font-bold text-accent font-display">{formatPrice(product.price)}</span>
-              {product.original_price && product.original_price > product.price && (
-                <span className="text-base text-muted line-through">{formatPrice(product.original_price)}</span>
-              )}
-            </div>
+            {(() => {
+              const salePrice = product.sale_price ?? product.price
+              const originalPrice = product.original_price ?? salePrice
+              const hasDiscount = originalPrice > salePrice
+              const discountPercent = hasDiscount
+                ? product.discount_percent || Math.round((1 - salePrice / originalPrice) * 100)
+                : 0
+              const discount = discountPercent > 0 ? discountPercent : 0
+
+              return (
+                <div className="flex items-center gap-3 flex-wrap mb-6">
+                  <span className="text-4xl font-bold text-accent font-display">{formatPrice(salePrice)}</span>
+                  {hasDiscount && (
+                    <span className="text-base text-muted line-through">{formatPrice(originalPrice)}</span>
+                  )}
+                  {discount > 0 && (
+                    <span className="text-sm font-bold bg-accent/10 text-accent px-2 py-1 rounded">
+                      -{discount}%
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Policies */}
             <div className="grid grid-cols-2 gap-2.5 mb-6">
