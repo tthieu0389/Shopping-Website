@@ -1,6 +1,7 @@
 import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import { getInitials } from '../../utils/index.js'
+import { Toast } from '../../components/layout/Layout.jsx'
 
 const ADMIN_MENU = [
   { section: 'Tổng quan' },
@@ -125,6 +126,7 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+      <Toast />
     </div>
   )
 }

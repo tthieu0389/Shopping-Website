@@ -4,7 +4,7 @@ import Navbar from './Navbar.jsx'
 import Footer from './Footer.jsx'
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
-function Toast() {
+export function Toast() {
   const [toasts, setToasts] = useState([])
 
   useEffect(() => {
@@ -30,10 +30,16 @@ function Toast() {
           key={t.id}
           className={`${colorMap[t.type] || 'bg-vnpt'} text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2`}
         >
+          <button
+            onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+            className="text-white/80 hover:text-white leading-none text-base cursor-pointer"
+            aria-label="Đóng thông báo"
+          >
+            ✕
+          </button>
           {t.type === 'success' && '✅'}
-          {t.type === 'error'   && '❌'}
           {t.type === 'info'    && 'ℹ️'}
-          {t.msg}
+          <span>{t.msg}</span>
         </div>
       ))}
     </div>
