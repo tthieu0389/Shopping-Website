@@ -123,7 +123,9 @@ export const useDiscountedProducts = (params = {}) => {
           p.thumbnail_url ? { ...p, thumbnail: p.thumbnail_url } : p,
         );
         setData(list);
-        setTotal(res.total || 0);
+        // Đọc total ở cả root lẫn meta để tránh vỡ pagination nếu backend
+        // đổi shape response (đã từng gây bug mất pagination ở Flash Sale).
+        setTotal(res.total ?? res.meta?.total ?? 0);
         setLoading(false);
       })
       .catch((err) => {
