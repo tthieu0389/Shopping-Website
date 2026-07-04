@@ -249,7 +249,7 @@ export function ProductCard({ product, showProgress = false }) {
             <span className="text-xs text-warning font-semibold">
               Còn {stockQty} sản phẩm
             </span>
-          ) : hasDiscount && !isOutOfStock ? (
+          ) : hasDiscount ? (
             <span className="text-xs text-muted line-through">
               {formatPrice(originalPrice)}
             </span>
@@ -263,8 +263,14 @@ export function ProductCard({ product, showProgress = false }) {
             >
               {formatPrice(salePrice)}
             </span>
-            {discount > 0 && !isOutOfStock && (
-              <span className="text-sm font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded">
+            {discount > 0 && (
+              <span
+                className={`text-sm font-bold px-1.5 py-0.5 rounded ${
+                  isOutOfStock
+                    ? "bg-shade text-muted"
+                    : "bg-accent/10 text-accent"
+                }`}
+              >
                 -{discount}%
               </span>
             )}
