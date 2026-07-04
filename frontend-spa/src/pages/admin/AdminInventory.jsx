@@ -25,7 +25,7 @@ export default function AdminInventory() {
 
   const load = () => {
     setLoading(true)
-    inventoryApi.getAll({ page, limit: LIMIT })
+    inventoryApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
       .then(res => { setAllItems(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
@@ -39,17 +39,13 @@ export default function AdminInventory() {
       .catch(() => {})
   }
 
-  useEffect(() => { load() }, [page])
+  useEffect(() => { load() }, [page, search])
   useEffect(() => { loadStats() }, [])
 
-  // ⚠️ Backend /inventory hiện CHƯA hỗ trợ tham số tìm kiếm (q) như /products,
-  // nên search ở đây tạm thời lọc trên dữ liệu của trang hiện tại (client-side).
-  // Cần backend bổ sung filter theo tên sản phẩm + JOIN products để search đúng
-  // trên toàn bộ dữ liệu kèm phân trang chính xác (xem báo cáo cuối file).
-  const handleSearchChange = debounce((v) => setSearch(v), 400)
-  const items = search.trim()
-    ? allItems.filter(item => (item.product_name || '').toLowerCase().includes(search.trim().toLowerCase()))
-    : allItems
+  // Search giờ đã lấy trực tiếp từ backend (/inventory hỗ trợ q — search theo
+  // tên sản phẩm, join products), không còn giới hạn trong dữ liệu trang hiện tại.
+  const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
+  const items = allItems
 
   const openAdjust = (item) => { setDelta(''); setAdjustItem(item) }
 
