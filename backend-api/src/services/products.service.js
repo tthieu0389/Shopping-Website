@@ -44,6 +44,24 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
     )
     .where("p.is_deleted", false);
 
+  const hideInactiveInventory = (builder) => {
+    builder.whereNotExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = p.id")
+        .whereIn("status", ["inactive", "archived"]),
+    );
+  };
+  query = query.where(hideInactiveInventory);
+  countQuery = countQuery.where((builder) => {
+    builder.whereNotExists(
+      knex("inventory")
+        .select(1)
+        .whereRaw("product_id = products.id")
+        .whereIn("status", ["inactive", "archived"]),
+    );
+  });
+
   const {
     q,
     search,

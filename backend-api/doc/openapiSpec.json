@@ -5090,7 +5090,7 @@
           }
         },
         "operationId": "updateInventory",
-        "description": "**Yêu cầu quyền: admin, staff.**\n\nLưu ý: nếu gửi `quantity` mà **không** kèm `status`, và dòng tồn kho hiện tại đang không phải `active` (vd đã bị soft-delete/`archived`), hệ thống sẽ **tự động set `status` về `active`**. Nếu muốn giữ nguyên status khác trong khi vẫn đổi quantity, phải truyền `status` tường minh."
+        "description": "**Yêu cầu quyền: admin, staff.**\n\n"
       },
       "delete": {
         "tags": ["Inventory"],

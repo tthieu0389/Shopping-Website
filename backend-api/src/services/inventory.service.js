@@ -72,14 +72,20 @@ exports.getAllInventory = async ({ limit, offset }) => {
       "i.status",
       "i.updated_at",
     )
-    .where("i.status", "active")
+    // Admin cần thấy cả dòng inactive để còn bấm kích hoạt lại (set về
+    // active) khi tới thời điểm bán lại. Chỉ ẩn dòng đã archived (soft-delete
+    // thật sự, coi như không còn tồn tại).
+    .whereIn("i.status", ["active", "inactive"])
+    // Đẩy các dòng hết hàng (quantity = 0) xuống cuối danh sách, để admin dễ
+    // thấy các sản phẩm còn hàng bình thường trước, hết hàng cần xử lý xem sau.
+    .orderByRaw("CASE WHEN i.quantity = 0 THEN 1 ELSE 0 END ASC")
     .orderBy("i.id", "desc")
     .limit(limit)
     .offset(offset);
 
   const [totalRow] = await knex("inventory")
     .count("* as count")
-    .where("status", "active");
+    .whereIn("status", ["active", "inactive"]);
   return { data, total: Number(totalRow.count) };
 };
 
@@ -93,14 +99,6 @@ exports.updateInventory = async (id, data, created_by = null) => {
     if (data.quantity !== undefined) {
       if (data.quantity < 0) throw new Error("Quantity cannot be negative");
       updatedFields.quantity = data.quantity;
-      // Nếu admin chủ động nhập/sửa số lượng mà không nói rõ status, coi như
-      // họ muốn dòng tồn kho này hoạt động trở lại. Tránh trường hợp dòng
-      // từng bị soft-delete (archived) rồi update quantity xong vẫn không
-      // bao giờ hiện lại trong danh sách sản phẩm (getAllProducts chỉ tính
-      // stock từ inventory có status = 'active').
-      if (data.status === undefined && old.status !== "active") {
-        updatedFields.status = "active";
-      }
     }
     if (data.min_quantity !== undefined)
       updatedFields.min_quantity = data.min_quantity;
@@ -125,10 +123,16 @@ exports.updateInventory = async (id, data, created_by = null) => {
       });
     }
 
+    // Sản phẩm chỉ được coi là còn bán khi dòng tồn kho đang active VÀ còn
+    // số lượng. Nếu inventory đang inactive/archived thì is_available luôn
+    // là false, bất kể quantity là bao nhiêu — tránh trường hợp sửa quantity
+    // của 1 dòng đã bị archived/inactive lại vô tình làm sản phẩm hiện lại.
+    const finalStatus = updated.status;
     await trx("products")
       .where({ id: old.product_id })
       .update({
-        is_available: (updated.quantity ?? old.quantity) > 0,
+        is_available:
+          finalStatus === "active" && (updated.quantity ?? old.quantity) > 0,
       });
 
     return updated;
@@ -150,6 +154,9 @@ exports.decreaseStock = async (
     .first();
 
   if (!inventory) throw new Error("Inventory not found");
+  if (inventory.status !== "active") {
+    throw new Error("Inventory is not active");
+  }
   if (amount <= 0) throw new Error("Invalid amount");
   if (inventory.quantity < amount) throw new Error("Not enough stock");
 
@@ -194,6 +201,9 @@ exports.increaseStock = async (
     .first();
 
   if (!inventory) throw new Error("Inventory not found");
+  if (inventory.status !== "active") {
+    throw new Error("Inventory is not active");
+  }
   if (amount <= 0) throw new Error("Invalid amount");
 
   const newQty = inventory.quantity + amount;
