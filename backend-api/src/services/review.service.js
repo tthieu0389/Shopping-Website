@@ -66,6 +66,48 @@ exports.getProductReviews = async (productId) => {
     .orderBy("r.created_at", "desc");
 };
 
+// GET FEATURED REVIEWS (dùng cho trang chủ - "Khách hàng nói gì?")
+// Tiêu chí "nổi bật":
+//   - rating >= 4 (không đưa review thấp sao lên trang chủ)
+//   - có comment thực sự (không rỗng/toàn khoảng trắng)
+//   - chưa bị xoá mềm, và sản phẩm liên quan cũng chưa bị xoá mềm
+//   - lấy TỐI ĐA 1 review/sản phẩm để tránh trang chủ toàn review của 1 sản phẩm
+//   - sau khi đã lấy 1 review đại diện/sản phẩm, sắp toàn bộ theo rating desc,
+//     created_at desc rồi cắt còn `limit` review để hiển thị
+exports.getFeaturedReviews = async (limit = 6) => {
+  const safeLimit =
+    isNaN(Number(limit)) || Number(limit) < 1 ? 6 : Number(limit);
+
+  const { rows } = await knex.raw(
+    `
+    SELECT * FROM (
+      SELECT DISTINCT ON (r.product_id)
+        r.id,
+        r.rating,
+        r.comment,
+        r.created_at,
+        r.product_id,
+        u.name AS user_name,
+        p.name AS product_name
+      FROM reviews r
+      JOIN users u ON r.user_id = u.id
+      JOIN products p ON r.product_id = p.id
+      WHERE r.is_deleted = false
+        AND p.is_deleted = false
+        AND r.rating >= 4
+        AND r.comment IS NOT NULL
+        AND trim(r.comment) <> ''
+      ORDER BY r.product_id, r.rating DESC, r.created_at DESC
+    ) best_per_product
+    ORDER BY rating DESC, created_at DESC
+    LIMIT ?
+    `,
+    [safeLimit],
+  );
+
+  return rows;
+};
+
 // DELETE (soft) - chu so huu hoac admin (kiem duyet) deu xoa duoc
 exports.deleteReview = async (id, userId, userRole) => {
   const review = await knex("reviews").where({ id }).first();

@@ -7,6 +7,9 @@ const validate = require("../middlewares/validate");
 
 const { createReviewSchema } = require("../schema/review.schema");
 
+// Get featured reviews (trang chủ) - đặt trước "/" và "/product/:productId" cho rõ ràng
+router.get("/featured", reviewController.getFeatured);
+
 // Get reviews by query
 router.get("/", reviewController.getByProduct);
 

@@ -21,6 +21,16 @@ exports.getByProduct = async (req, res, next) => {
   }
 };
 
+// GET FEATURED REVIEWS - dùng cho trang chủ, không cần đăng nhập
+exports.getFeatured = async (req, res, next) => {
+  try {
+    const data = await service.getFeaturedReviews(req.query.limit);
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.remove = async (req, res, next) => {
   try {
     await service.deleteReview(req.params.id, req.user.id, req.user.role);
