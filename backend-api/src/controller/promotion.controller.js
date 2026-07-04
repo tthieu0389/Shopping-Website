@@ -29,7 +29,15 @@ exports.getDiscountedProducts = async (req, res, next) => {
       limit,
       offset,
     });
-    res.json({ success: true, data, meta: { page, limit, total } });
+
+    // xóa field này đi cho response gọn lại.
+    res.json({
+      success: true,
+      data,
+      total,
+      page,
+      limit,
+    });
   } catch (err) {
     next(err);
   }
