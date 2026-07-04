@@ -134,7 +134,7 @@ const runQueryAndFormat = async ({
 
   const data = await query
     .orderByRaw(
-      `CASE WHEN COALESCE((select quantity from inventory where product_id = p.id and status = 'active' limit 1), 0) = 0 THEN 1 ELSE 0 END ASC`,
+      `CASE WHEN is_available = false OR COALESCE((select quantity from inventory where product_id = p.id and status = 'active' limit 1), 0) = 0 THEN 1 ELSE 0 END ASC`,
     )
     .orderBy(currentSort.column, currentSort.direction)
     .orderBy("p.id", "asc")
@@ -314,6 +314,14 @@ exports.getRelatedProducts = async (id) => {
         .limit(1)
         .as("thumbnail_url"),
     )
+    .select(
+      knex("inventory")
+        .select("quantity")
+        .whereRaw("product_id = p.id")
+        .where("status", "active")
+        .limit(1)
+        .as("stock"),
+    )
     .where("p.category_id", product.category_id)
     .where("p.is_deleted", false)
     .whereNot("p.id", id)
@@ -323,6 +331,11 @@ exports.getRelatedProducts = async (id) => {
         .whereRaw("product_id = p.id")
         .whereIn("status", ["inactive", "archived"]),
     )
+    // Đẩy sản phẩm hết hàng hoặc bị ẩn (is_available=false hoặc quantity=0) xuống cuối
+    .orderByRaw(
+      `CASE WHEN is_available = false OR COALESCE((select quantity from inventory where product_id = p.id and status = 'active' limit 1), 0) = 0 THEN 1 ELSE 0 END ASC`,
+    )
+    .orderBy("p.id", "desc")
     .limit(8);
 
   return await promotionService.attachPromotionInfo(related);
