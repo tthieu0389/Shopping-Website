@@ -93,6 +93,14 @@ exports.updateInventory = async (id, data, created_by = null) => {
     if (data.quantity !== undefined) {
       if (data.quantity < 0) throw new Error("Quantity cannot be negative");
       updatedFields.quantity = data.quantity;
+      // Nếu admin chủ động nhập/sửa số lượng mà không nói rõ status, coi như
+      // họ muốn dòng tồn kho này hoạt động trở lại. Tránh trường hợp dòng
+      // từng bị soft-delete (archived) rồi update quantity xong vẫn không
+      // bao giờ hiện lại trong danh sách sản phẩm (getAllProducts chỉ tính
+      // stock từ inventory có status = 'active').
+      if (data.status === undefined && old.status !== "active") {
+        updatedFields.status = "active";
+      }
     }
     if (data.min_quantity !== undefined)
       updatedFields.min_quantity = data.min_quantity;

@@ -243,13 +243,13 @@ export default function AdminProducts() {
           ]}
           colWidths={[
             "56px",
-            "280px",
-            "140px",
-            "130px",
-            "110px",
-            "100px",
-            "110px",
+            "260px",
             "120px",
+            "110px",
+            "110px",
+            "150px",
+            "110px",
+            "110px",
           ]}
           loading={loading}
           empty={!loading && "Không có sản phẩm nào"}
