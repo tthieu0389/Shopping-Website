@@ -178,18 +178,22 @@ export default function AdminProducts() {
         .catch((err) => toast.error(err.message || "Không thể lưu sản phẩm"))
         .finally(() => setSaving(false));
     } else {
-      productsApi
-        .update(modal.id, payload)
-        .then(() =>
-          syncInventory(modal.id, form.stock).catch((err) => {
-            // Không chặn việc đã cập nhật sản phẩm nếu đồng bộ tồn kho lỗi,
-            // chỉ cảnh báo để admin biết cần vào Inventory kiểm tra lại.
-            toast.error(
-              "Đã cập nhật sản phẩm nhưng không thể đồng bộ tồn kho: " +
-                (err.message || "Lỗi không xác định"),
-            );
-          }),
-        )
+      // Đồng bộ tồn kho TRƯỚC, cập nhật product (bao gồm is_available) SAU.
+      // Lý do: BE updateInventory() tự set lại products.is_available theo
+      // quantity > 0 mỗi khi sync tồn kho -> nếu gọi productsApi.update()
+      // trước thì lựa chọn "Trạng thái hiển thị" (Đang bán/Tạm ẩn) của admin
+      // sẽ bị syncInventory ghi đè ngay sau đó. Đảo thứ tự để lệnh cuối cùng
+      // (theo đúng ý admin) luôn thắng.
+      syncInventory(modal.id, form.stock)
+        .catch((err) => {
+          // Không chặn việc cập nhật sản phẩm nếu đồng bộ tồn kho lỗi,
+          // chỉ cảnh báo để admin biết cần vào Inventory kiểm tra lại.
+          toast.error(
+            "Không thể đồng bộ tồn kho: " +
+              (err.message || "Lỗi không xác định"),
+          );
+        })
+        .then(() => productsApi.update(modal.id, payload))
         .then(() => {
           toast.success("Đã cập nhật sản phẩm");
           setModal(null);
