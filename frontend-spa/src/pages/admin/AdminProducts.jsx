@@ -216,11 +216,9 @@ export default function AdminProducts() {
   };
 
   const handleInvStatus = async (p, newStatus) => {
+    if (!p.inv_id) { toast.error("Sản phẩm chưa có dòng tồn kho"); return; }
     try {
-      const res = await inventoryApi.getByProduct(p.id);
-      const inv = res.data;
-      if (!inv) { toast.error("Sản phẩm chưa có dòng tồn kho"); return; }
-      await inventoryApi.update(inv.id, { status: newStatus });
+      await inventoryApi.update(p.inv_id, { status: newStatus });
       toast.success(`Đã chuyển kho → ${newStatus}`);
       load();
     } catch (err) {
