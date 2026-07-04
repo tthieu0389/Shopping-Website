@@ -43,7 +43,7 @@ function BlogList() {
         {!loading && total > 0 && (
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-muted">
-              Hiển thị <strong className="text-body">{(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)}</strong> / <strong className="text-body">{total}</strong> bài viết
+              Hiển thị <strong className="text-body">{blogs.length}</strong> / <strong className="text-body">{total}</strong> bài viết
             </p>
             {totalPages > 1 && (
               <p className="text-sm text-muted">Trang {page} / {totalPages}</p>
