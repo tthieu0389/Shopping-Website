@@ -34,6 +34,14 @@ exports.getAllProducts = async ({ limit, offset, filters = {} }) => {
         .limit(1)
         .as("thumbnail_url"),
     )
+    .select(
+      knex("inventory")
+        .select("quantity")
+        .whereRaw("product_id = p.id")
+        .where("status", "active")
+        .limit(1)
+        .as("stock"),
+    )
     .where("p.is_deleted", false);
 
   const {
