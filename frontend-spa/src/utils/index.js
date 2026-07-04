@@ -78,3 +78,9 @@ export const toast = {
   error:   (msg) => window.dispatchEvent(new CustomEvent('vnpt:toast', { detail: { msg, type: 'error' } })),
   info:    (msg) => window.dispatchEvent(new CustomEvent('vnpt:toast', { detail: { msg, type: 'info' } })),
 }
+
+// ── SỰ KIỆN AVATAR THAY ĐỔI ───────────────────────────────────────────────────
+// Bắn event toàn cục khi avatar được cập nhật, để Navbar (và bất kỳ nơi nào
+// khác đang hiển thị avatar) tự refetch ngay mà không cần reload trang.
+export const notifyAvatarUpdated = (avatarPath) =>
+  window.dispatchEvent(new CustomEvent('vnpt:avatar-updated', { detail: { avatar: avatarPath } }))

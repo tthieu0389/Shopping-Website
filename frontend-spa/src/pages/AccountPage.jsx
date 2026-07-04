@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useOrders, useUserProfile, useUserAddresses } from '../hooks/index.js'
-import { Breadcrumb, LoadingSpinner, EmptyState } from '../components/common/index.jsx'
-import { formatPrice, formatDate, toast } from '../utils/index.js'
+import { Breadcrumb, LoadingSpinner, EmptyState, AvatarUploadModal } from '../components/common/index.jsx'
+import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
 import { ordersApi, userApi } from '../api/index.js'
 import useAuthStore from '../store/authStore.js'
 
@@ -653,8 +653,12 @@ function SettingsTab() {
 // ── Main AccountPage ──────────────────────────────────────────────────────────
 export default function AccountPage() {
   const { user, logout } = useAuthStore()
+  const { data: profile, reload: reloadProfile } = useUserProfile()
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+
+  const avatarUrl = resolveImageUrl(profile?.avatar)
 
   const currentPath = location.pathname
   const activeTab = NAV_ITEMS.find(n =>
@@ -683,9 +687,24 @@ export default function AccountPage() {
         <aside className="sticky top-24">
           {/* User card */}
           <div className="bg-white border border-shade rounded-xl p-6 mb-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-vnpt text-white flex items-center justify-center text-2xl font-bold mx-auto mb-3">
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
+            <button
+              type="button"
+              onClick={() => setAvatarModalOpen(true)}
+              className="group relative w-16 h-16 rounded-full mx-auto mb-3 block overflow-hidden focus:outline-none focus:ring-2 focus:ring-vnpt focus:ring-offset-2"
+              title="Đổi ảnh đại diện"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-vnpt text-white flex items-center justify-center text-2xl font-bold">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+              )}
+              {/* Overlay khi hover, gợi ý đổi ảnh — giống pattern Facebook/LinkedIn */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs">📷</span>
+              </div>
+            </button>
             <div className="font-bold text-body">{user?.name || 'Người dùng'}</div>
             <div className="text-xs text-muted mt-1 mb-3 truncate">{user?.email}</div>
             <span className="inline-block bg-yellow-50 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">
@@ -727,6 +746,14 @@ export default function AccountPage() {
           {renderTab()}
         </div>
       </div>
+
+      {avatarModalOpen && (
+        <AvatarUploadModal
+          currentAvatarUrl={avatarUrl}
+          onClose={() => setAvatarModalOpen(false)}
+          onSuccess={() => reloadProfile()}
+        />
+      )}
     </div>
   )
 }

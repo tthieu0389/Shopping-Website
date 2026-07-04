@@ -162,6 +162,14 @@ export const blogImagesApi = {
 export const userApi = {
   getProfile: () => api.get("/user-profile"),
   updateProfile: (data) => api.put("/user-profile", data),
+  // Upload avatar (multipart/form-data, field "avatar") — trả về { data: profile }
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append("avatar", file);
+    return api.post("/user-profile/avatar", formData, {
+      headers: { "Content-Type": undefined },
+    });
+  },
   getAddresses: () => api.get("/user-address"),
   // Admin/staff: lấy địa chỉ của MỘT khách hàng cụ thể (dùng khi lên đơn hộ khách)
   getAddressesByUserId: (userId) => api.get(`/user-address/user/${userId}`),

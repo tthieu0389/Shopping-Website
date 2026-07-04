@@ -1,6 +1,7 @@
 import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import { getInitials } from '../../utils/index.js'
+import { useAvatarUrl } from '../../hooks/index.js'
 
 const STAFF_MENU = [
   { section: 'Tổng quan' },
@@ -73,10 +74,15 @@ function StaffSidebar() {
 
 function ProfileBlock() {
   const { user, logout } = useAuthStore()
+  const avatarUrl = useAvatarUrl()
   return (
     <div className="px-4 py-3.5 flex items-center gap-2.5">
-      <div className="w-[34px] h-[34px] rounded-full bg-amber-400 flex items-center justify-center text-vnpt-dark text-xs font-extrabold flex-shrink-0">
-        {getInitials(user?.name || 'Staff')}
+      <div className="w-[34px] h-[34px] rounded-full bg-amber-400 flex items-center justify-center text-vnpt-dark text-xs font-extrabold flex-shrink-0 overflow-hidden">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+        ) : (
+          getInitials(user?.name || 'Staff')
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-white text-[13px] font-bold truncate">{user?.name || 'Nhân viên'}</div>

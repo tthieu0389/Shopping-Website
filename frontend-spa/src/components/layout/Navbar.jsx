@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import useCartStore from '../../store/cartStore.js'
-import { useSearch } from '../../hooks/index.js'
+import { useSearch, useAvatarUrl } from '../../hooks/index.js'
 import { formatPrice, resolveImageUrl } from '../../utils/index.js'
 
 function SearchResultItem({ product: p, onSelect }) {
@@ -41,6 +41,7 @@ function SearchResultItem({ product: p, onSelect }) {
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
+  const avatarUrl = useAvatarUrl()
   const items = useCartStore(s => s.items)
   const cartCount = items.length
   const navigate = useNavigate()
@@ -198,8 +199,12 @@ export default function Navbar() {
             {isAuthenticated ? (
               <div className="relative group flex-shrink-0">
                 <button className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-shade hover:border-vnpt transition-colors text-sm font-semibold text-body whitespace-nowrap">
-                  <div className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  <div className="w-7 h-7 rounded-full bg-vnpt text-white flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.name?.charAt(0)?.toUpperCase() || 'U'
+                    )}
                   </div>
                   <span className="hidden sm:inline">{user?.name?.split(' ').pop()}</span>
                 </button>

@@ -10,6 +10,7 @@ import {
   promotionsApi,
 } from "../api/index.js";
 import useAuthStore from "../store/authStore.js";
+import { resolveImageUrl } from "../utils/index.js";
 
 // ── useProducts ───────────────────────────────────────────────────────────────
 export const useProducts = (params = {}) => {
@@ -317,6 +318,41 @@ export const useUserProfile = () => {
   }, [reload]);
 
   return { data, loading, reload };
+};
+
+// ── useAvatarUrl ──────────────────────────────────────────────────────────────
+// Dùng chung cho mọi nơi cần hiển thị avatar user hiện tại (Navbar, AdminLayout,
+// StaffLayout...). Tự fetch khi đã đăng nhập, và tự cập nhật ngay lập tức khi
+// avatar được đổi ở nơi khác (AccountPage) thông qua event 'vnpt:avatar-updated'
+// — không cần reload trang.
+export const useAvatarUrl = () => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAvatarUrl(null);
+      return;
+    }
+    let cancelled = false;
+    userApi
+      .getProfile()
+      .then((res) => {
+        if (!cancelled) setAvatarUrl(resolveImageUrl(res.data?.avatar));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const handleAvatarUpdated = (e) => setAvatarUrl(resolveImageUrl(e.detail?.avatar));
+    window.addEventListener("vnpt:avatar-updated", handleAvatarUpdated);
+    return () => window.removeEventListener("vnpt:avatar-updated", handleAvatarUpdated);
+  }, []);
+
+  return avatarUrl;
 };
 
 // ── useUserAddresses ──────────────────────────────────────────────────────────
