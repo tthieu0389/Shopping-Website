@@ -133,7 +133,9 @@ const runQueryAndFormat = async ({
   const currentSort = sortMapping[sort] || sortMapping.newest;
 
   const data = await query
-    .orderByRaw("CASE WHEN is_available = false THEN 1 ELSE 0 END ASC")
+    .orderByRaw(
+      `CASE WHEN COALESCE((select quantity from inventory where product_id = p.id and status = 'active' limit 1), 0) = 0 THEN 1 ELSE 0 END ASC`,
+    )
     .orderBy(currentSort.column, currentSort.direction)
     .orderBy("p.id", "asc")
     .limit(safeLimit)
