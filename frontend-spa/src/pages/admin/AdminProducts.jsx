@@ -215,6 +215,19 @@ export default function AdminProducts() {
       .catch((err) => toast.error(err.message || "Không thể xoá"));
   };
 
+  const handleInvStatus = async (p, newStatus) => {
+    try {
+      const res = await inventoryApi.getByProduct(p.id);
+      const inv = res.data;
+      if (!inv) { toast.error("Sản phẩm chưa có dòng tồn kho"); return; }
+      await inventoryApi.update(inv.id, { status: newStatus });
+      toast.success(`Đã chuyển kho → ${newStatus}`);
+      load();
+    } catch (err) {
+      toast.error(err.message || "Không thể cập nhật trạng thái kho");
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
   const catOptions = [
     ["", "— Không chọn —"],
@@ -242,17 +255,19 @@ export default function AdminProducts() {
             "Thương hiệu",
             "Giá bán",
             "Tồn kho",
+            "Kho",
             "Trạng thái",
             "",
           ]}
           colWidths={[
             "56px",
-            "260px",
-            "120px",
+            "240px",
             "110px",
-            "110px",
-            "150px",
-            "110px",
+            "100px",
+            "100px",
+            "130px",
+            "130px",
+            "100px",
             "110px",
           ]}
           loading={loading}
@@ -307,6 +322,46 @@ export default function AdminProducts() {
                             : "success"
                     }
                   />
+                </TD>
+                <TD noTruncate>
+                  {p.inv_status == null ? (
+                    <Badge label="Chưa có" tone="muted" />
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      <Badge
+                        label={
+                          p.inv_status === "active" ? "Active"
+                          : p.inv_status === "inactive" ? "Inactive"
+                          : "Archived"
+                        }
+                        tone={
+                          p.inv_status === "active" ? "success"
+                          : p.inv_status === "inactive" ? "warning"
+                          : "error"
+                        }
+                      />
+                      <div className="flex gap-1.5 flex-wrap">
+                        {p.inv_status !== "active" && (
+                          <span
+                            className="text-[10px] font-semibold text-green-600 cursor-pointer hover:underline"
+                            onClick={() => handleInvStatus(p, "active")}
+                          >Active</span>
+                        )}
+                        {p.inv_status !== "inactive" && (
+                          <span
+                            className="text-[10px] font-semibold text-amber-600 cursor-pointer hover:underline"
+                            onClick={() => handleInvStatus(p, "inactive")}
+                          >Inactive</span>
+                        )}
+                        {p.inv_status !== "archived" && (
+                          <span
+                            className="text-[10px] font-semibold text-red-500 cursor-pointer hover:underline"
+                            onClick={() => handleInvStatus(p, "archived")}
+                          >Archive</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </TD>
                 <TD noTruncate>
                   <Badge
