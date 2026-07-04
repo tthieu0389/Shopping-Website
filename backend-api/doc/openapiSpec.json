@@ -2133,7 +2133,8 @@
                     "type": "number"
                   },
                   "is_default": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Optional. Nếu không truyền, hệ thống sẽ tự động set true nếu đây là địa chỉ đầu tiên (chưa có địa chỉ nào) của user, ngược lại mặc định là false. Nếu truyền true, các địa chỉ khác của user sẽ tự động được unset default."
                   }
                 }
               }
@@ -2175,7 +2176,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "createAddress"
+        "operationId": "createAddress",
+        "description": "Nếu không truyền `is_default`, hệ thống sẽ tự động đặt địa chỉ này làm mặc định khi đây là địa chỉ đầu tiên của user."
       }
     },
     "/api/user-address/user/{userId}": {
@@ -2368,7 +2370,7 @@
           }
         },
         "operationId": "deleteAddress",
-        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**"
+        "description": "**Yêu cầu là chủ sở hữu tài nguyên (hoặc admin/staff).**\n\nNếu địa chỉ bị xóa đang là địa chỉ mặc định (`is_default = true`), hệ thống sẽ tự động gán mặc định cho địa chỉ còn lại được tạo sớm nhất (nếu còn địa chỉ nào khác)."
       }
     },
     "/api/user-address/{id}/default": {
