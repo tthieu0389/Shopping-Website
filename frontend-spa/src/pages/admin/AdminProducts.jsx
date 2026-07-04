@@ -136,6 +136,7 @@ export default function AdminProducts() {
     // "stock" KHÔNG phải cột của bảng products (tồn kho nằm ở bảng inventory
     // riêng) -> không gửi field này vào productsApi, chỉ dùng nó để gọi
     // inventoryApi riêng bên dưới (qua syncInventory).
+    // inventory_status không thuộc bảng products — xử lý riêng qua inventoryApi
     const payload = {
       name: form.name,
       description: form.description,
@@ -179,34 +180,40 @@ export default function AdminProducts() {
         .catch((err) => toast.error(err.message || "Không thể lưu sản phẩm"))
         .finally(() => setSaving(false));
     } else {
-      // Đồng bộ tồn kho TRƯỚC, cập nhật product (bao gồm is_available) SAU.
-      // Lý do: BE updateInventory() tự set lại products.is_available theo
-      // quantity > 0 mỗi khi sync tồn kho -> nếu gọi productsApi.update()
-      // trước thì lựa chọn "Trạng thái hiển thị" (Đang bán/Tạm ẩn) của admin
-      // sẽ bị syncInventory ghi đè ngay sau đó. Đảo thứ tự để lệnh cuối cùng
-      // (theo đúng ý admin) luôn thắng.
-      syncInventory(modal.id, form.stock)
-        .catch((err) => {
-          // Không chặn việc cập nhật sản phẩm nếu đồng bộ tồn kho lỗi,
-          // chỉ cảnh báo để admin biết cần vào Inventory kiểm tra lại.
-          toast.error(
-            "Không thể đồng bộ tồn kho: " +
-              (err.message || "Lỗi không xác định"),
-          );
-        })
-        .then(() => productsApi.update(modal.id, payload))
-        .then(() => {
-          if (form.inventory_status) {
-            return handleInvStatus(modal, form.inventory_status, true);
+      // Thứ tự: 1) sync quantity kho  2) update product  3) update status kho
+      // Bước 3 chạy SAU cùng vì BE updateInventory() tự điều chỉnh is_available
+      // theo quantity — chạy sau để status kho cuối cùng luôn theo ý admin.
+      (async () => {
+        try {
+          // Bước 1: đồng bộ số lượng tồn kho
+          try {
+            await syncInventory(modal.id, form.stock);
+          } catch (err) {
+            toast.error("Không thể đồng bộ tồn kho: " + (err.message || "Lỗi không xác định"));
+            // Không dừng lại, vẫn tiếp tục cập nhật sản phẩm
           }
-        })
-        .then(() => {
+
+          // Bước 2: cập nhật thông tin sản phẩm
+          await productsApi.update(modal.id, payload);
+
+          // Bước 3: cập nhật status kho (sau cùng để không bị bước 1 ghi đè)
+          if (form.inventory_status) {
+            try {
+              await updateInvStatus(modal.id, form.inventory_status);
+            } catch (err) {
+              toast.error("Không thể cập nhật trạng thái kho: " + (err.message || "Lỗi không xác định"));
+            }
+          }
+
           toast.success("Đã cập nhật sản phẩm");
           setModal(null);
           load();
-        })
-        .catch((err) => toast.error(err.message || "Không thể lưu sản phẩm"))
-        .finally(() => setSaving(false));
+        } catch (err) {
+          toast.error(err.message || "Không thể lưu sản phẩm");
+        } finally {
+          setSaving(false);
+        }
+      })();
     }
   };
 
@@ -221,15 +228,23 @@ export default function AdminProducts() {
       .catch((err) => toast.error(err.message || "Không thể xoá"));
   };
 
-  const handleInvStatus = async (p, newStatus, silent = false) => {
+  // Cập nhật status kho theo product_id, trả về Promise để dùng trong save flow
+  const updateInvStatus = async (productId, newStatus) => {
+    const res = await inventoryApi.getByProduct(productId);
+    const inv = res.data;
+    if (!inv?.id) return; // chưa có dòng inventory, bỏ qua
+    if (inv.status === newStatus) return; // không thay đổi, bỏ qua
+    await inventoryApi.update(inv.id, { status: newStatus });
+  };
+
+  // Dùng khi click trực tiếp từ bảng (nếu cần sau này)
+  const handleInvStatus = async (p, newStatus) => {
     try {
-      const res = await inventoryApi.getByProduct(p.id);
-      const inv = res.data;
-      if (!inv?.id) { if (!silent) toast.error("Sản phẩm chưa có dòng tồn kho"); return; }
-      await inventoryApi.update(inv.id, { status: newStatus });
-      if (!silent) { toast.success(`Đã chuyển kho → ${newStatus}`); load(); }
+      await updateInvStatus(p.id, newStatus);
+      toast.success(`Đã chuyển kho → ${newStatus}`);
+      load();
     } catch (err) {
-      if (!silent) toast.error(err.message || "Không thể cập nhật trạng thái kho");
+      toast.error(err.message || "Không thể cập nhật trạng thái kho");
     }
   };
 
@@ -509,18 +524,25 @@ export default function AdminProducts() {
                   ]}
                 />
                 {modal !== "add" && (
-                  <Select
-                    label="Trạng thái kho"
-                    value={form.inventory_status || ""}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, inventory_status: e.target.value }))
-                    }
-                    options={[
-                      ["active", "Active"],
-                      ["inactive", "Inactive"],
-                      ["archived", "Archived"],
-                    ]}
-                  />
+                  <div className="flex flex-col gap-1">
+                    <Select
+                      label="Trạng thái kho"
+                      value={form.inventory_status || "active"}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, inventory_status: e.target.value }))
+                      }
+                      options={[
+                        ["active", "Active — đang kinh doanh"],
+                        ["inactive", "Inactive — tạm ngừng bán"],
+                        ["archived", "Archived — xoá khỏi kho"],
+                      ]}
+                    />
+                    {form.inventory_status === "archived" && (
+                      <p className="text-[11px] text-accent font-semibold leading-snug">
+                        ⚠ Sản phẩm sẽ biến mất khỏi danh sách sau khi lưu và không thể khôi phục từ trang này.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </section>
