@@ -70,6 +70,14 @@ const calculateOrderAmount = async (
       throw err;
     }
 
+    if (inventory.status !== "active") {
+      const err = new Error(
+        `Sản phẩm "${product.name}" hiện đã ngừng kinh doanh`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
     if (inventory.quantity < item.quantity) {
       const err = new Error(
         `Sản phẩm "${product.name}" không đủ số lượng (còn ${inventory.quantity}, cần ${item.quantity})`,

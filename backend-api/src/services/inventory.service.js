@@ -197,12 +197,30 @@ exports.decreaseStock = async (
     .forUpdate()
     .first();
 
-  if (!inventory) throw new Error("Inventory not found");
-  if (inventory.status !== "active") {
-    throw new Error("Inventory is not active");
+  if (!inventory) {
+    const err = new Error("Không tìm thấy thông tin tồn kho cho sản phẩm này");
+    err.statusCode = 404;
+    throw err;
   }
-  if (amount <= 0) throw new Error("Invalid amount");
-  if (inventory.quantity < amount) throw new Error("Not enough stock");
+  if (inventory.status !== "active") {
+    const err = new Error(
+      "Sản phẩm này hiện đã ngừng kinh doanh, không thể đặt hàng",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+  if (amount <= 0) {
+    const err = new Error("Số lượng không hợp lệ");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (inventory.quantity < amount) {
+    const err = new Error(
+      `Sản phẩm không đủ số lượng (còn ${inventory.quantity}, cần ${amount})`,
+    );
+    err.statusCode = 400;
+    throw err;
+  }
 
   const newQty = inventory.quantity - amount;
 
@@ -244,8 +262,16 @@ exports.increaseStock = async (
     .forUpdate()
     .first();
 
-  if (!inventory) throw new Error("Inventory not found");
-  if (amount <= 0) throw new Error("Invalid amount");
+  if (!inventory) {
+    const err = new Error("Không tìm thấy thông tin tồn kho cho sản phẩm này");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (amount <= 0) {
+    const err = new Error("Số lượng không hợp lệ");
+    err.statusCode = 400;
+    throw err;
+  }
 
   const newQty = inventory.quantity + amount;
 

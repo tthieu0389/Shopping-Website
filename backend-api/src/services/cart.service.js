@@ -40,7 +40,11 @@ exports.addToCart = async (user_id, product_id, quantity) => {
 
     const inventory = await trx("inventory").where({ product_id }).first();
 
-    if (!inventory || inventory.quantity <= 0) {
+    if (
+      !inventory ||
+      inventory.status !== "active" ||
+      inventory.quantity <= 0
+    ) {
       const err = new Error(`Sản phẩm "${product.name}" đã hết hàng`);
       err.statusCode = 400;
       throw err;
@@ -139,7 +143,11 @@ exports.updateItem = async (item_id, user_id, quantity) => {
       .where({ product_id: cartItem.product_id })
       .first();
 
-    if (!inventory || inventory.quantity <= 0) {
+    if (
+      !inventory ||
+      inventory.status !== "active" ||
+      inventory.quantity <= 0
+    ) {
       const err = new Error("Sản phẩm đã hết hàng");
       err.statusCode = 400;
       throw err;
