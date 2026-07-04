@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { contactApi } from '../../api/index.js'
-import { Card, Btn } from './ui.jsx'
+import { Card, Btn, FilterTabs, SearchInput } from './ui.jsx'
 import { toast, formatDate } from '../../utils/index.js'
 
 export default function AdminContacts() {
@@ -9,6 +9,7 @@ export default function AdminContacts() {
   const [selected, setSelected] = useState(null)
   const [replyBody, setReplyBody] = useState('')
   const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   const load = () => {
     setLoading(true)
@@ -61,35 +62,37 @@ ${quotedMessage}`
       .catch(err => toast.error(err.message || 'Không thể xoá'))
   }
 
-  const filtered = filter === 'all'
+  const filtered = (filter === 'all'
     ? contacts
     : filter === 'newsletter'
       ? contacts.filter(c => c.name === 'Newsletter')
       : contacts.filter(c => c.name !== 'Newsletter')
+  ).filter(c =>
+    !search.trim() ||
+    c.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+    c.email.toLowerCase().includes(search.trim().toLowerCase())
+  )
 
   if (loading) return <div className="py-16 text-center text-muted text-sm">Đang tải...</div>
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Filter tabs */}
-      <div className="flex items-center gap-2">
-        {[
-          ['all', 'Tất cả', contacts.length],
-          ['contact', 'Liên hệ', contacts.filter(c => c.name !== 'Newsletter').length],
-          ['newsletter', 'Đăng ký email', contacts.filter(c => c.name === 'Newsletter').length],
-        ].map(([val, lbl, count]) => (
-          <button
-            key={val}
-            onClick={() => { setFilter(val); setSelected(null) }}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
-              filter === val
-                ? 'bg-vnpt text-white'
-                : 'bg-cream text-muted border border-shade hover:border-vnpt hover:text-vnpt'
-            }`}
-          >
-            {lbl} ({count})
-          </button>
-        ))}
+      {/* Search + filter tabs */}
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <SearchInput
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Tìm theo tên hoặc email..."
+        />
+        <FilterTabs
+          options={[
+            ['all', 'Tất cả', contacts.length],
+            ['contact', 'Liên hệ', contacts.filter(c => c.name !== 'Newsletter').length],
+            ['newsletter', 'Đăng ký email', contacts.filter(c => c.name === 'Newsletter').length],
+          ]}
+          value={filter}
+          onChange={(v) => { setFilter(v); setSelected(null) }}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4" style={{ minHeight: 480 }}>

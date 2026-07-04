@@ -17,6 +17,8 @@ import {
   Select,
   Textarea,
   AdminPagination,
+  SearchInput,
+  SelectPill,
 } from "./ui.jsx";
 import {
   formatPrice,
@@ -53,6 +55,7 @@ export default function AdminProducts() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // null | 'add' | product
   const [form, setForm] = useState(emptyForm);
@@ -66,7 +69,12 @@ export default function AdminProducts() {
   const load = () => {
     setLoading(true);
     productsApi
-      .getAllForAdmin({ page, limit: LIMIT, ...(search ? { q: search } : {}) })
+      .getAllForAdmin({
+        page,
+        limit: LIMIT,
+        ...(search ? { q: search } : {}),
+        ...(categoryFilter ? { category_id: categoryFilter } : {}),
+      })
       .then((res) => {
         setProducts(res.data || []);
         setTotal(res.total || 0);
@@ -77,7 +85,7 @@ export default function AdminProducts() {
 
   useEffect(() => {
     load();
-  }, [page, search]);
+  }, [page, search, categoryFilter]);
 
   const handleSearchChange = debounce((v) => {
     setPage(1);
@@ -276,12 +284,24 @@ export default function AdminProducts() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center flex-wrap gap-3">
-        <input
-          defaultValue={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="🔍  Tìm theo tên hoặc slug..."
-          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
-        />
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <SearchInput
+            defaultValue={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Tìm theo tên hoặc slug..."
+          />
+          <SelectPill
+            value={categoryFilter}
+            onChange={(v) => {
+              setPage(1);
+              setCategoryFilter(v);
+            }}
+            options={[
+              ["", "Tất cả danh mục"],
+              ...categories.map((c) => [String(c.id), c.name]),
+            ]}
+          />
+        </div>
         <Btn onClick={openAdd}>➕ Thêm sản phẩm</Btn>
       </div>
 

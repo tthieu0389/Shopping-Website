@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { categoriesApi } from '../../api/index.js'
-import { Card, Btn, Modal, Input, Textarea, Badge } from './ui.jsx'
+import { Card, Btn, Modal, Input, Textarea, Badge, SearchInput } from './ui.jsx'
 import { toast } from '../../utils/index.js'
 
 const emptyForm = { name: '', slug: '', description: '' }
@@ -11,6 +11,7 @@ export default function AdminCategories() {
   const [modal, setModal] = useState(null) // null | 'add' | category
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
 
   const load = () => {
     setLoading(true)
@@ -41,19 +42,33 @@ export default function AdminCategories() {
       .catch(err => toast.error(err.message || 'Không thể xoá danh mục'))
   }
 
+  const filtered = search.trim()
+    ? categories.filter(c =>
+        c.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+        (c.slug || '').toLowerCase().includes(search.trim().toLowerCase())
+      )
+    : categories
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <SearchInput
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Tìm theo tên hoặc slug..."
+        />
         <Btn onClick={openAdd}>➕ Thêm danh mục</Btn>
       </div>
 
       {loading ? (
         <div className="py-16 text-center text-muted text-sm">Đang tải...</div>
-      ) : categories.length === 0 ? (
-        <div className="py-16 text-center text-muted text-sm">Chưa có danh mục nào</div>
+      ) : filtered.length === 0 ? (
+        <div className="py-16 text-center text-muted text-sm">
+          {search.trim() ? 'Không tìm thấy danh mục phù hợp' : 'Chưa có danh mục nào'}
+        </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
-          {categories.map(c => (
+          {filtered.map(c => (
             <Card key={c.id} className="p-4 text-center relative">
               <div className="text-3xl mb-2">🗂️</div>
               <div className="font-bold text-sm text-body mb-1 truncate">{c.name}</div>

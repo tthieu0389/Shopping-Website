@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { blogsApi, blogImagesApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Textarea } from './ui.jsx'
-import { toast, formatDate, debounce, resolveImageUrl } from '../../utils/index.js'
+import { toast, formatDate, resolveImageUrl } from '../../utils/index.js'
 
 const LIMIT = 10
 const emptyForm = { title: '', slug: '', content: '', thumbnail_url: '' }
@@ -20,7 +20,6 @@ export default function AdminBlogs() {
   const [blogs, setBlogs] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [modal, setModal] = useState(null) // null | 'add' | blog
   const [form, setForm] = useState(emptyForm)
@@ -28,17 +27,16 @@ export default function AdminBlogs() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  // Phân trang + tìm kiếm lấy trực tiếp từ backend (/blogs hỗ trợ page, limit, q)
+  // Phân trang lấy trực tiếp từ backend (/blogs hỗ trợ page, limit)
   const load = () => {
     setLoading(true)
-    blogsApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
+    blogsApi.getAll({ page, limit: LIMIT })
       .then(res => { setBlogs(res.data || []); setTotal(res.total || 0) })
       .catch(err => toast.error(err.message || 'Không thể tải danh sách tin tức'))
       .finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [page, search])
+  useEffect(() => { load() }, [page])
 
-  const handleSearchChange = debounce((v) => { setPage(1); setSearch(v) }, 400)
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
   const pageItems = blogs
@@ -91,13 +89,7 @@ export default function AdminBlogs() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center flex-wrap gap-3">
-        <input
-          defaultValue={search}
-          onChange={e => handleSearchChange(e.target.value)}
-          placeholder="🔍  Tìm theo tiêu đề hoặc slug..."
-          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
-        />
+      <div className="flex justify-end items-center flex-wrap gap-3">
         <Btn onClick={openAdd}>➕ Đăng bài viết</Btn>
       </div>
 

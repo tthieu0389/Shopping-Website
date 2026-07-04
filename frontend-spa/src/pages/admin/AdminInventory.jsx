@@ -12,6 +12,7 @@ import {
   Input,
   Select,
   AdminPagination,
+  SearchInput,
 } from "./ui.jsx";
 import { toast, formatDate, debounce } from "../../utils/index.js";
 
@@ -154,11 +155,10 @@ export default function AdminInventory() {
       </div>
 
       <div className="flex justify-between items-center flex-wrap gap-3">
-        <input
+        <SearchInput
           defaultValue={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="🔍  Tìm theo tên sản phẩm..."
-          className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
+          placeholder="Tìm theo tên sản phẩm..."
         />
       </div>
 

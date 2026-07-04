@@ -1,4 +1,4 @@
-import { useState, Children } from "react";
+import { useState, useEffect, useRef, Children } from "react";
 
 // ─── Badge ──────────────────────────────────────────────────────────────────
 const BADGE_TONES = {
@@ -267,6 +267,104 @@ export function TD({ children, className = "", muted, bold, noTruncate }) {
       {/* Inner wrapper truncates long text so it never pushes the column wider */}
       <div className={noTruncate ? "" : "truncate"}>{children}</div>
     </td>
+  );
+}
+
+// ─── Search input ───────────────────────────────────────────────────────────
+// Ô tìm kiếm chuẩn dùng chung cho mọi trang admin: icon kính lúp bên trong,
+// bo tròn pill, viền đổi màu vnpt khi focus. Truyền value/defaultValue,
+// onChange, placeholder như input bình thường; wrapperClassName chỉnh độ
+// rộng/flex của khối bọc ngoài (vd "w-64 flex-shrink-0" hoặc
+// "flex-1 min-w-[220px]").
+export function SearchInput({
+  icon = "🔍",
+  className = "",
+  wrapperClassName = "w-64 flex-shrink-0",
+  ...props
+}) {
+  return (
+    <div className={`relative ${wrapperClassName}`}>
+      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
+        {icon}
+      </span>
+      <input
+        type="text"
+        className={`w-full pl-9 pr-4 py-2 rounded-full border border-shade text-sm outline-none focus:border-vnpt transition-colors bg-canvas ${className}`}
+        {...props}
+      />
+    </div>
+  );
+}
+
+// ─── Select pill (custom dropdown bo tròn) ─────────────────────────────────
+// Dùng thay cho <select> gốc khi cần list bo góc đầy đủ (native <select>
+// không cho phép bo góc phần list). Dùng chung cho các bộ lọc dạng dropdown
+// trên mọi trang admin để đồng bộ với thanh tìm kiếm.
+export function SelectPill({ value, onChange, options, icon }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selectedLabel = options.find(([val]) => val === value)?.[1] ?? value;
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 cursor-pointer rounded-full border border-shade bg-canvas text-sm font-semibold outline-none transition-colors hover:border-vnpt px-4 py-2 pr-3 whitespace-nowrap"
+      >
+        {icon && <span className="text-sm">{icon}</span>}
+        <span className="text-body">{selectedLabel}</span>
+        <svg
+          className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 bg-canvas border border-shade rounded-xl shadow-md z-50 overflow-hidden min-w-full">
+          {options.map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => {
+                onChange(val);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors whitespace-nowrap
+                ${val === value ? "bg-vnpt-light text-vnpt font-bold" : "text-body hover:bg-cream"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Toolbar ────────────────────────────────────────────────────────────────
+// Thanh công cụ chuẩn cho đầu mỗi trang admin: search/filter bên trái, hành
+// động chính (vd nút Thêm) bên phải. Dùng để mọi trang admin có cùng bố cục,
+// khoảng cách và cách xuống dòng khi màn hình hẹp.
+export function Toolbar({ children, actions }) {
+  return (
+    <div className="flex justify-between items-center flex-wrap gap-3">
+      <div className="flex items-center gap-2.5 flex-wrap">{children}</div>
+      {actions && <div className="flex items-center gap-2.5 flex-shrink-0">{actions}</div>}
+    </div>
   );
 }
 

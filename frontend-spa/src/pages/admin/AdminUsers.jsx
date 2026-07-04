@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminUsersApi } from '../../api/index.js'
-import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Select, FilterTabs, AdminPagination } from './ui.jsx'
+import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Select, FilterTabs, AdminPagination, SearchInput } from './ui.jsx'
 import { toast, formatDate, getInitials, debounce } from '../../utils/index.js'
 
 const LIMIT = 10
@@ -58,11 +58,10 @@ export default function AdminUsers() {
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <input
+          <SearchInput
             defaultValue={search}
             onChange={e => handleSearchChange(e.target.value)}
-            placeholder="🔍  Tìm theo tên hoặc email..."
-            className="px-4 py-2 rounded-full border border-shade text-sm outline-none w-64 focus:border-vnpt"
+            placeholder="Tìm theo tên hoặc email..."
           />
           <FilterTabs options={[['all', 'Tất cả'], ['user', 'Khách hàng'], ['admin', 'Quản trị viên']]} value={roleFilter} onChange={setRoleFilter} />
         </div>

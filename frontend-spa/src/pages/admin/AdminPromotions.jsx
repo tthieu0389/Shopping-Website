@@ -17,6 +17,7 @@ import {
   Select,
   FilterTabs,
   AdminPagination,
+  SearchInput,
 } from "./ui.jsx";
 import {
   formatPrice,
@@ -75,6 +76,7 @@ export default function AdminPromotions() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [assignPromo, setAssignPromo] = useState(null); // promotion đang gán sản phẩm
+  const [search, setSearch] = useState("");
 
   const load = () => {
     setLoading(true);
@@ -162,6 +164,12 @@ export default function AdminPromotions() {
       .catch((err) => toast.error(err.message || "Không thể xoá"));
   };
 
+  const filteredPromotions = search.trim()
+    ? promotions.filter((p) =>
+        p.name.toLowerCase().includes(search.trim().toLowerCase()),
+      )
+    : promotions;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center flex-wrap gap-3">
@@ -173,7 +181,14 @@ export default function AdminPromotions() {
             Tạo chương trình khuyến mãi rồi chọn sản phẩm áp dụng bên dưới
           </p>
         </div>
-        <Btn onClick={openAdd}>➕ Thêm chương trình</Btn>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo tên chương trình..."
+          />
+          <Btn onClick={openAdd}>➕ Thêm chương trình</Btn>
+        </div>
       </div>
 
       <Card>
@@ -189,9 +204,14 @@ export default function AdminPromotions() {
           ]}
           colWidths={['220px', '100px', '220px', '110px', '80px', '90px', '160px']}
           loading={loading}
-          empty={!loading && "Chưa có chương trình khuyến mãi nào"}
+          empty={
+            !loading &&
+            (search.trim()
+              ? "Không tìm thấy chương trình phù hợp"
+              : "Chưa có chương trình khuyến mãi nào")
+          }
         >
-          {promotions.map((p, i) => {
+          {filteredPromotions.map((p, i) => {
             const status = getPromoStatus(p);
             return (
               <TR key={p.id} striped={i % 2 !== 0}>
@@ -652,34 +672,22 @@ function AssignProductsModal({ promotion, onClose }) {
 
       {/* Toolbar filter + search — hàng 1 */}
       <div className="flex flex-wrap items-center gap-2.5 mb-2.5">
-        <input
+        <SearchInput
           defaultValue={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="🔍  Tìm sản phẩm..."
-          className="flex-1 min-w-[140px] px-3.5 py-2 rounded-lg border border-shade text-sm outline-none focus:border-vnpt bg-canvas"
+          placeholder="Tìm sản phẩm..."
+          wrapperClassName="flex-1 min-w-[180px]"
         />
-        <select
+        <SelectPill
           value={categoryId}
-          onChange={(e) => changeFilter(setCategoryId)(e.target.value)}
-          className="flex-1 min-w-[120px] px-3 py-2 rounded-lg border border-shade text-sm outline-none focus:border-vnpt bg-canvas text-body"
-        >
-          {catOptions.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={changeFilter(setCategoryId)}
+          options={catOptions}
+        />
+        <SelectPill
           value={productType}
-          onChange={(e) => changeFilter(setProductType)(e.target.value)}
-          className="flex-1 min-w-[120px] px-3 py-2 rounded-lg border border-shade text-sm outline-none focus:border-vnpt bg-canvas text-body"
-        >
-          {PRODUCT_TYPES.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
+          onChange={changeFilter(setProductType)}
+          options={PRODUCT_TYPES}
+        />
       </div>
 
       {/* Tab + chọn nhanh — hàng 2, tách riêng để hàng 1 không bị chật */}
