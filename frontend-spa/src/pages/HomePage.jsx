@@ -216,8 +216,11 @@ function ReviewsSlider() {
               <div className="text-sm mb-3 text-warning">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
               <p className="text-sm text-body leading-relaxed mb-4 flex-1 line-clamp-3 overflow-hidden">"{r.comment}"</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-sm font-bold flex-shrink-0">
-                  {getInitials(r.user_name)}
+                <div className="w-10 h-10 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                  {r.user_avatar
+                    ? <img src={resolveImageUrl(r.user_avatar)} alt={r.user_name} className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display='none' }} />
+                    : getInitials(r.user_name)
+                  }
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-body">{r.user_name}</div>

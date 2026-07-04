@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Breadcrumb, LoadingSpinner } from '../components/common/index.jsx'
 import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
-import { ordersApi, contactApi } from '../api/index.js'
+import { ordersApi, contactApi, productsApi } from '../api/index.js'
 import useAuthStore from '../store/authStore.js'
 
 // ── Hằng số ───────────────────────────────────────────────────────────────────
@@ -125,8 +125,23 @@ function OrderTimeline({ status }) {
 }
 
 // ── Component: OrderItems ─────────────────────────────────────────────────────
-function OrderItems({ items = [] }) {
+function OrderItems({ items = [], orderStatus }) {
   if (!items.length) return null
+  const isCompleted = orderStatus === 'completed'
+  const navigate = useNavigate()
+  const [checking, setChecking] = useState(null) // product_id đang check
+
+  const handleProductClick = async (productId) => {
+    setChecking(productId)
+    try {
+      await productsApi.getById(productId)
+      navigate(`/products/${productId}`)
+    } catch {
+      toast.error('Sản phẩm hiện không còn kinh doanh')
+    } finally {
+      setChecking(null)
+    }
+  }
 
   return (
     <div className="bg-white border border-shade rounded-xl overflow-hidden">
@@ -142,21 +157,32 @@ function OrderItems({ items = [] }) {
           const unitPrice = item.unit_price ?? item.price ?? 0
           const qty       = item.quantity ?? 1
           const subtotal  = unitPrice * qty
+          const isChecking = checking === item.product_id
           return (
             <div key={item.id ?? i} className="flex items-center gap-4 px-6 py-4 hover:bg-cream transition-colors">
-              {/* Ảnh */}
-              <div className="w-16 h-16 rounded-lg bg-surface border border-shade flex items-center justify-center overflow-hidden flex-shrink-0">
-                {img
-                  ? <img src={img} alt={item.name} className="w-full h-full object-contain p-1" onError={e => { e.target.src = 'https://placehold.co/64x64?text=📦' }} />
-                  : <span className="text-2xl">📦</span>
+              {/* Ảnh — clickable */}
+              <button
+                onClick={() => handleProductClick(item.product_id)}
+                disabled={isChecking}
+                className="w-16 h-16 rounded-lg bg-surface border border-shade flex items-center justify-center overflow-hidden flex-shrink-0 hover:border-vnpt transition-colors disabled:opacity-60 cursor-pointer"
+              >
+                {isChecking
+                  ? <div className="w-5 h-5 border-2 border-vnpt/30 border-t-vnpt rounded-full animate-spin" />
+                  : img
+                    ? <img src={img} alt={item.product_name} className="w-full h-full object-contain p-1" onError={e => { e.target.src = 'https://placehold.co/64x64?text=📦' }} />
+                    : <span className="text-2xl">📦</span>
                 }
-              </div>
+              </button>
 
-              {/* Info */}
+              {/* Info — tên cũng clickable */}
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-body text-sm leading-snug line-clamp-2">
+                <button
+                  onClick={() => handleProductClick(item.product_id)}
+                  disabled={isChecking}
+                  className="font-semibold text-body text-sm leading-snug line-clamp-2 text-left hover:text-vnpt transition-colors disabled:opacity-60 cursor-pointer"
+                >
                   {item.product_name || item.name || 'Sản phẩm'}
-                </div>
+                </button>
                 {item.variant_name && (
                   <div className="text-xs text-muted mt-0.5">{item.variant_name}</div>
                 )}
@@ -165,9 +191,22 @@ function OrderItems({ items = [] }) {
                 </div>
               </div>
 
-              {/* Subtotal */}
-              <div className="font-bold text-accent text-base flex-shrink-0">
-                {formatPrice(subtotal)}
+              {/* Right: subtotal + review btn */}
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                <div className="font-bold text-accent text-base">
+                  {formatPrice(subtotal)}
+                </div>
+                {isCompleted && item.product_id && (
+                  <Link
+                    to={`/products/${item.product_id}#reviews`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-warning text-warning text-[11px] font-bold hover:bg-warning hover:text-white transition-all duration-200 group"
+                  >
+                    <svg className="w-3.5 h-3.5 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    Đánh giá
+                  </Link>
+                )}
               </div>
             </div>
           )
@@ -429,6 +468,7 @@ export default function OrderDetailPage() {
   const { data: order, loading, error, reload } = useOrder(id)
   const [cancelling, setCancelling]   = useState(false)
   const [showContact, setShowContact] = useState(false)
+  const [rebuying, setRebuying]       = useState(false)
   const user = useAuthStore(s => s.user)
 
   const handleCancel = async () => {
@@ -474,6 +514,20 @@ export default function OrderDetailPage() {
   const statusInfo = ORDER_STATUS[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400', step: 0 }
   const canCancel  = ['pending', 'confirmed'].includes(order.status)
   const items      = order.items || order.order_items || []
+
+  const handleRebuy = async () => {
+    const firstItem = items[0]
+    if (!firstItem?.product_id) return
+    setRebuying(true)
+    try {
+      await productsApi.getById(firstItem.product_id)
+      navigate(`/products/${firstItem.product_id}`)
+    } catch {
+      toast.error('Sản phẩm hiện không còn kinh doanh')
+    } finally {
+      setRebuying(false)
+    }
+  }
 
   // Địa chỉ giao hàng
   const addr = order.shipping_address || order.address || null
@@ -531,13 +585,15 @@ export default function OrderDetailPage() {
                 {cancelling ? 'Đang huỷ...' : 'Huỷ đơn'}
               </button>
             )}
-            {order.status === 'completed' && (
-              <Link
-                to={`/products`}
-                className="px-5 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors"
+            {order.status === 'completed' && items.length > 0 && (
+              <button
+                onClick={handleRebuy}
+                disabled={rebuying}
+                className="px-5 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
               >
+                {rebuying && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Mua lại
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -552,7 +608,7 @@ export default function OrderDetailPage() {
 
           {/* LEFT: items + summary */}
           <div className="space-y-5">
-            <OrderItems items={items} />
+            <OrderItems items={items} orderStatus={order.status} />
             <OrderSummary order={order} />
           </div>
 
