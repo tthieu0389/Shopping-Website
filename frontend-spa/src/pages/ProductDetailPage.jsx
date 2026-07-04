@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useParams, useLocation } from 'react-router-dom'
 import { useProduct, useRelatedProducts, useReviews } from '../hooks/index.js'
 import { Breadcrumb, LoadingSpinner, EmptyState, ProductCard, StarRating } from '../components/common/index.jsx'
 import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
@@ -24,9 +24,23 @@ export default function ProductDetailPage() {
   const syncing  = useCartStore(s => s.syncing)
   const { isAuthenticated } = useAuthStore()
 
+  const { hash } = useLocation()
+  const tabsRef = useRef(null)
+
   const [qty, setQty]               = useState(1)
-  const [activeTab, setActiveTab]   = useState('desc')
+  const [activeTab, setActiveTab]   = useState(() => hash === '#reviews' ? 'reviews' : 'desc')
   const [activeImg, setActiveImg]   = useState(0)
+
+  // Auto-scroll to reviews tab when navigated with #reviews hash
+  useEffect(() => {
+    if (hash === '#reviews' && product) {
+      setActiveTab('reviews')
+      const id = setTimeout(() => {
+        tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 300)
+      return () => clearTimeout(id)
+    }
+  }, [hash, product])
 
   // Review form
   const [rating, setRating]         = useState(0)
@@ -256,7 +270,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* ── TABS ─────────────────────────────────────────────────────────── */}
-        <div className="mb-16">
+        <div className="mb-16" ref={tabsRef}>
           <div className="flex border-b border-shade mb-7">
             {TABS.map(({ id, label }) => (
               <button
@@ -378,8 +392,11 @@ export default function ProductDetailPage() {
                     <div key={r.id} className="bg-white border border-shade rounded-xl p-5">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {r.user_name?.charAt(0)?.toUpperCase() || 'U'}
+                          <div className="w-8 h-8 rounded-full bg-vnpt-light text-vnpt flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden">
+                            {r.user_avatar
+                              ? <img src={resolveImageUrl(r.user_avatar)} alt={r.user_name} className="w-full h-full object-cover" onError={e => { e.currentTarget.replaceWith(Object.assign(document.createElement('span'), { textContent: r.user_name?.charAt(0)?.toUpperCase() || 'U' })) }} />
+                              : (r.user_name?.charAt(0)?.toUpperCase() || 'U')
+                            }
                           </div>
                           <span className="text-sm font-semibold text-body">{r.user_name || 'Khách hàng'}</span>
                         </div>
