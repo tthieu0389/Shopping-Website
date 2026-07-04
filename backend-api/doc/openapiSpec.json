@@ -1177,6 +1177,37 @@
             }
           }
         ]
+      },
+      "FeaturedReview": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "product_id": {
+            "type": "integer"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_name": {
+            "type": "string",
+            "description": "Tên người đánh giá"
+          },
+          "product_name": {
+            "type": "string",
+            "description": "Tên sản phẩm được đánh giá"
+          }
+        }
       }
     },
     "parameters": {
@@ -6227,6 +6258,56 @@
           }
         },
         "operationId": "createReview"
+      }
+    },
+    "/api/reviews/featured": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Lấy đánh giá nổi bật (dùng cho trang chủ)",
+        "description": "Trả về tối đa `limit` đánh giá nổi bật để hiển thị ở trang chủ. Tiêu chí: rating >= 4, có nội dung comment (không rỗng), review và sản phẩm liên quan chưa bị xoá mềm. Mỗi sản phẩm chỉ đóng góp tối đa 1 đánh giá (đánh giá tốt nhất của sản phẩm đó) để đảm bảo đa dạng giữa các sản phẩm, sau đó toàn bộ kết quả được sắp theo rating giảm dần rồi tới thời gian tạo gần nhất. Không yêu cầu đăng nhập.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 6,
+              "minimum": 1
+            },
+            "description": "Số lượng đánh giá tối đa cần lấy (mặc định 6)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách đánh giá nổi bật",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/FeaturedReview"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "getFeaturedReviews"
       }
     },
     "/api/reviews/product/{productId}": {
