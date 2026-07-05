@@ -22,7 +22,7 @@ export default function ProductDetailPage() {
   const cartItems = useCartStore(s => s.items)
   const addItem  = useCartStore(s => s.addItem)
   const syncing  = useCartStore(s => s.syncing)
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   const { hash } = useLocation()
   const tabsRef = useRef(null)
@@ -103,6 +103,19 @@ export default function ProductDetailPage() {
       toast.error(err.message || 'Gửi đánh giá thất bại')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const myReview = reviews.find(r => String(r.user_id) === String(user?.id))
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa đánh giá này?')) return
+    try {
+      await reviewsApi.delete(reviewId)
+      toast.success('Đã xóa đánh giá')
+      reloadReviews()
+    } catch (err) {
+      toast.error(err.message || 'Xóa đánh giá thất bại')
     }
   }
 
@@ -367,6 +380,7 @@ export default function ProductDetailPage() {
 
               {/* Form gửi đánh giá */}
               {isAuthenticated ? (
+                myReview ? null : (
                 <form onSubmit={handleSubmitReview} className="bg-white border border-shade rounded-xl p-6">
                   <h3 className="text-base font-bold text-body mb-4">Viết đánh giá của bạn</h3>
                   <div className="mb-4">
@@ -391,6 +405,7 @@ export default function ProductDetailPage() {
                     {submitting ? 'Đang gửi...' : '📤 Gửi đánh giá'}
                   </button>
                 </form>
+                )
               ) : (
                 <div className="bg-vnpt-light rounded-xl p-6 text-center">
                   <p className="text-sm text-muted mb-3">Đăng nhập để viết đánh giá</p>
@@ -417,7 +432,18 @@ export default function ProductDetailPage() {
                           </div>
                           <span className="text-sm font-semibold text-body">{r.user_name || 'Khách hàng'}</span>
                         </div>
-                        <span className="text-xs text-muted">{formatDate(r.created_at)}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted">{formatDate(r.created_at)}</span>
+                          {String(r.user_id) === String(user?.id) && (
+                            <button
+                              onClick={() => handleDeleteReview(r.id)}
+                              className="text-xs text-accent hover:text-red-700 font-semibold transition-colors"
+                              title="Xóa đánh giá"
+                            >
+                              🗑 Xóa
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="text-warning text-sm mb-2">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
                       {r.comment && <p className="text-sm text-muted leading-relaxed">{r.comment}</p>}
