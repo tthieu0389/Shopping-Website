@@ -59,11 +59,10 @@ export default function AdminProducts() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // null | 'add' | product
-  const [activeTab, setActiveTab] = useState("info"); // 'info' | 'specs'
+  const [activeTab, setActiveTab] = useState("info"); // 'info' | 'specs' | 'images'
   const [createdProduct, setCreatedProduct] = useState(null); // product vừa tạo, dùng cho tab specs
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [imageModal, setImageModal] = useState(null); // null | product
 
   useEffect(() => {
     categoriesApi.getAll().then((res) => setCategories(res.data || []));
@@ -412,12 +411,6 @@ export default function AdminProducts() {
                 <TD noTruncate>
                   <div className="flex gap-3">
                     <span
-                      className="text-muted font-bold cursor-pointer text-xs"
-                      onClick={() => setImageModal(p)}
-                    >
-                      Ảnh
-                    </span>
-                    <span
                       className="text-vnpt font-bold cursor-pointer text-xs"
                       onClick={() => openEdit(p)}
                     >
@@ -448,7 +441,7 @@ export default function AdminProducts() {
           {/* Tab bar — chỉ hiện khi đang sửa (không phải thêm mới) */}
           {modal !== "add" && (
             <div className="flex border-b border-shade mb-5 -mt-1">
-              {[["info", "Thông tin"], ["specs", "Thông số kỹ thuật"]].map(([id, label]) => (
+              {[["info", "Thông tin"], ["specs", "Thông số kỹ thuật"], ["images", "Ảnh"]].map(([id, label]) => (
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
@@ -643,26 +636,32 @@ export default function AdminProducts() {
             <SpecsTabContent product={modal} />
           )}
 
-          <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-shade">
-            <Btn variant="ghost" onClick={() => setModal(null)}>
-              Huỷ
-            </Btn>
-            {(modal === "add" || activeTab === "info") && (
-              <Btn
-                onClick={handleSave}
-                disabled={saving || !form.name || !form.price}
-              >
-                {saving ? "Đang lưu..." : "Lưu sản phẩm"}
+          {/* ── Tab: Ảnh ── */}
+          {modal !== "add" && activeTab === "images" && (
+            <ImagesTabContent product={modal} />
+          )}
+
+          <div className="flex items-center justify-between gap-2.5 mt-6 pt-4 border-t border-shade">
+            <div className="text-xs text-muted italic">
+              {modal !== "add" && (activeTab === "specs" || activeTab === "images")
+                ? "✓ Các thay đổi ở tab này được lưu tự động"
+                : ""}
+            </div>
+            <div className="flex gap-2.5">
+              <Btn variant="ghost" onClick={() => setModal(null)}>
+                {modal === "add" || activeTab === "info" ? "Huỷ" : "Đóng"}
               </Btn>
-            )}
+              {(modal === "add" || activeTab === "info") && (
+                <Btn
+                  onClick={handleSave}
+                  disabled={saving || !form.name || !form.price}
+                >
+                  {saving ? "Đang lưu..." : "Lưu sản phẩm"}
+                </Btn>
+              )}
+            </div>
           </div>
         </Modal>
-      )}
-      {imageModal && (
-        <ProductImagesModal
-          product={imageModal}
-          onClose={() => setImageModal(null)}
-        />
       )}
     </div>
   );
@@ -867,8 +866,8 @@ function SpecsTabContent({ product }) {
   );
 }
 
-// ─── Modal quản lý ảnh sản phẩm (thêm / xoá / đặt ảnh đại diện) ──────────────
-function ProductImagesModal({ product, onClose }) {
+// ─── Nội dung tab Ảnh (nhúng trong modal Sửa sản phẩm) ───────────────────────
+function ImagesTabContent({ product }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -930,11 +929,7 @@ function ProductImagesModal({ product, onClose }) {
   };
 
   return (
-    <Modal
-      title={`Ảnh sản phẩm — ${product.name}`}
-      onClose={onClose}
-      width="max-w-[640px]"
-    >
+    <div>
       <label
         className={`flex items-center justify-center gap-2 border-2 border-dashed border-shade rounded-xl py-6 mb-5 cursor-pointer text-sm font-semibold text-muted hover:border-vnpt hover:text-vnpt transition-colors ${uploading ? "opacity-60 pointer-events-none" : ""}`}
       >
@@ -996,12 +991,6 @@ function ProductImagesModal({ product, onClose }) {
           ))}
         </div>
       )}
-
-      <div className="flex justify-end mt-5">
-        <Btn variant="ghost" onClick={onClose}>
-          Đóng
-        </Btn>
-      </div>
-    </Modal>
+    </div>
   );
 }
