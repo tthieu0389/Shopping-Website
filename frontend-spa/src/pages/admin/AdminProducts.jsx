@@ -60,6 +60,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // null | 'add' | product
   const [activeTab, setActiveTab] = useState("info"); // 'info' | 'specs'
+  const [createdProduct, setCreatedProduct] = useState(null); // product vừa tạo, dùng cho tab specs
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [imageModal, setImageModal] = useState(null); // null | product
@@ -742,10 +743,16 @@ function SpecsTabContent({ product }) {
         </div>
       ) : (
         <div className="border border-shade rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="max-h-[340px] overflow-y-auto">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-[38%]" />
+              <col className="w-[46%]" />
+              <col className="w-[16%]" />
+            </colgroup>
             <thead>
               <tr className="bg-cream border-b border-shade">
-                <th className="text-left px-4 py-2.5 text-xs font-bold text-muted uppercase tracking-wide w-[45%]">Thông số</th>
+                <th className="text-left px-4 py-2.5 text-xs font-bold text-muted uppercase tracking-wide">Thông số</th>
                 <th className="text-left px-4 py-2.5 text-xs font-bold text-muted uppercase tracking-wide">Giá trị</th>
                 <th className="w-20" />
               </tr>
@@ -761,6 +768,7 @@ function SpecsTabContent({ product }) {
                           value={editBuf.detail_name}
                           onChange={(e) => setEditBuf((b) => ({ ...b, detail_name: e.target.value }))}
                           placeholder="VD: RAM"
+                          maxLength={100}
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -769,6 +777,7 @@ function SpecsTabContent({ product }) {
                           value={editBuf.detail_value}
                           onChange={(e) => setEditBuf((b) => ({ ...b, detail_value: e.target.value }))}
                           placeholder="VD: 8GB"
+                          maxLength={500}
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -780,8 +789,8 @@ function SpecsTabContent({ product }) {
                     </>
                   ) : (
                     <>
-                      <td className="px-4 py-2.5 font-medium text-body">{spec.detail_name}</td>
-                      <td className="px-4 py-2.5 text-muted">{spec.detail_value}</td>
+                      <td className="px-4 py-2.5 font-medium text-body break-words">{spec.detail_name}</td>
+                      <td className="px-4 py-2.5 text-muted break-words">{spec.detail_value}</td>
                       <td className="px-3 py-2">
                         <div className="flex gap-2 justify-end">
                           <button onClick={() => startEdit(spec)} className="text-[11px] font-bold text-vnpt hover:underline">Sửa</button>
@@ -802,6 +811,7 @@ function SpecsTabContent({ product }) {
                       value={newRow.detail_name}
                       onChange={(e) => setNewRow((r) => ({ ...r, detail_name: e.target.value }))}
                       placeholder="VD: Màn hình, RAM, Pin..."
+                      maxLength={100}
                       onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                     />
                   </td>
@@ -811,6 +821,7 @@ function SpecsTabContent({ product }) {
                       value={newRow.detail_value}
                       onChange={(e) => setNewRow((r) => ({ ...r, detail_value: e.target.value }))}
                       placeholder="VD: 6.7 inch AMOLED"
+                      maxLength={500}
                       onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                     />
                   </td>
@@ -831,6 +842,7 @@ function SpecsTabContent({ product }) {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
