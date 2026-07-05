@@ -17,6 +17,7 @@ import {
 import { toast, formatDate, debounce } from "../../utils/index.js";
 
 const LIMIT = 10;
+const MAX_INT4 = 2147483647;
 
 function statusOf(qty, min) {
   if (qty === 0) return { label: "✕ Hết hàng", tone: "error" };
@@ -40,6 +41,7 @@ export default function AdminInventory() {
   const [loading, setLoading] = useState(true);
   const [adjustItem, setAdjustItem] = useState(null);
   const [delta, setDelta] = useState("");
+  const [minQty, setMinQty] = useState("");
   const [status, setStatus] = useState("active");
   const [saving, setSaving] = useState(false);
   // Dữ liệu toàn bộ kho (không phân trang) — chỉ dùng để tính 3 thẻ thống kê phía trên
@@ -87,6 +89,7 @@ export default function AdminInventory() {
 
   const openAdjust = (item) => {
     setDelta("");
+    setMinQty(String(item.min_quantity ?? 10));
     setStatus(item.status || "active");
     setAdjustItem(item);
   };
@@ -96,6 +99,8 @@ export default function AdminInventory() {
     const payload = {};
     if (d) payload.quantity = Math.max(0, adjustItem.quantity + d);
     if (status !== (adjustItem.status || "active")) payload.status = status;
+    const newMin = parseInt(minQty, 10);
+    if (!isNaN(newMin) && newMin >= 0 && newMin !== adjustItem.min_quantity) payload.min_quantity = newMin;
     if (Object.keys(payload).length === 0) return;
 
     setSaving(true);
@@ -113,7 +118,8 @@ export default function AdminInventory() {
 
   const hasChange =
     (parseInt(delta, 10) || 0) !== 0 ||
-    (adjustItem && status !== (adjustItem.status || "active"));
+    (adjustItem && status !== (adjustItem.status || "active")) ||
+    (adjustItem && parseInt(minQty, 10) !== adjustItem.min_quantity);
 
   // Soft delete (archive) dòng tồn kho — BE sẽ chặn (409) nếu sản phẩm còn
   // đơn hàng chưa xử lý xong (pending/confirmed/shipping).
@@ -245,9 +251,48 @@ export default function AdminInventory() {
             label="Số lượng thay đổi (+nhập / -xuất)"
             type="number"
             value={delta}
-            onChange={(e) => setDelta(e.target.value)}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === "" || raw === "-" || raw === "+") { setDelta(raw); return; }
+              const n = parseInt(raw, 10);
+              if (isNaN(n)) { setDelta(raw); return; }
+              // Kết quả sau thay đổi không được vượt MAX_INT4
+              const maxDelta = MAX_INT4 - (adjustItem?.quantity ?? 0);
+              const minDelta = -(adjustItem?.quantity ?? 0);
+              const clamped = Math.min(Math.max(n, minDelta), maxDelta);
+              setDelta(String(clamped));
+            }}
             placeholder="VD: +20 hoặc -5"
           />
+          {adjustItem && (() => {
+            const d = parseInt(delta, 10) || 0;
+            const result = (adjustItem.quantity ?? 0) + d;
+            const maxDelta = MAX_INT4 - (adjustItem.quantity ?? 0);
+            const atMax = d >= maxDelta && maxDelta >= 0;
+            return atMax ? (
+              <p className="text-xs text-amber-600 -mt-2">
+                Đã đạt tối đa cho phép ({MAX_INT4.toLocaleString("vi-VN")}). Tồn kho sau: <strong>{result.toLocaleString("vi-VN")}</strong>
+              </p>
+            ) : null;
+          })()}
+          <Input
+            label="Ngưỡng tối thiểu"
+            type="number"
+            value={minQty}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === "") { setMinQty(""); return; }
+              const n = parseInt(raw, 10);
+              if (isNaN(n)) return;
+              setMinQty(String(Math.min(Math.max(n, 0), MAX_INT4)));
+            }}
+            placeholder="VD: 10"
+          />
+          {parseInt(minQty, 10) >= MAX_INT4 && (
+            <p className="text-xs text-amber-600 -mt-2">
+              Đã đạt giới hạn tối đa ({MAX_INT4.toLocaleString("vi-VN")}).
+            </p>
+          )}
           <Select
             label="Trạng thái quản lý kho"
             value={status}
