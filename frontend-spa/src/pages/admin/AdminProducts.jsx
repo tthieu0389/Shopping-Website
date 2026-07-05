@@ -217,20 +217,11 @@ export default function AdminProducts() {
       (async () => {
         try {
           // Bước 1: đồng bộ số lượng tồn kho
-          try {
-            await syncInventory(modal.id, form.stock);
-          } catch (err) {
-            toast.error("Không thể đồng bộ tồn kho: " + (err.message || "Lỗi không xác định"));
-            // Không dừng lại, vẫn tiếp tục cập nhật sản phẩm
-          }
+          await syncInventory(modal.id, form.stock);
 
           // Bước 2: ép trạng thái kho theo lựa chọn của admin (trước khi update product)
           if (form.inventory_status) {
-            try {
-              await updateInvStatus(modal.id, form.inventory_status);
-            } catch (err) {
-              toast.error("Không thể cập nhật trạng thái kho: " + (err.message || "Lỗi không xác định"));
-            }
+            await updateInvStatus(modal.id, form.inventory_status);
           }
 
           // Bước 3: cập nhật thông tin sản phẩm (is_available giờ đã khớp với inventory)
