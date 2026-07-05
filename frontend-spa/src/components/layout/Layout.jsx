@@ -24,22 +24,23 @@ export function Toast() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2">
+    // Mobile: bottom-center với margin để không đè nav; Desktop: bottom-right
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[9999] flex flex-col gap-2 pointer-events-none">
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`${colorMap[t.type] || 'bg-vnpt'} text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2`}
+          className={`${colorMap[t.type] || 'bg-vnpt'} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2 pointer-events-auto w-full sm:w-auto sm:max-w-sm`}
         >
           <button
             onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
-            className="text-white/80 hover:text-white leading-none text-base cursor-pointer"
+            className="text-white/80 hover:text-white leading-none text-base cursor-pointer flex-shrink-0"
             aria-label="Đóng thông báo"
           >
             ✕
           </button>
           {t.type === 'success' && '✅'}
           {t.type === 'info'    && 'ℹ️'}
-          <span>{t.msg}</span>
+          <span className="flex-1">{t.msg}</span>
         </div>
       ))}
     </div>
