@@ -118,7 +118,7 @@ export default function Navbar() {
     { to: '/products?product_type=device',   label: 'Điện thoại' },
     { to: '/products?product_type=sim',      label: 'Sim' },
     { to: '/products?product_type=internet', label: 'Dịch vụ' },
-    { to: '/flash-sale',                     label: '⚡ Flash Sale' },
+    { to: '/flash-sale',                     label: 'Flash Sale' },
     { to: '/blog',                           label: 'Tin tức' },
     { to: '/contact',                        label: 'Liên hệ' },
   ]
