@@ -4,6 +4,7 @@ import {
   categoriesApi,
   productImagesApi,
   inventoryApi,
+  productDetailsApi,
 } from "../../api/index.js";
 import {
   Card,
@@ -58,6 +59,7 @@ export default function AdminProducts() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // null | 'add' | product
+  const [activeTab, setActiveTab] = useState("info"); // 'info' | 'specs'
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [imageModal, setImageModal] = useState(null); // null | product
@@ -94,6 +96,7 @@ export default function AdminProducts() {
 
   const openAdd = () => {
     setForm(emptyForm);
+    setActiveTab("info");
     setModal("add");
   };
   const openEdit = (p) => {
@@ -109,6 +112,7 @@ export default function AdminProducts() {
       is_available: !!p.is_available,
       inventory_status: p.inventory_status || "active",
     });
+    setActiveTab("info");
     setModal(p);
   };
 
@@ -440,184 +444,213 @@ export default function AdminProducts() {
           onClose={() => setModal(null)}
           width="max-w-[620px]"
         >
-          <div className="flex flex-col gap-5">
-            <section>
-              <SectionLabel>Thông tin cơ bản</SectionLabel>
-              <Input
-                label="Tên sản phẩm"
-                required
-                value={form.name}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder="VD: iPhone 16 Pro Max 256GB"
-                maxLength={200}
-              />
-              <Textarea
-                label="Mô tả"
-                value={form.description}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, description: e.target.value }))
-                }
-                rows={3}
-                placeholder="Mô tả sản phẩm..."
-                maxLength={5000}
-              />
-            </section>
+          {/* Tab bar — chỉ hiện khi đang sửa (không phải thêm mới) */}
+          {modal !== "add" && (
+            <div className="flex border-b border-shade mb-5 -mt-1">
+              {[["info", "Thông tin"], ["specs", "Thông số kỹ thuật"]].map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+                    activeTab === id
+                      ? "border-vnpt text-vnpt"
+                      : "border-transparent text-muted hover:text-body"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
-            <section>
-              <SectionLabel>Phân loại</SectionLabel>
-              <div className="grid grid-cols-2 gap-x-3">
-                <Select
-                  label="Danh mục"
-                  value={form.category_id}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, category_id: e.target.value }))
-                  }
-                  options={catOptions}
-                />
-                <Select
-                  label="Loại sản phẩm"
-                  value={form.product_type}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, product_type: e.target.value }))
-                  }
-                  options={[
-                    ["device", "Điện thoại/Thiết bị"],
-                    ["sim", "Sim số"],
-                    ["internet", "Gói cước"],
-                    ["accessory", "Phụ kiện"],
-                  ]}
-                />
+          {/* ── Tab: Thông tin ── */}
+          {(modal === "add" || activeTab === "info") && (
+            <div className="flex flex-col gap-5">
+              <section>
+                <SectionLabel>Thông tin cơ bản</SectionLabel>
                 <Input
-                  label="Thương hiệu"
-                  value={form.brand}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, brand: e.target.value }))
-                  }
-                  placeholder="Apple, Samsung, VNPT..."
-                  maxLength={100}
-                />
-                <Input
-                  label="Mã thiết bị (model)"
-                  value={form.model}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, model: e.target.value }))
-                  }
-                  placeholder="Không bắt buộc"
-                  maxLength={100}
-                />
-              </div>
-            </section>
-
-            <section>
-              <SectionLabel>Giá &amp; Tồn kho</SectionLabel>
-              <div
-                className={`grid gap-x-3 ${modal === "add" ? "grid-cols-3" : "grid-cols-2"}`}
-              >
-                <Input
-                  label="Giá bán (VNĐ)"
+                  label="Tên sản phẩm"
                   required
-                  type="number"
-                  value={form.price}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw === "") { setForm((p) => ({ ...p, price: "" })); return; }
-                    const num = parseFloat(raw);
-                    if (!isNaN(num) && num > 9999999999.99) return;
-                    setForm((p) => ({ ...p, price: raw }));
-                  }}
-                  onKeyDown={(e) =>
-                    ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, name: e.target.value }))
                   }
-                  min="1"
-                  max="9999999999.99"
-                  step="0.01"
-                  placeholder="33990000"
+                  placeholder="VD: iPhone 16 Pro Max 256GB"
+                  maxLength={200}
                 />
-                <Input
-                  label="Tồn kho ban đầu"
-                  type="number"
-                  value={form.stock}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "");
-                    if (raw !== "" && parseInt(raw, 10) > 2147483647) return;
-                    setForm((p) => ({ ...p, stock: raw }));
-                  }}
-                  onKeyDown={(e) =>
-                    ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()
+                <Textarea
+                  label="Mô tả"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, description: e.target.value }))
                   }
-                  min="0"
-                  max="2147483647"
-                  placeholder="10"
+                  rows={3}
+                  placeholder="Mô tả sản phẩm..."
+                  maxLength={5000}
                 />
-                {modal === "add" && (
+              </section>
+
+              <section>
+                <SectionLabel>Phân loại</SectionLabel>
+                <div className="grid grid-cols-2 gap-x-3">
+                  <Select
+                    label="Danh mục"
+                    value={form.category_id}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, category_id: e.target.value }))
+                    }
+                    options={catOptions}
+                  />
+                  <Select
+                    label="Loại sản phẩm"
+                    value={form.product_type}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, product_type: e.target.value }))
+                    }
+                    options={[
+                      ["device", "Điện thoại/Thiết bị"],
+                      ["sim", "Sim số"],
+                      ["internet", "Gói cước"],
+                      ["accessory", "Phụ kiện"],
+                    ]}
+                  />
                   <Input
-                    label="Ngưỡng cảnh báo"
+                    label="Thương hiệu"
+                    value={form.brand}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, brand: e.target.value }))
+                    }
+                    placeholder="Apple, Samsung, VNPT..."
+                    maxLength={100}
+                  />
+                  <Input
+                    label="Mã thiết bị (model)"
+                    value={form.model}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, model: e.target.value }))
+                    }
+                    placeholder="Không bắt buộc"
+                    maxLength={100}
+                  />
+                </div>
+              </section>
+
+              <section>
+                <SectionLabel>Giá &amp; Tồn kho</SectionLabel>
+                <div
+                  className={`grid gap-x-3 ${modal === "add" ? "grid-cols-3" : "grid-cols-2"}`}
+                >
+                  <Input
+                    label="Giá bán (VNĐ)"
+                    required
                     type="number"
-                    min="0"
-                    max="2147483647"
-                    value={form.min_quantity}
+                    value={form.price}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") { setForm((p) => ({ ...p, price: "" })); return; }
+                      const num = parseFloat(raw);
+                      if (!isNaN(num) && num > 9999999999.99) return;
+                      setForm((p) => ({ ...p, price: raw }));
+                    }}
+                    onKeyDown={(e) =>
+                      ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()
+                    }
+                    min="1"
+                    max="9999999999.99"
+                    step="0.01"
+                    placeholder="33990000"
+                  />
+                  <Input
+                    label="Tồn kho ban đầu"
+                    type="number"
+                    value={form.stock}
                     onChange={(e) => {
                       const raw = e.target.value.replace(/[^0-9]/g, "");
                       if (raw !== "" && parseInt(raw, 10) > 2147483647) return;
-                      setForm((p) => ({ ...p, min_quantity: raw }));
+                      setForm((p) => ({ ...p, stock: raw }));
                     }}
                     onKeyDown={(e) =>
                       ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()
                     }
-                    placeholder="5"
+                    min="0"
+                    max="2147483647"
+                    placeholder="10"
                   />
-                )}
-              </div>
-            </section>
+                  {modal === "add" && (
+                    <Input
+                      label="Ngưỡng cảnh báo"
+                      type="number"
+                      min="0"
+                      max="2147483647"
+                      value={form.min_quantity}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, "");
+                        if (raw !== "" && parseInt(raw, 10) > 2147483647) return;
+                        setForm((p) => ({ ...p, min_quantity: raw }));
+                      }}
+                      onKeyDown={(e) =>
+                        ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()
+                      }
+                      placeholder="5"
+                    />
+                  )}
+                </div>
+              </section>
 
-            <section>
-              <SectionLabel>Hiển thị</SectionLabel>
-              <div className={`grid gap-x-3 ${modal !== "add" ? "grid-cols-2" : ""}`}>
-                <Select
-                  label="Trạng thái hiển thị"
-                  value={form.is_available ? "true" : "false"}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      is_available: e.target.value === "true",
-                    }))
-                  }
-                  options={[
-                    ["true", "Đang bán"],
-                    ["false", "Tạm ẩn"],
-                  ]}
-                />
-                {modal !== "add" && (
+              <section>
+                <SectionLabel>Hiển thị</SectionLabel>
+                <div className={`grid gap-x-3 ${modal !== "add" ? "grid-cols-2" : ""}`}>
                   <Select
-                    label="Trạng thái kho"
-                    value={form.inventory_status || "active"}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setForm((p) => ({ ...p, inventory_status: val }));
-                    }}
+                    label="Trạng thái hiển thị"
+                    value={form.is_available ? "true" : "false"}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        is_available: e.target.value === "true",
+                      }))
+                    }
                     options={[
-                      ["active", "Đang mở kho"],
-                      ["inactive", "Tạm khóa kho"],
-                      ["archived", "Ẩn khỏi kho"],
+                      ["true", "Đang bán"],
+                      ["false", "Tạm ẩn"],
                     ]}
                   />
-                )}
-              </div>
-            </section>
-          </div>
+                  {modal !== "add" && (
+                    <Select
+                      label="Trạng thái kho"
+                      value={form.inventory_status || "active"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((p) => ({ ...p, inventory_status: val }));
+                      }}
+                      options={[
+                        ["active", "Đang mở kho"],
+                        ["inactive", "Tạm khóa kho"],
+                        ["archived", "Ẩn khỏi kho"],
+                      ]}
+                    />
+                  )}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ── Tab: Thông số kỹ thuật ── */}
+          {modal !== "add" && activeTab === "specs" && (
+            <SpecsTabContent product={modal} />
+          )}
 
           <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-shade">
             <Btn variant="ghost" onClick={() => setModal(null)}>
               Huỷ
             </Btn>
-            <Btn
-              onClick={handleSave}
-              disabled={saving || !form.name || !form.price}
-            >
-              {saving ? "Đang lưu..." : "Lưu sản phẩm"}
-            </Btn>
+            {(modal === "add" || activeTab === "info") && (
+              <Btn
+                onClick={handleSave}
+                disabled={saving || !form.name || !form.price}
+              >
+                {saving ? "Đang lưu..." : "Lưu sản phẩm"}
+              </Btn>
+            )}
           </div>
         </Modal>
       )}
@@ -626,6 +659,190 @@ export default function AdminProducts() {
           product={imageModal}
           onClose={() => setImageModal(null)}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── Nội dung tab Thông số kỹ thuật (nhúng trong modal Sửa sản phẩm) ──────────
+function SpecsTabContent({ product }) {
+  const [specs, setSpecs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editBuf, setEditBuf] = useState({ detail_name: "", detail_value: "" });
+  const [newRow, setNewRow] = useState({ detail_name: "", detail_value: "" });
+  const [saving, setSaving] = useState(false);
+  const [addMode, setAddMode] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    productDetailsApi
+      .getByProduct(product.id)
+      .then((res) => setSpecs(res.data || []))
+      .catch((err) => toast.error(err.message || "Không thể tải thông số"))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleAdd = async () => {
+    if (!newRow.detail_name.trim() || !newRow.detail_value.trim()) return;
+    setSaving(true);
+    try {
+      await productDetailsApi.create({ product_id: product.id, ...newRow });
+      toast.success("Đã thêm thông số");
+      setNewRow({ detail_name: "", detail_value: "" });
+      setAddMode(false);
+      load();
+    } catch (err) {
+      toast.error(err.message || "Không thể thêm thông số");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEdit = (spec) => {
+    setEditingId(spec.id);
+    setEditBuf({ detail_name: spec.detail_name, detail_value: spec.detail_value });
+  };
+
+  const handleUpdate = async (id) => {
+    if (!editBuf.detail_name.trim() || !editBuf.detail_value.trim()) return;
+    setSaving(true);
+    try {
+      await productDetailsApi.update(id, editBuf);
+      toast.success("Đã cập nhật");
+      setEditingId(null);
+      load();
+    } catch (err) {
+      toast.error(err.message || "Không thể cập nhật");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (spec) => {
+    if (!confirm(`Xoá thông số "${spec.detail_name}"?`)) return;
+    try {
+      await productDetailsApi.remove(spec.id);
+      toast.success("Đã xoá");
+      load();
+    } catch (err) {
+      toast.error(err.message || "Không thể xoá");
+    }
+  };
+
+  if (loading) return <div className="text-center text-sm text-muted py-10">Đang tải...</div>;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {specs.length === 0 && !addMode ? (
+        <div className="text-center text-sm text-muted py-10 border border-dashed border-shade rounded-xl">
+          Sản phẩm chưa có thông số kỹ thuật nào
+        </div>
+      ) : (
+        <div className="border border-shade rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-cream border-b border-shade">
+                <th className="text-left px-4 py-2.5 text-xs font-bold text-muted uppercase tracking-wide w-[45%]">Thông số</th>
+                <th className="text-left px-4 py-2.5 text-xs font-bold text-muted uppercase tracking-wide">Giá trị</th>
+                <th className="w-20" />
+              </tr>
+            </thead>
+            <tbody>
+              {specs.map((spec, i) => (
+                <tr key={spec.id} className={i % 2 !== 0 ? "bg-cream/50" : ""}>
+                  {editingId === spec.id ? (
+                    <>
+                      <td className="px-3 py-2">
+                        <input
+                          className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                          value={editBuf.detail_name}
+                          onChange={(e) => setEditBuf((b) => ({ ...b, detail_name: e.target.value }))}
+                          placeholder="VD: RAM"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                          value={editBuf.detail_value}
+                          onChange={(e) => setEditBuf((b) => ({ ...b, detail_value: e.target.value }))}
+                          placeholder="VD: 8GB"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-2 justify-end">
+                          <button disabled={saving} onClick={() => handleUpdate(spec.id)} className="text-[11px] font-bold text-vnpt hover:underline disabled:opacity-50">Lưu</button>
+                          <button onClick={() => setEditingId(null)} className="text-[11px] font-bold text-muted hover:underline">Huỷ</button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-4 py-2.5 font-medium text-body">{spec.detail_name}</td>
+                      <td className="px-4 py-2.5 text-muted">{spec.detail_value}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => startEdit(spec)} className="text-[11px] font-bold text-vnpt hover:underline">Sửa</button>
+                          <button onClick={() => handleDelete(spec)} className="text-[11px] font-bold text-accent hover:underline">Xoá</button>
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+
+              {addMode && (
+                <tr className="bg-vnpt-light/40 border-t border-shade">
+                  <td className="px-3 py-2">
+                    <input
+                      autoFocus
+                      className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                      value={newRow.detail_name}
+                      onChange={(e) => setNewRow((r) => ({ ...r, detail_name: e.target.value }))}
+                      placeholder="VD: Màn hình, RAM, Pin..."
+                      onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                      value={newRow.detail_value}
+                      onChange={(e) => setNewRow((r) => ({ ...r, detail_value: e.target.value }))}
+                      placeholder="VD: 6.7 inch AMOLED"
+                      onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        disabled={saving || !newRow.detail_name.trim() || !newRow.detail_value.trim()}
+                        onClick={handleAdd}
+                        className="text-[11px] font-bold text-vnpt hover:underline disabled:opacity-40"
+                      >{saving ? "..." : "Thêm"}</button>
+                      <button
+                        onClick={() => { setAddMode(false); setNewRow({ detail_name: "", detail_value: "" }); }}
+                        className="text-[11px] font-bold text-muted hover:underline"
+                      >Huỷ</button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!addMode && (
+        <div>
+          <button
+            onClick={() => setAddMode(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-vnpt-light text-vnpt rounded-full text-sm font-bold hover:bg-vnpt hover:text-white transition-colors"
+          >
+            ➕ Thêm thông số
+          </button>
+        </div>
       )}
     </div>
   );

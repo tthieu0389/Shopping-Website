@@ -276,26 +276,32 @@ export default function ProductDetailPage() {
             })()}
 
             {/* Actions */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleAdd}
-                disabled={product.is_available === false || syncing}
-                className="py-4 bg-vnpt text-white rounded-full font-bold text-base hover:bg-vnpt-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {syncing ? '⏳ Đang thêm...' : '🛒 Thêm vào giỏ'}
-              </button>
-              <Link
-                to="/checkout"
-                className="py-4 bg-accent text-white rounded-full font-bold text-base hover:bg-accent-dark transition-all text-center"
-                onClick={async (e) => {
-                  if (product.is_available === false) { e.preventDefault(); return }
-                  if (!isAuthenticated) { e.preventDefault(); toast.error('Vui lòng đăng nhập'); return }
-                  await addItem(product, qty)
-                }}
-              >
-                ⚡ Mua ngay
-              </Link>
-            </div>
+            {(() => {
+              const isOutOfStock = product.is_available === false || (product.stock !== null && product.stock !== undefined && product.stock === 0)
+              return (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleAdd}
+                    disabled={isOutOfStock || syncing}
+                    className="py-4 bg-vnpt text-white rounded-full font-bold text-base hover:bg-vnpt-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {syncing ? '⏳ Đang thêm...' : '🛒 Thêm vào giỏ'}
+                  </button>
+                  <button
+                    disabled={isOutOfStock}
+                    className="py-4 bg-accent text-white rounded-full font-bold text-base hover:bg-accent-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={async (e) => {
+                      if (isOutOfStock) return
+                      if (!isAuthenticated) { toast.error('Vui lòng đăng nhập'); return }
+                      await addItem(product, qty)
+                      window.location.href = '/checkout'
+                    }}
+                  >
+                    ⚡ Mua ngay
+                  </button>
+                </div>
+              )
+            })()}
           </div>
         </div>
 
@@ -332,12 +338,12 @@ export default function ProductDetailPage() {
           {activeTab === 'specs' && (
             <div>
               {product.details && product.details.length > 0 ? (
-                <table className="w-full text-sm">
+                <table className="w-full text-sm border border-shade rounded-xl overflow-hidden">
                   <tbody>
                     {product.details.map((d, i) => (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-cream' : 'bg-white'}>
-                        <td className="py-3 px-4 font-semibold text-body w-1/3">{d.detail_name}</td>
-                        <td className="py-3 px-4 text-muted">{d.detail_value}</td>
+                      <tr key={i} className={i % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
+                        <td className="py-3 px-5 font-semibold text-body w-1/3 border-r border-shade">{d.detail_name}</td>
+                        <td className="py-3 px-5 text-body">{d.detail_value}</td>
                       </tr>
                     ))}
                   </tbody>

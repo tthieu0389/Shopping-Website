@@ -188,6 +188,14 @@ export const contactApi = {
   remove: (id) => api.delete(`/contacts/${id}`),
 };
 
+// ── PRODUCT DETAILS / THÔNG SỐ KỸ THUẬT (ADMIN) ─────────────────────────────
+export const productDetailsApi = {
+  getByProduct: (productId) => api.get(`/product-details/product/${productId}`),
+  create: (data) => api.post("/product-details", data),
+  update: (id, data) => api.put(`/product-details/${id}`, data),
+  remove: (id) => api.delete(`/product-details/${id}`),
+};
+
 // ── STORES ───────────────────────────────────────────────────────────────────
 export const storesApi = {
   getAll: () => api.get("/stores"),
