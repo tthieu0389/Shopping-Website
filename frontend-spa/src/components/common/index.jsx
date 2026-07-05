@@ -450,7 +450,7 @@ export function SectionHead({ label, title, sub }) {
           {label}
         </div>
       )}
-      <h2 className="font-display text-[34px] font-bold text-body mb-3">
+      <h2 className="font-display text-2xl sm:text-[28px] lg:text-[34px] font-bold text-body mb-3">
         {title}
       </h2>
       {sub && (
@@ -475,11 +475,11 @@ export function TrustBand() {
     { icon: "📞", title: "Hỗ trợ 24/7", sub: "1800 1234 miễn phí" },
   ];
   return (
-    <div className="bg-vnpt py-8 px-10">
-      <div className="max-w-[1200px] mx-auto grid grid-cols-4 gap-6">
+    <div className="bg-vnpt py-6 sm:py-8 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {items.map(({ icon, title, sub }) => (
           <div key={title} className="flex items-center gap-3.5 text-white">
-            <div className="w-11 h-11 bg-white/12 rounded-[10px] flex items-center justify-center text-xl flex-shrink-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/12 rounded-[10px] flex items-center justify-center text-lg sm:text-xl flex-shrink-0">
               {icon}
             </div>
             <div>
@@ -496,13 +496,13 @@ export function TrustBand() {
 // ── CountdownTimer ────────────────────────────────────────────────────────────
 export function CountdownTimer({ h, m, s }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2">
       {[h, m, s].map((val, i) => (
-        <span key={i} className="flex items-center gap-2">
-          <span className="bg-accent text-white px-3.5 py-2 rounded-lg text-xl font-bold font-display min-w-[52px] text-center">
+        <span key={i} className="flex items-center gap-1.5 sm:gap-2">
+          <span className="bg-accent text-white px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-base sm:text-xl font-bold font-display min-w-[40px] sm:min-w-[52px] text-center">
             {val}
           </span>
-          {i < 2 && <span className="text-white text-xl font-bold">:</span>}
+          {i < 2 && <span className="text-white text-base sm:text-xl font-bold">:</span>}
         </span>
       ))}
     </div>

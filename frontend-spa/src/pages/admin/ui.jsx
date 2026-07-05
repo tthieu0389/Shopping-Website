@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Children } from "react";
+import { createPortal } from "react-dom";
 
 // ─── Badge ──────────────────────────────────────────────────────────────────
 const BADGE_TONES = {
@@ -87,17 +88,45 @@ export function Input({ label, required, ...props }) {
 // options dạng [value, label]) để không phải sửa nơi gọi.
 export function Select({ label, required, options = [], value, onChange, disabled, className = "" }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null); // { top, left, width, openUpward }
   const ref = useRef(null);
   const selected = options.find(([v]) => String(v) === String(value));
   const selectedLabel = selected ? selected[1] : (options[0]?.[1] ?? "");
 
+  const computeCoords = () => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const estimatedHeight = Math.min(240, options.length * 40 + 8);
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < estimatedHeight && rect.top > spaceBelow;
+    setCoords({
+      top: openUpward ? rect.top : rect.bottom,
+      left: rect.left,
+      width: rect.width,
+      openUpward,
+    });
+  };
+
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    if (!open) return;
+    computeCoords();
+    // Đóng / cập nhật lại vị trí khi cuộn trang hoặc resize, vì dropdown giờ
+    // định vị fixed theo toạ độ màn hình, không còn nằm trong flow của modal.
+    const handleScrollOrResize = () => computeCoords();
+    const handleClickOutside = (e) => {
+      if (ref.current && ref.current.contains(e.target)) return;
+      setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handlePick = (v) => {
     onChange?.({ target: { value: v } });
@@ -125,8 +154,18 @@ export function Select({ label, required, options = [], value, onChange, disable
           </svg>
         </button>
 
-        {open && (
-          <div className="absolute top-full left-0 mt-1.5 w-full bg-canvas border border-shade rounded-xl shadow-md z-50 overflow-hidden max-h-60 overflow-y-auto">
+        {open && coords && createPortal(
+          <div
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              position: "fixed",
+              top: coords.openUpward ? undefined : coords.top + 6,
+              bottom: coords.openUpward ? window.innerHeight - coords.top + 6 : undefined,
+              left: coords.left,
+              width: coords.width,
+            }}
+            className="bg-canvas border border-shade rounded-xl shadow-lg z-[300] overflow-y-auto max-h-60"
+          >
             {options.map(([v, l]) => (
               <button
                 key={v}
@@ -138,7 +177,8 @@ export function Select({ label, required, options = [], value, onChange, disable
                 {l}
               </button>
             ))}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </Field>

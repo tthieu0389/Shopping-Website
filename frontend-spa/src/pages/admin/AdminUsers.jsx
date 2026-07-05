@@ -5,6 +5,8 @@ import { toast, formatDate, getInitials, debounce } from '../../utils/index.js'
 
 const LIMIT = 10
 const emptyForm = { name: '', email: '', password: '', role: 'user' }
+const ROLE_LABELS = { user: 'Khách hàng', staff: 'Nhân viên', admin: 'Quản trị viên' }
+const ROLE_TONES = { user: 'muted', staff: 'warning', admin: 'info' }
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([])
@@ -63,7 +65,7 @@ export default function AdminUsers() {
             onChange={e => handleSearchChange(e.target.value)}
             placeholder="Tìm theo tên hoặc email..."
           />
-          <FilterTabs options={[['all', 'Tất cả'], ['user', 'Khách hàng'], ['admin', 'Quản trị viên']]} value={roleFilter} onChange={setRoleFilter} />
+          <FilterTabs options={[['all', 'Tất cả'], ['user', 'Khách hàng'], ['staff', 'Nhân viên'], ['admin', 'Quản trị viên']]} value={roleFilter} onChange={setRoleFilter} />
         </div>
         <Btn onClick={openAdd}>➕ Thêm tài khoản</Btn>
       </div>
@@ -84,7 +86,7 @@ export default function AdminUsers() {
                 </div>
               </TD>
               <TD muted>{u.email}</TD>
-              <TD noTruncate><Badge label={u.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'} tone={u.role === 'admin' ? 'info' : 'muted'} /></TD>
+              <TD noTruncate><Badge label={ROLE_LABELS[u.role] || u.role} tone={ROLE_TONES[u.role] || 'muted'} /></TD>
               <TD muted>{formatDate(u.created_at)}</TD>
               <TD noTruncate>
                 <div className="flex gap-3">
@@ -100,11 +102,11 @@ export default function AdminUsers() {
       <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
 
       {modal && (
-        <Modal title={modal === 'add' ? 'Thêm tài khoản mới' : `Sửa: ${modal.name}`} onClose={() => setModal(null)} width="max-w-[440px]">
+        <Modal title={modal === 'add' ? 'Thêm tài khoản mới' : `Sửa: ${modal.name}`} onClose={() => setModal(null)} width="max-w-[500px]">
           <Input label="Họ và tên" required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nguyễn Văn A" />
           <Input label="Email" required type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="email@vnpt.vn" />
           <Input label={modal === 'add' ? 'Mật khẩu' : 'Mật khẩu mới (để trống nếu không đổi)'} required={modal === 'add'} type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder="Tối thiểu 6 ký tự" />
-          <Select label="Vai trò" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} options={[['user', 'Khách hàng'], ['admin', 'Quản trị viên']]} />
+          <Select label="Vai trò" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} options={[['user', 'Khách hàng'], ['staff', 'Nhân viên'], ['admin', 'Quản trị viên']]} />
           <div className="flex justify-end gap-2.5">
             <Btn variant="ghost" onClick={() => setModal(null)}>Huỷ</Btn>
             <Btn onClick={handleSave} disabled={saving}>{saving ? 'Đang lưu...' : 'Lưu tài khoản'}</Btn>

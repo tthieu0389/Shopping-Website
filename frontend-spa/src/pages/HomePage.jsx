@@ -68,18 +68,18 @@ function HeroSlider({ promotionMap = {} }) {
   const discount = discountPct ?? 0
 
   return (
-    <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[20px] p-7 text-white select-none">
+    <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[20px] p-4 sm:p-5 lg:p-7 text-white select-none max-w-[320px] sm:max-w-[380px] lg:max-w-none mx-auto lg:mx-0">
       {/* Ảnh + arrows nằm ngoài ảnh */}
-      <div className="relative flex items-center gap-2 mb-4">
+      <div className="relative flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
         {/* Prev */}
         <button
           onClick={() => goTo((current - 1 + topProducts.length) % topProducts.length)}
-          className="flex-shrink-0 w-8 h-8 bg-white/15 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-base font-bold transition-all duration-200"
+          className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-white/15 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-xs sm:text-base font-bold transition-all duration-200"
         >‹</button>
 
         {/* Ảnh sản phẩm — swipe support */}
         <div
-          className="relative flex-1 aspect-square rounded-[14px] bg-white/8 overflow-hidden"
+          className="relative flex-1 aspect-[4/3] lg:aspect-square rounded-[14px] bg-white/8 overflow-hidden"
           onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
           onTouchEnd={e => {
             const diff = touchStartX.current - e.changedTouches[0].clientX
@@ -95,7 +95,7 @@ function HeroSlider({ promotionMap = {} }) {
                 key={prod.id}
                 src={pImg || 'https://placehold.co/300x300?text=No+Image'}
                 alt={prod.name}
-                className="absolute inset-0 w-full h-full object-contain p-5 transition-all duration-500"
+                className="absolute inset-0 w-full h-full object-contain p-3 sm:p-5 transition-all duration-500"
                 style={{ opacity: i === current ? 1 : 0, transform: i === current ? 'scale(1)' : 'scale(0.95)' }}
                 onError={e => { e.target.src = 'https://placehold.co/300x300?text=No+Image' }}
               />
@@ -106,20 +106,20 @@ function HeroSlider({ promotionMap = {} }) {
         {/* Next */}
         <button
           onClick={() => goTo((current + 1) % topProducts.length)}
-          className="flex-shrink-0 w-8 h-8 bg-white/15 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-base font-bold transition-all duration-200"
+          className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-white/15 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-xs sm:text-base font-bold transition-all duration-200"
         >›</button>
       </div>
 
       {/* Thông tin sản phẩm */}
-      <div className="min-h-[90px]">
-        <div className="text-[11px] text-white/60 font-semibold uppercase tracking-wider mb-1">{p.brand || 'VNPT Shop'}</div>
-        <div className="font-bold text-[16px] leading-snug mb-3 line-clamp-2">{p.name}</div>
-        <div className="flex items-center gap-2.5 mb-4">
-          <span className="text-[26px] font-bold text-blue-300 font-display">{formatPrice(salePrice)}</span>
+      <div className="min-h-[80px] sm:min-h-[90px]">
+        <div className="text-[10px] sm:text-[11px] text-white/60 font-semibold uppercase tracking-wider mb-1">{p.brand || 'VNPT Shop'}</div>
+        <div className="font-bold text-sm sm:text-[16px] leading-snug mb-2 sm:mb-3 line-clamp-2">{p.name}</div>
+        <div className="flex items-center gap-2 sm:gap-2.5 mb-3 sm:mb-4 flex-wrap">
+          <span className="text-lg sm:text-[26px] font-bold text-blue-300 font-display">{formatPrice(salePrice)}</span>
           {discount > 0 && (
             <>
-              <span className="text-sm text-white/50 line-through">{formatPrice(originalPrice)}</span>
-              <span className="bg-accent text-white text-xs font-bold px-2.5 py-1 rounded-full">-{discount}%</span>
+              <span className="text-xs sm:text-sm text-white/50 line-through">{formatPrice(originalPrice)}</span>
+              <span className="bg-accent text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">-{discount}%</span>
             </>
           )}
         </div>
@@ -127,7 +127,7 @@ function HeroSlider({ promotionMap = {} }) {
 
       <Link
         to={`/products/${p.slug}`}
-        className="block w-full py-3 bg-accent text-white rounded-full font-bold text-sm hover:bg-accent-dark transition-colors text-center mb-4"
+        className="block w-full py-2.5 sm:py-3 bg-accent text-white rounded-full font-bold text-xs sm:text-sm hover:bg-accent-dark transition-colors text-center mb-3 sm:mb-4"
       >
         🛒 Xem sản phẩm
       </Link>
@@ -251,7 +251,7 @@ function FlashSaleSlider({ products, loading }) {
   const touchStartX = useRef(0)
 
   useEffect(() => {
-    const update = () => setPerView(window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : window.innerWidth < 1280 ? 3 : 4)
+    const update = () => setPerView(window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 3 : window.innerWidth < 1280 ? 4 : 4)
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
@@ -310,7 +310,7 @@ function FlashSaleSlider({ products, loading }) {
           className="hidden md:flex flex-shrink-0 w-10 h-10 bg-white/10 border border-white/25 hover:bg-white/20 hover:border-white/50 text-white rounded-full items-center justify-center text-lg font-bold transition-colors"
         >‹</button>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+        <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
           {visible.map((p, i) => (
             <FlashSaleCard key={`${p.id}-${i}`} product={p} />
           ))}
@@ -348,30 +348,30 @@ function RollingBanner({ products, loading, label, linkTo, linkLabel, gradient, 
   const displayDisc = disc ?? Math.round((1 - price / originalPrice) * 100)
 
   return (
-    <div className="rounded-[20px] p-9 text-white flex flex-col justify-between min-h-[260px]" style={{ background: gradient }}>
+    <div className="rounded-[20px] p-5 sm:p-6 lg:p-9 text-white flex flex-col justify-between min-h-[220px] sm:min-h-[240px] lg:min-h-[260px]" style={{ background: gradient }}>
       <div>
         <div className="text-[11px] font-bold uppercase tracking-[2px] opacity-75 mb-3">{label}</div>
         {loading ? (
           <div className="text-white/50 text-sm">Đang tải...</div>
         ) : !p ? (
-          <div className="font-display text-[28px] font-bold leading-snug opacity-60">Chưa có dữ liệu</div>
+          <div className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold leading-snug opacity-60">Chưa có dữ liệu</div>
         ) : (
           <div key={p.id}>
             {/* Tên sản phẩm */}
-            <div className="font-display text-[26px] font-bold leading-snug line-clamp-2 mb-4">{p.name}</div>
+            <div className="font-display text-xl sm:text-2xl lg:text-[26px] font-bold leading-snug line-clamp-2 mb-4">{p.name}</div>
 
             {/* Luôn hiển thị dạng sale: giá gốc gạch ngang + badge % + giá sale */}
             <>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-display text-[15px] font-normal line-through opacity-55">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="font-display text-sm lg:text-[15px] font-normal line-through opacity-55">
                   {formatPrice(originalPrice)}
                 </span>
                 <span className="text-[11px] font-bold bg-white text-red-600 px-2.5 py-0.5 rounded-full leading-5">
                   -{displayDisc}%
                 </span>
               </div>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="font-display text-[32px] font-bold leading-none">{formatPrice(price)}</span>
+              <div className="flex items-baseline gap-1 mb-4 flex-wrap">
+                <span className="font-display text-2xl sm:text-[28px] lg:text-[32px] font-bold leading-none">{formatPrice(price)}</span>
                 <span className="text-sm font-normal opacity-70">/tháng</span>
               </div>
             </>
@@ -406,8 +406,8 @@ function PromoBanners({ simProducts, simLoading, internetProducts, internetLoadi
   const netWithDisc = internetProducts.map(p => ({ ...p, promotionDiscount: promotionMap[p.id] ?? null }))
 
   return (
-    <div className="bg-cream px-10 py-10">
-      <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-5 items-stretch">
+    <div className="bg-cream px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
         <RollingBanner
           products={simWithDisc}
           loading={simLoading}
@@ -462,15 +462,15 @@ function NewsletterSection() {
   const handleKey = (e) => { if (e.key === 'Enter') handleSubmit() }
 
   return (
-    <div className="bg-vnpt-dark px-10 py-[72px] text-center">
-      <h2 className="font-display text-[32px] font-bold text-white mb-2.5">Nhận ưu đãi sớm nhất</h2>
-      <p className="text-white/70 mb-8 text-sm">Đăng ký email để nhận thông báo Flash Sale, tin tức công nghệ mới nhất</p>
+    <div className="bg-vnpt-dark px-4 sm:px-6 lg:px-10 py-12 sm:py-[72px] text-center">
+      <h2 className="font-display text-2xl sm:text-[32px] font-bold text-white mb-2.5">Nhận ưu đãi sớm nhất</h2>
+      <p className="text-white/70 mb-8 text-sm px-2 sm:px-0">Đăng ký email để nhận thông báo Flash Sale, tin tức công nghệ mới nhất</p>
 
-      <div className="flex max-w-[500px] mx-auto bg-white rounded-full overflow-hidden p-1 pl-5">
+      <div className="flex flex-col sm:flex-row max-w-[500px] mx-auto bg-white rounded-2xl sm:rounded-full overflow-hidden p-1 sm:pl-5 gap-1 sm:gap-0">
         <input
           type="email"
           placeholder="Nhập địa chỉ email của bạn..."
-          className="flex-1 border-none outline-none text-sm font-body text-body bg-transparent"
+          className="flex-1 border-none outline-none text-sm font-body text-body bg-transparent px-4 py-2.5 sm:px-0 sm:py-0"
           value={email}
           onChange={e => { setEmail(e.target.value); setStatus('idle') }}
           onKeyDown={handleKey}
@@ -532,32 +532,32 @@ export default function HomePage() {
     <div>
       {/* HERO */}
       <div
-        className="relative overflow-hidden px-10 py-16"
+        className="relative overflow-hidden px-4 sm:px-6 lg:px-10 py-10 sm:py-12 lg:py-16"
         style={{ background: 'linear-gradient(135deg, #00205f 0%, #003087 55%, #1a4fa8 100%)' }}
       >
-        <div className="relative max-w-[1200px] mx-auto grid grid-cols-2 gap-16 items-center">
+        <div className="relative max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           <div>
             <div className="inline-flex items-center gap-1.5 bg-white/12 text-white border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wider mb-5">
               🔥 Ưu đãi mùa hè 2024
             </div>
-            <h1 className="font-display text-[50px] font-bold text-white leading-tight mb-4">
+            <h1 className="font-display text-[32px] sm:text-[40px] lg:text-[50px] font-bold text-white leading-tight mb-4">
               Kết nối mọi <span className="text-blue-300">giới hạn</span> — Công nghệ đỉnh cao
             </h1>
-            <p className="text-base text-white/80 leading-relaxed mb-7">
+            <p className="text-sm sm:text-base text-white/80 leading-relaxed mb-7">
               Mua sắm điện thoại, sim số đẹp, gói cước ưu đãi từ nhà mạng hàng đầu Việt Nam. Giao hàng trong 2 giờ tại nội thành.
             </p>
             <div className="flex gap-3 flex-wrap mb-9">
-              <Link to="/products?product_type=device" className="px-7 py-3.5 rounded-full text-sm font-bold hover:-translate-y-0.5 transition-all shadow-md" style={{ backgroundColor: '#E30613', color: '#ffffff' }}>
+              <Link to="/products?product_type=device" className="px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-sm font-bold hover:-translate-y-0.5 transition-all shadow-md" style={{ backgroundColor: '#E30613', color: '#ffffff' }}>
                 Mua ngay hôm nay
               </Link>
-              <Link to="/flash-sale" className="px-7 py-3.5 rounded-full text-sm font-semibold transition-all" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}>
+              <Link to="/flash-sale" className="px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-sm font-semibold transition-all" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}>
                 ⚡ Xem Flash Sale
               </Link>
             </div>
-            <div className="flex gap-8">
+            <div className="flex gap-6 sm:gap-8 flex-wrap">
               {[['2M+','Khách hàng tin dùng'],['500K+','Đơn hàng thành công'],['100%','Hàng chính hãng']].map(([n,l]) => (
                 <div key={l}>
-                  <div className="text-[28px] font-bold text-white font-display">{n}</div>
+                  <div className="text-2xl sm:text-[28px] font-bold text-white font-display">{n}</div>
                   <div className="text-xs text-white/60 mt-0.5">{l}</div>
                 </div>
               ))}
@@ -574,19 +574,19 @@ export default function HomePage() {
       <TrustBand />
 
       {/* CATEGORIES */}
-      <section className="bg-cream py-16 px-10">
+      <section className="bg-cream py-10 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-10">
         <div className="max-w-[1200px] mx-auto">
           <SectionHead label="Danh mục" title="Khám phá sản phẩm" sub="Từ sim số đẹp đến điện thoại cao cấp, tất cả đều có tại VNPT Shop" />
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             {CATEGORIES.map(({ type, icon, name, suffix }) => {
               const count = categoryCounts[type]
               return (
                 <Link
                   key={type}
                   to={`/products?product_type=${type}`}
-                  className="bg-white rounded-xl p-6 text-center border border-shade hover:border-vnpt hover:-translate-y-0.5 hover:shadow-md transition-all duration-250"
+                  className="bg-white rounded-xl p-4 sm:p-5 lg:p-6 text-center border border-shade hover:border-vnpt hover:-translate-y-0.5 hover:shadow-md transition-all duration-250"
                 >
-                  <div className="w-14 h-14 bg-vnpt-light rounded-[14px] flex items-center justify-center mx-auto mb-3 text-[26px]">{icon}</div>
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-vnpt-light rounded-[14px] flex items-center justify-center mx-auto mb-3 text-xl sm:text-2xl lg:text-[26px]">{icon}</div>
                   <div className="text-sm font-semibold text-body mb-1">{name}</div>
                   <div className="text-xs text-muted">
                     {count === undefined ? '...' : `${count} ${suffix}`}
@@ -599,10 +599,10 @@ export default function HomePage() {
       </section>
 
       {/* FLASH SALE */}
-      <section className="bg-vnpt-dark py-16 px-10">
+      <section className="bg-vnpt-dark py-10 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-10">
         <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-center justify-between mb-7">
-            <div className="font-display text-[28px] font-bold text-white">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-7">
+            <div className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold text-white">
               ⚡ Flash Sale <span className="text-red-400">Hôm nay</span>
             </div>
             <CountdownTimer h={h} m={m} s={s} />
@@ -622,12 +622,12 @@ export default function HomePage() {
       <PromoBanners simProducts={simProducts} simLoading={simLoading} internetProducts={internetProducts} internetLoading={internetLoading} promotionMap={promotionMap} />
 
       {/* SERVICES */}
-      <section className="py-16 px-10">
+      <section className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-10">
         <div className="max-w-[1200px] mx-auto">
           <SectionHead label="Dịch vụ VNPT" title="Giải pháp toàn diện" sub="Từ cá nhân đến doanh nghiệp — VNPT cung cấp đầy đủ dịch vụ viễn thông" />
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {SERVICES.map(({ icon, name, desc, price, sub }) => (
-              <div key={name} className="bg-cream rounded-[20px] p-7 border border-shade hover:border-vnpt hover:bg-white hover:shadow-md transition-all duration-250 cursor-pointer group relative overflow-hidden">
+              <div key={name} className="bg-cream rounded-[20px] p-5 sm:p-6 lg:p-7 border border-shade hover:border-vnpt hover:bg-white hover:shadow-md transition-all duration-250 cursor-pointer group relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-[3px] bg-vnpt scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
                 <div className="text-3xl mb-4">{icon}</div>
                 <div className="text-[17px] font-bold text-body mb-2">{name}</div>
@@ -641,7 +641,7 @@ export default function HomePage() {
       </section>
 
       {/* REVIEWS */}
-      <section className="bg-cream py-16 px-10">
+      <section className="bg-cream py-10 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-10">
         <div className="max-w-[1200px] mx-auto">
           <SectionHead label="Đánh giá khách hàng" title="Khách hàng nói gì?" />
           <ReviewsSlider />
