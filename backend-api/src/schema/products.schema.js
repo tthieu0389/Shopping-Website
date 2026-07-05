@@ -42,7 +42,7 @@ exports.createProductSchema = z.object({
       MAX_PRICE,
       "Giá bán vượt quá giới hạn cho phép (tối đa 9,999,999,999.99 ₫)",
     ),
-  product_type: z.string().min(1).max(50).optional().default("device"),
+  product_type: z.string().min(1).max(20).optional().default("device"),
   category_id: z.coerce.number().int().optional(),
   brand: z
     .string()
@@ -83,7 +83,7 @@ exports.updateProductSchema = z.object({
       "Giá bán vượt quá giới hạn cho phép (tối đa 9,999,999,999.99 ₫)",
     )
     .optional(),
-  product_type: z.string().min(1).max(50).optional(),
+  product_type: z.string().min(1).max(20).optional(),
   category_id: z.coerce.number().int().optional(),
   brand: z
     .string()

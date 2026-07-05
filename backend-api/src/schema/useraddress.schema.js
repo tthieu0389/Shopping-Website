@@ -2,34 +2,80 @@ const { z } = require("zod");
 
 exports.createAddressSchema = z.object({
   user_id: z.coerce.number().int().optional(),
-  receiver_name: z.string().optional(),
+  receiver_name: z
+    .string()
+    .max(100, "Tên người nhận không được vượt quá 100 ký tự")
+    .optional(),
   phone: z
     .string()
     .regex(/^[0-9]{9,11}$/)
-    .optional(), 
+    .optional(),
 
-  province: z.string().optional(),
-  district: z.string().optional(),
-  ward: z.string().optional(),
-  address_line: z.string().optional(),
+  province: z
+    .string()
+    .max(100, "Tỉnh/thành không được vượt quá 100 ký tự")
+    .optional(),
+  district: z
+    .string()
+    .max(100, "Quận/huyện không được vượt quá 100 ký tự")
+    .optional(),
+  ward: z
+    .string()
+    .max(100, "Phường/xã không được vượt quá 100 ký tự")
+    .optional(),
+  address_line: z
+    .string()
+    .max(500, "Địa chỉ chi tiết không được vượt quá 500 ký tự")
+    .optional(),
 
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  latitude: z
+    .number()
+    .min(-90, "Vĩ độ không hợp lệ")
+    .max(90, "Vĩ độ không hợp lệ")
+    .optional(),
+  longitude: z
+    .number()
+    .min(-180, "Kinh độ không hợp lệ")
+    .max(180, "Kinh độ không hợp lệ")
+    .optional(),
 
   is_default: z.boolean().optional(),
 });
 
 exports.updateAddressSchema = z.object({
-  receiver_name: z.string().optional(),
+  receiver_name: z
+    .string()
+    .max(100, "Tên người nhận không được vượt quá 100 ký tự")
+    .optional(),
   phone: z
     .string()
     .regex(/^[0-9]{9,11}$/)
     .optional(),
-  province: z.string().optional(),
-  district: z.string().optional(),
-  ward: z.string().optional(),
-  address_line: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  province: z
+    .string()
+    .max(100, "Tỉnh/thành không được vượt quá 100 ký tự")
+    .optional(),
+  district: z
+    .string()
+    .max(100, "Quận/huyện không được vượt quá 100 ký tự")
+    .optional(),
+  ward: z
+    .string()
+    .max(100, "Phường/xã không được vượt quá 100 ký tự")
+    .optional(),
+  address_line: z
+    .string()
+    .max(500, "Địa chỉ chi tiết không được vượt quá 500 ký tự")
+    .optional(),
+  latitude: z
+    .number()
+    .min(-90, "Vĩ độ không hợp lệ")
+    .max(90, "Vĩ độ không hợp lệ")
+    .optional(),
+  longitude: z
+    .number()
+    .min(-180, "Kinh độ không hợp lệ")
+    .max(180, "Kinh độ không hợp lệ")
+    .optional(),
   is_default: z.boolean().optional(),
 });
