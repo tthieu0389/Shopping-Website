@@ -2,6 +2,7 @@ const { z } = require("zod");
 
 const thumbnailUrlSchema = z
   .string()
+  .max(500, "thumbnail_url không được vượt quá 500 ký tự")
   .refine(
     (val) =>
       val.startsWith("/") ||

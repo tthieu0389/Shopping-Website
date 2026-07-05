@@ -1385,15 +1385,18 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
-                    "format": "email"
+                    "format": "email",
+                    "maxLength": 100
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "maxLength": 72
                   }
                 }
               }
@@ -1579,15 +1582,18 @@
                 "required": ["name", "email", "password", "role"],
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
-                    "format": "email"
+                    "format": "email",
+                    "maxLength": 100
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "maxLength": 72
                   },
                   "role": {
                     "type": "string",
@@ -1659,15 +1665,18 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                   },
                   "email": {
                     "type": "string",
-                    "format": "email"
+                    "format": "email",
+                    "maxLength": 100
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "maxLength": 72
                   },
                   "role": {
                     "type": "string",
@@ -6848,18 +6857,22 @@
                 "required": ["title", "content"],
                 "properties": {
                   "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200
                   },
                   "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200
                   },
                   "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20000
                   },
                   "thumbnail_url": {
                     "type": "string",
                     "format": "uri",
-                    "description": "URL ảnh đại diện bài viết"
+                    "description": "URL ảnh đại diện bài viết",
+                    "maxLength": 500
                   }
                 }
               }
@@ -6973,18 +6986,22 @@
                 "type": "object",
                 "properties": {
                   "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200
                   },
                   "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 200
                   },
                   "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20000
                   },
                   "thumbnail_url": {
                     "type": "string",
                     "format": "uri",
-                    "description": "URL ảnh đại diện bài viết"
+                    "description": "URL ảnh đại diện bài viết",
+                    "maxLength": 500
                   }
                 }
               }

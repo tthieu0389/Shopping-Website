@@ -13,7 +13,8 @@ exports.registerSchema = z.object({
     .max(100, "Email không được vượt quá 100 ký tự"),
   password: z
     .string({ required_error: "Mật khẩu không được để trống" })
-    .min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
+    .max(72, "Mật khẩu không được vượt quá 72 ký tự"), // bcrypt chỉ đọc tối đa 72 byte đầu
 });
 
 exports.loginSchema = z.object({
@@ -39,7 +40,8 @@ exports.createUserSchema = z.object({
     .max(100, "Email không được vượt quá 100 ký tự"),
   password: z
     .string({ required_error: "Mật khẩu không được để trống" })
-    .min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
+    .max(72, "Mật khẩu không được vượt quá 72 ký tự"),
   role: z.enum(["admin", "staff", "user"], {
     required_error: "Vai trò không hợp lệ",
     invalid_type_error: "Vai trò không hợp lệ",
@@ -59,6 +61,10 @@ exports.updateUserSchema = z.object({
     .email("Email không hợp lệ")
     .max(100, "Email không được vượt quá 100 ký tự")
     .optional(),
-  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự").optional(),
+  password: z
+    .string()
+    .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
+    .max(72, "Mật khẩu không được vượt quá 72 ký tự")
+    .optional(),
   role: z.enum(["admin", "staff", "user"]).optional(),
 });
