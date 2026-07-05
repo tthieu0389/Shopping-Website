@@ -100,9 +100,44 @@ exports.getCartItems = async (user_id) => {
     { throwOnUnavailable: false },
   );
 
+  // Item hết hàng (is_available=false) mà qty giỏ > 1 thì reset về 1
+  // Lock từng dòng trước khi update, re-check sau lock để tránh đụng độ
+  // với updateItem()/checkout() đang chạy song song.
+  const staleIds = calculated.items
+    .filter((ci) => !ci.is_available)
+    .map((ci) => rawItems.find((r) => r.product_id === ci.product_id))
+    .filter((raw) => raw && raw.quantity > 1)
+    .map((raw) => raw.id);
+
+  if (staleIds.length > 0) {
+    await knex.transaction(async (trx) => {
+      for (const id of staleIds) {
+        const locked = await trx("cart_items")
+          .where({ id })
+          .forUpdate()
+          .first();
+        if (locked && locked.quantity > 1) {
+          await trx("cart_items")
+            .where({ id })
+            .update({ quantity: 1, updated_at: trx.fn.now() });
+        }
+      }
+    });
+  }
+
   calculated.items = calculated.items.map((item) => {
     const rawMatch = rawItems.find((r) => r.product_id === item.product_id);
-    return { id: rawMatch.id, is_selected: rawMatch.is_selected, ...item };
+    const wasReset = !item.is_available && rawMatch.quantity > 1;
+    return {
+      id: rawMatch.id,
+      is_selected: rawMatch.is_selected,
+      ...item,
+      quantity: wasReset ? 1 : item.quantity,
+      // base_price phải tính lại theo qty mới (1), không phải qty cũ.
+      ...(wasReset && item.unit_price !== undefined
+        ? { base_price: item.unit_price }
+        : {}),
+    };
   });
   return calculated;
 };
