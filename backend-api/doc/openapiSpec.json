@@ -1280,6 +1280,16 @@
           "type": "string"
         },
         "description": "Tìm kiếm theo tên, email hoặc số điện thoại người dùng"
+      },
+      "RoleFilterParam": {
+        "name": "role",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": ["admin", "staff", "user"]
+        },
+        "description": "Lọc theo vai trò tài khoản. Không truyền = lấy tất cả (tab \"Tất cả\"). `user` = Khách hàng, `staff` = Nhân viên, `admin` = Quản trị viên."
       }
     },
     "responses": {
@@ -1494,6 +1504,9 @@
           },
           {
             "$ref": "#/components/parameters/SearchParam"
+          },
+          {
+            "$ref": "#/components/parameters/RoleFilterParam"
           }
         ],
         "responses": {
@@ -1547,7 +1560,7 @@
           }
         },
         "operationId": "listUsers",
-        "description": "**Yêu cầu quyền: admin, staff.**\n\nDùng endpoint này để **tra cứu `user_id`** khi staff/admin cần tạo đơn hộ khách (ví dụ khách mua trực tiếp tại cửa hàng, chỉ cung cấp tên/SĐT/email): tìm user trước bằng `search`, lấy `id` trong kết quả rồi truyền vào `user_id` của `POST /api/orders`.\n\nTham số `search` khớp theo **1 trong 3** field: `name` (ILIKE, không phân biệt hoa/thường), `email` (ILIKE), hoặc `phone` (LIKE, join từ bảng `user_profiles`) — chỉ cần khách cung cấp đúng 1 trong 3 thông tin trên là tra được, không cần biết đủ cả 3. Response luôn trả về đầy đủ cả `name`, `email`, `phone` (nếu có) của mỗi user tìm được, bất kể đang search bằng field nào, để nhân viên đối chiếu đúng khách trước khi chọn."
+        "description": "**Yêu cầu quyền: admin, staff.**\n\nDùng endpoint này để **tra cứu `user_id`** khi staff/admin cần tạo đơn hộ khách (ví dụ khách mua trực tiếp tại cửa hàng, chỉ cung cấp tên/SĐT/email): tìm user trước bằng `search`, lấy `id` trong kết quả rồi truyền vào `user_id` của `POST /api/orders`.\n\nTham số `search` khớp theo **1 trong 3** field: `name` (ILIKE, không phân biệt hoa/thường), `email` (ILIKE), hoặc `phone` (LIKE, join từ bảng `user_profiles`) — chỉ cần khách cung cấp đúng 1 trong 3 thông tin trên là tra được, không cần biết đủ cả 3. Response luôn trả về đầy đủ cả `name`, `email`, `phone` (nếu có) của mỗi user tìm được, bất kể đang search bằng field nào, để nhân viên đối chiếu đúng khách trước khi chọn.\n\nTham số `role` dùng để lọc theo vai trò cho 3 tab trên trang quản lý tài khoản (Khách hàng / Nhân viên / Quản trị viên). Không truyền `role` sẽ trả về toàn bộ (tab \"Tất cả\"), có thể kết hợp đồng thời với `search`."
       },
       "post": {
         "tags": ["Users"],
