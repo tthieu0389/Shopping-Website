@@ -21,8 +21,14 @@ exports.getAllUsers = async (req, res, next) => {
 
     const searchQuery = req.query.q || req.query.search;
     const search = searchQuery?.trim() || undefined;
+    const role = req.query.role?.trim() || undefined;
 
-    const result = await userService.getAllUsers({ limit, offset, search });
+    const result = await userService.getAllUsers({
+      limit,
+      offset,
+      search,
+      role,
+    });
     res.json({ data: result.data, total: result.total, page, limit });
   } catch (err) {
     next(err);

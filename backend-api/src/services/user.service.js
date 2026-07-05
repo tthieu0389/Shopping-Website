@@ -2,6 +2,8 @@ const knex = require("../database/knex");
 const bcrypt = require("bcrypt");
 const { normalizeKeyword } = require("../utils/searchKeyword");
 
+const ALLOWED_ROLES = ["admin", "staff", "user"];
+
 exports.createUser = async (data) => {
   const exists = await knex("users")
     .where({ email: data.email, is_deleted: false })
@@ -14,15 +16,17 @@ exports.createUser = async (data) => {
   return user;
 };
 
-exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
+exports.getAllUsers = async ({ limit = 10, offset = 0, search, role }) => {
   // Chuẩn hóa đầu vào ngay từ đầu (trim + gộp khoảng trắng thừa)
   const searchTerm = normalizeKeyword(search);
   const pageSize = Math.min(Number(limit) || 10, 300);
   const pageOffset = Math.max(Number(offset) || 0, 0);
+
   // Xây dựng base query (join user_profiles để search được cả theo SĐT)
   let base = knex("users as u")
     .leftJoin("user_profiles as p", "u.id", "p.user_id")
     .where({ "u.is_deleted": false });
+
   // Chỉ áp dụng filter khi có từ khóa thực sự
   if (searchTerm.length > 0) {
     base = base.where((qb) => {
@@ -31,8 +35,15 @@ exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
         .orWhere("p.phone", "like", `%${searchTerm}%`);
     });
   }
+
+  // Filter theo role (Khách hàng / Nhân viên / Quản trị viên trên UI)
+  if (role && ALLOWED_ROLES.includes(role)) {
+    base = base.where("u.role", role);
+  }
+
   const [{ count }] = await base.clone().countDistinct("u.id as count");
   const total = parseInt(count) || 0;
+
   // Truy vấn dữ liệu
   const data = await base
     .distinct(
