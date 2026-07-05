@@ -487,8 +487,11 @@ export default function AdminProducts() {
                   }
                   rows={3}
                   placeholder="Mô tả sản phẩm..."
-                  maxLength={5000}
+                  maxLength={3000}
                 />
+                <div className={`text-xs -mt-3 mb-3 text-right ${(form.description?.length || 0) >= 3000 ? "text-accent font-semibold" : "text-muted"}`}>
+                  {form.description?.length || 0}/3000
+                </div>
               </section>
 
               <section>
@@ -763,21 +766,23 @@ function SpecsTabContent({ product }) {
                   {editingId === spec.id ? (
                     <>
                       <td className="px-3 py-2">
-                        <input
-                          className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                        <textarea
+                          className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt resize-y whitespace-pre-wrap break-words"
                           value={editBuf.detail_name}
                           onChange={(e) => setEditBuf((b) => ({ ...b, detail_name: e.target.value }))}
                           placeholder="VD: RAM"
                           maxLength={100}
+                          rows={4}
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <input
-                          className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                        <textarea
+                          className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt resize-y whitespace-pre-wrap break-words"
                           value={editBuf.detail_value}
                           onChange={(e) => setEditBuf((b) => ({ ...b, detail_value: e.target.value }))}
                           placeholder="VD: 8GB"
                           maxLength={500}
+                          rows={4}
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -805,24 +810,26 @@ function SpecsTabContent({ product }) {
               {addMode && (
                 <tr className="bg-vnpt-light/40 border-t border-shade">
                   <td className="px-3 py-2">
-                    <input
+                    <textarea
                       autoFocus
-                      className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                      className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt resize-y whitespace-pre-wrap break-words"
                       value={newRow.detail_name}
                       onChange={(e) => setNewRow((r) => ({ ...r, detail_name: e.target.value }))}
                       placeholder="VD: Màn hình, RAM, Pin..."
                       maxLength={100}
-                      onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                      rows={4}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAdd(); } }}
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <input
-                      className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt"
+                    <textarea
+                      className="w-full border border-shade rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-vnpt resize-y whitespace-pre-wrap break-words"
                       value={newRow.detail_value}
                       onChange={(e) => setNewRow((r) => ({ ...r, detail_value: e.target.value }))}
                       placeholder="VD: 6.7 inch AMOLED"
                       maxLength={500}
-                      onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                      rows={4}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAdd(); } }}
                     />
                   </td>
                   <td className="px-3 py-2">
