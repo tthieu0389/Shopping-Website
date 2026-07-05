@@ -31,6 +31,51 @@ const PRICE_RANGES = [
 
 const LIMIT = 12
 
+function SortDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = SORT_OPTIONS.find(o => o.value === value) || SORT_OPTIONS[0]
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-2 border border-shade rounded-lg text-sm font-body hover:border-vnpt focus:border-vnpt transition-colors outline-none bg-white"
+      >
+        <span>{selected.label}</span>
+        <svg className={`w-4 h-4 text-muted transition-transform ${open ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 bg-white border border-shade rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]">
+          {SORT_OPTIONS.map(o => (
+            <button
+              key={o.value}
+              onClick={() => { onChange(o.value); setOpen(false) }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                o.value === value
+                  ? 'bg-vnpt text-white font-semibold'
+                  : 'hover:bg-cream text-body'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: categories } = useCategories()
@@ -272,15 +317,10 @@ export default function ProductsPage() {
                 <>Hiển thị <strong className="text-body">{products.length}</strong> / <strong className="text-body">{total}</strong> sản phẩm</>
               )}
             </p>
-            <select
+            <SortDropdown
               value={filters.sort}
-              onChange={e => updateFilter('sort', e.target.value)}
-              className="px-3 py-2 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
-            >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              onChange={v => updateFilter('sort', v)}
+            />
           </div>
 
           {/* Active filter tags — luôn render để tránh layout shift */}
