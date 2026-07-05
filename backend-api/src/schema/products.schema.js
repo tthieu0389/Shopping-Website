@@ -33,7 +33,7 @@ exports.createProductSchema = z.object({
     .optional(), // sẽ auto-generate nếu thiếu
   description: z
     .string()
-    .max(5000, "Mô tả sản phẩm không được vượt quá 5000 ký tự")
+    .max(1500, "Mô tả sản phẩm không được vượt quá 1500 ký tự")
     .optional(),
   price: z.coerce
     .number()
@@ -73,7 +73,7 @@ exports.updateProductSchema = z.object({
     .optional(),
   description: z
     .string()
-    .max(5000, "Mô tả sản phẩm không được vượt quá 5000 ký tự")
+    .max(1500, "Mô tả sản phẩm không được vượt quá 1500 ký tự")
     .optional(),
   price: z.coerce
     .number()
