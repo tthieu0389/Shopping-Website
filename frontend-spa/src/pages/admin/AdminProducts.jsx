@@ -451,6 +451,7 @@ export default function AdminProducts() {
                   setForm((p) => ({ ...p, name: e.target.value }))
                 }
                 placeholder="VD: iPhone 16 Pro Max 256GB"
+                maxLength={200}
               />
               <Textarea
                 label="Mô tả"
@@ -460,6 +461,7 @@ export default function AdminProducts() {
                 }
                 rows={3}
                 placeholder="Mô tả sản phẩm..."
+                maxLength={5000}
               />
             </section>
 
@@ -494,6 +496,7 @@ export default function AdminProducts() {
                     setForm((p) => ({ ...p, brand: e.target.value }))
                   }
                   placeholder="Apple, Samsung, VNPT..."
+                  maxLength={100}
                 />
                 <Input
                   label="Mã thiết bị (model)"
@@ -502,6 +505,7 @@ export default function AdminProducts() {
                     setForm((p) => ({ ...p, model: e.target.value }))
                   }
                   placeholder="Không bắt buộc"
+                  maxLength={100}
                 />
               </div>
             </section>
@@ -516,18 +520,35 @@ export default function AdminProducts() {
                   required
                   type="number"
                   value={form.price}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, price: e.target.value }))
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") { setForm((p) => ({ ...p, price: "" })); return; }
+                    const num = parseFloat(raw);
+                    if (!isNaN(num) && num > 9999999999.99) return;
+                    setForm((p) => ({ ...p, price: raw }));
+                  }}
+                  onKeyDown={(e) =>
+                    ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()
                   }
+                  min="1"
+                  max="9999999999.99"
+                  step="0.01"
                   placeholder="33990000"
                 />
                 <Input
                   label="Tồn kho ban đầu"
                   type="number"
                   value={form.stock}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, stock: e.target.value }))
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    if (raw !== "" && parseInt(raw, 10) > 2147483647) return;
+                    setForm((p) => ({ ...p, stock: raw }));
+                  }}
+                  onKeyDown={(e) =>
+                    ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()
                   }
+                  min="0"
+                  max="2147483647"
                   placeholder="10"
                 />
                 {modal === "add" && (
@@ -535,9 +556,15 @@ export default function AdminProducts() {
                     label="Ngưỡng cảnh báo"
                     type="number"
                     min="0"
+                    max="2147483647"
                     value={form.min_quantity}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, min_quantity: e.target.value }))
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, "");
+                      if (raw !== "" && parseInt(raw, 10) > 2147483647) return;
+                      setForm((p) => ({ ...p, min_quantity: raw }));
+                    }}
+                    onKeyDown={(e) =>
+                      ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()
                     }
                     placeholder="5"
                   />
