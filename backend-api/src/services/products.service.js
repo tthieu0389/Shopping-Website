@@ -377,6 +377,16 @@ exports.updateProduct = async (id, data) => {
       err.statusCode = 400;
       throw err;
     }
+    // Chặn luôn trường hợp status active nhưng quantity = 0 (hết hàng)
+    // — tránh FE gửi is_available=true bừa khi kho đã cạn, gây lệch trạng
+    // thái hiển thị (VD: "Hết hàng" nhưng vẫn "Đang bán").
+    if (inventory.quantity <= 0) {
+      const err = new Error(
+        "Không thể bật bán sản phẩm khi tồn kho đã hết hàng (quantity = 0).",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
   }
 
   const [product] = await knex("products")

@@ -87,12 +87,17 @@ exports.getCartItems = async (user_id) => {
   if (rawItems.length === 0) return { items: [], total_final_amount: 0 };
 
   // Truyền user_id để tính toán phí vận chuyển chính xác nếu có địa chỉ mặc định/thông tin user
+  // throwOnUnavailable: false — chỉ xem giỏ hàng, không được throw làm sập cả
+  // response khi có 1 item hết hàng (sẽ kéo theo các item khác không liên quan
+  // "biến mất" khỏi mắt FE dù dữ liệu DB vẫn còn nguyên). Item hết hàng sẽ
+  // được đánh dấu is_available:false để FE tự hiển thị xám/"Hết hàng".
   const calculated = await _calculateOrderAmount(
     rawItems,
     null,
     null,
     knex,
     user_id,
+    { throwOnUnavailable: false },
   );
 
   calculated.items = calculated.items.map((item) => {
@@ -118,6 +123,7 @@ exports.previewCart = async (user_id, data) => {
     data.pickup_store_id,
     knex,
     user_id,
+    { throwOnUnavailable: false },
   );
 };
 

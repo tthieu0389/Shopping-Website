@@ -13,7 +13,14 @@ const calculateOrderAmount = async (
   pickupStoreId = null,
   trx = knex,
   userId = null,
+  options = {},
 ) => {
+  // throwOnUnavailable = true (mặc định): dùng cho checkout/createOrder — phải
+  // chặn cứng, không cho đặt hàng khi có item hết hàng/không đủ số lượng.
+  // throwOnUnavailable = false: dùng cho xem giỏ hàng/preview — item lỗi chỉ
+  // bị đánh dấu is_available=false, KHÔNG throw để tránh sập cả response và
+  // kéo theo mất luôn các item khác không liên quan trong giỏ.
+  const { throwOnUnavailable = true } = options;
   // 1. Thu thap tat ca ID can thiet de truy van mot lan duy nhat
   const productIds = [...new Set(items.map((i) => i.product_id))];
 
@@ -57,34 +64,84 @@ const calculateOrderAmount = async (
 
     const product = productMap.get(item.product_id);
     if (!product) {
-      const err = new Error(`Product ${item.product_id} not found`);
-      err.statusCode = 404;
-      throw err;
+      if (throwOnUnavailable) {
+        const err = new Error(`Product ${item.product_id} not found`);
+        err.statusCode = 404;
+        throw err;
+      }
+      processedItems.push({
+        product_id: item.product_id,
+        product_name: null,
+        quantity: item.quantity,
+        is_available: false,
+        stock: 0,
+        unavailable_reason: "Sản phẩm không còn tồn tại",
+      });
+      continue;
     }
 
     const inventory = inventoryMap.get(item.product_id);
     if (!inventory) {
-      const err = new Error(
-        `Không tìm thấy thông tin tồn kho cho sản phẩm "${product.name}"`,
-      );
-      err.statusCode = 400;
-      throw err;
+      if (throwOnUnavailable) {
+        const err = new Error(
+          `Không tìm thấy thông tin tồn kho cho sản phẩm "${product.name}"`,
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+      processedItems.push({
+        product_id: product.id,
+        product_name: product.name,
+        image_url: imageMap.get(item.product_id) || null,
+        quantity: item.quantity,
+        is_available: false,
+        stock: 0,
+        unavailable_reason: "Sản phẩm chưa có thông tin tồn kho",
+      });
+      continue;
     }
 
     if (inventory.status !== "active") {
-      const err = new Error(
-        `Sản phẩm "${product.name}" hiện đã ngừng kinh doanh`,
-      );
-      err.statusCode = 400;
-      throw err;
+      if (throwOnUnavailable) {
+        const err = new Error(
+          `Sản phẩm "${product.name}" hiện đã ngừng kinh doanh`,
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+      processedItems.push({
+        product_id: product.id,
+        product_name: product.name,
+        image_url: imageMap.get(item.product_id) || null,
+        quantity: item.quantity,
+        is_available: false,
+        stock: inventory.quantity,
+        unavailable_reason: "Sản phẩm hiện đã ngừng kinh doanh",
+      });
+      continue;
     }
 
     if (inventory.quantity < item.quantity) {
-      const err = new Error(
-        `Sản phẩm "${product.name}" không đủ số lượng (còn ${inventory.quantity}, cần ${item.quantity})`,
-      );
-      err.statusCode = 400;
-      throw err;
+      if (throwOnUnavailable) {
+        const err = new Error(
+          `Sản phẩm "${product.name}" không đủ số lượng (còn ${inventory.quantity}, cần ${item.quantity})`,
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+      processedItems.push({
+        product_id: product.id,
+        product_name: product.name,
+        image_url: imageMap.get(item.product_id) || null,
+        quantity: item.quantity,
+        is_available: inventory.quantity > 0,
+        stock: inventory.quantity,
+        unavailable_reason:
+          inventory.quantity <= 0
+            ? "Sản phẩm đã hết hàng"
+            : `Chỉ còn ${inventory.quantity} sản phẩm trong kho`,
+      });
+      continue;
     }
 
     const unitPrice = Number(product.price);
@@ -118,6 +175,8 @@ const calculateOrderAmount = async (
       base_price: basePrice,
       discount_amount: discountAmount,
       final_price: finalPrice,
+      is_available: true,
+      stock: inventory.quantity,
     });
   }
 
