@@ -20,8 +20,10 @@ const REQUEST_TYPES = [
 ]
 
 export default function ContactPage() {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm()
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
   const [sending, setSending] = useState(false)
+  const message = watch('message', '')
+  const MESSAGE_MAX_LEN = 2000
 
   const onSubmit = async (data) => {
     setSending(true)
@@ -107,12 +109,16 @@ export default function ContactPage() {
               <label className="text-sm font-semibold block mb-1.5">Nội dung *</label>
               <textarea
                 {...register('message', { required: 'Vui lòng nhập nội dung' })}
-                rows={5}
+                rows={10}
+                maxLength={MESSAGE_MAX_LEN}
                 placeholder="Mô tả chi tiết yêu cầu của bạn..."
                 className={`w-full px-4 py-3 border rounded-lg text-sm font-body outline-none focus:border-vnpt resize-none transition-colors ${
                   errors.message ? 'border-accent' : 'border-shade'
                 }`}
               />
+              <div className={`text-xs mt-1 text-right ${(message?.length || 0) >= MESSAGE_MAX_LEN ? 'text-accent font-semibold' : 'text-muted'}`}>
+                {message?.length || 0}/{MESSAGE_MAX_LEN}
+              </div>
               {errors.message && <p className="text-xs text-accent mt-1">{errors.message.message}</p>}
             </div>
 
