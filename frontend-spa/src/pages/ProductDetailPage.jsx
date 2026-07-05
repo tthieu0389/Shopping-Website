@@ -107,6 +107,9 @@ export default function ProductDetailPage() {
   }
 
   const myReview = reviews.find(r => String(r.user_id) === String(user?.id))
+  const [expandedReviews, setExpandedReviews] = useState({})
+  const COMMENT_PREVIEW_LEN = 180
+  const toggleExpandReview = (id) => setExpandedReviews(p => ({ ...p, [id]: !p[id] }))
 
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Bạn có chắc muốn xóa đánh giá này?')) return
@@ -397,11 +400,15 @@ export default function ProductDetailPage() {
                     <label className="text-sm font-semibold text-body block mb-1.5">Nhận xét</label>
                     <textarea
                       value={comment}
-                      onChange={e => setComment(e.target.value)}
+                      onChange={e => setComment(e.target.value.slice(0, 1500))}
                       rows={4}
+                      maxLength={1500}
                       placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
                       className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt resize-none"
                     />
+                    <div className={`text-xs mt-1 text-right ${comment.length >= 1500 ? 'text-accent font-semibold' : 'text-muted'}`}>
+                      {comment.length}/1500
+                    </div>
                   </div>
                   <button
                     type="submit"
@@ -452,7 +459,22 @@ export default function ProductDetailPage() {
                         </div>
                       </div>
                       <div className="text-warning text-sm mb-2">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
-                      {r.comment && <p className="text-sm text-muted leading-relaxed">{r.comment}</p>}
+                      {r.comment && (
+                        <p className="text-sm text-muted leading-relaxed break-words whitespace-pre-line">
+                          {r.comment.length > COMMENT_PREVIEW_LEN && !expandedReviews[r.id]
+                            ? r.comment.slice(0, COMMENT_PREVIEW_LEN) + '…'
+                            : r.comment}
+                          {r.comment.length > COMMENT_PREVIEW_LEN && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandReview(r.id)}
+                              className="text-vnpt font-semibold ml-1.5 hover:underline"
+                            >
+                              {expandedReviews[r.id] ? 'Thu gọn' : 'Xem thêm'}
+                            </button>
+                          )}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
