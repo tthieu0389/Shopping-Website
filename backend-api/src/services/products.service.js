@@ -45,10 +45,12 @@ const applyCommonFilters = (query, countQuery, filters) => {
   const keyword = q || search;
 
   if (keyword) {
+    const kw = keyword.trim();
+    const slugKw = kw.toLowerCase().replace(/\s+/g, "-");
     const searchBlock = (builder) => {
       builder
-        .where("name", "like", `%${keyword}%`)
-        .orWhere("slug", "like", `%${keyword}%`);
+        .whereILike("name", `%${kw}%`)
+        .orWhereILike("slug", `%${slugKw}%`);
     };
     query = query.where(searchBlock);
     countQuery = countQuery.where(searchBlock);
