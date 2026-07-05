@@ -20,7 +20,7 @@ const SERVICES = [
 ]
 
 // ── HeroSlider ────────────────────────────────────────────────────────────────
-function HeroSlider() {
+function HeroSlider({ promotionMap = {} }) {
   const { data: allProducts, loading } = useProducts({ limit: 50, product_type: 'device' })
   const [current, setCurrent] = useState(0)
   const timerRef = useRef(null)
@@ -60,12 +60,12 @@ function HeroSlider() {
 
   const p = topProducts[current]
   const img = resolveImageUrl(p.img || p.thumbnail || p.image_url || null)
+  const discountPct = promotionMap[p.id] ?? null
   const salePrice = p.price
-  const rawOld = p.oldPrice || p.original_price
-  const originalPrice = rawOld && rawOld > salePrice
-    ? rawOld
-    : Math.round(salePrice * (1 + (0.15 + (((p.id || 1) * 7) % 26) / 100)))
-  const discount = Math.round((1 - salePrice / originalPrice) * 100)
+  const originalPrice = discountPct > 0
+    ? Math.round(salePrice / (1 - discountPct / 100))
+    : null
+  const discount = discountPct ?? 0
 
   return (
     <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[20px] p-7 text-white select-none">
@@ -565,7 +565,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <HeroSlider />
+            <HeroSlider promotionMap={promotionMap} />
           </div>
         </div>
       </div>
