@@ -309,7 +309,7 @@ export default function ProductDetailPage() {
           {activeTab === 'desc' && (
             <div className="prose max-w-none text-sm text-muted leading-relaxed">
               {product.description
-                ? <p>{product.description}</p>
+                ? <p style={{overflowWrap:"anywhere",whiteSpace:"pre-wrap"}}>{product.description}</p>
                 : <p className="text-muted italic">Chưa có mô tả sản phẩm.</p>
               }
             </div>
