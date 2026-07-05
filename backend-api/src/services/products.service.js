@@ -343,6 +343,16 @@ exports.getRelatedProducts = async (id) => {
   return await promotionService.attachPromotionInfo(related);
 };
 
+exports.getDistinctModels = async () => {
+  const rows = await knex("products")
+    .distinct("model")
+    .whereNotNull("model")
+    .andWhere("model", "!=", "")
+    .andWhere("is_deleted", false)
+    .orderBy("model", "asc");
+  return rows.map((r) => r.model);
+};
+
 exports.updateProduct = async (id, data) => {
   if (!id || isNaN(id)) {
     const err = new Error("Invalid product ID");
