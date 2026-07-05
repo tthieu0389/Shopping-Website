@@ -185,124 +185,195 @@ export default function ProductsPage() {
   const hasActiveFilters = filters.search || filters.category_id || filters.product_type || filters.price_min || filters.price_max
   const selectedCategory = categories.find(c => String(c.id) === String(filters.category_id))
 
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+
+  // Khóa scroll body khi filter drawer mobile mở
+  useEffect(() => {
+    document.body.style.overflow = mobileFiltersOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileFiltersOpen])
+
   return (
     <div>
       <Breadcrumb items={[{ to: '/', label: 'Trang chủ' }, { label: 'Sản phẩm' }]} />
 
-      <div className="max-w-[1200px] mx-auto px-10 py-8 grid grid-cols-[260px_minmax(0,1fr)] gap-7 items-start min-h-[calc(100vh-180px)]">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-8 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-5 lg:gap-7 items-start min-h-[calc(100vh-180px)]">
+
+        {/* ── NÚT MỞ BỘ LỌC — chỉ hiện trên mobile/tablet ─────────────────── */}
+        <button
+          onClick={() => setMobileFiltersOpen(true)}
+          className="lg:hidden flex items-center justify-between gap-2 px-4 py-3 bg-white border border-shade rounded-xl text-sm font-semibold text-body"
+        >
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-vnpt" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            Bộ lọc
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-accent" />}
+          </span>
+          <svg className="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+
+        {/* Backdrop khi drawer mở — chỉ mobile/tablet */}
+        {mobileFiltersOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/40 z-40"
+            onClick={() => setMobileFiltersOpen(false)}
+          />
+        )}
 
         {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
-        <aside className="sticky top-24 self-start space-y-4">
-
-          {/* Tìm kiếm */}
-          <div className="bg-white border border-shade rounded-xl p-5">
-            <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Tìm kiếm</div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Tên sản phẩm..."
-                value={localSearch}
-                onChange={handleSearchChange}
-                onCompositionStart={handleCompositionStart}
-                onCompositionEnd={handleCompositionEnd}
-                className="w-full px-4 py-2.5 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors pr-8"
-              />
-              {localSearch && (
-                <button
-                  onClick={() => { setLocalSearch(''); updateFilter('search', '') }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-body"
-                >✕</button>
-              )}
-            </div>
+        {/* Desktop: cột cố định bên trái. Mobile/tablet: drawer trượt từ trái, ẩn mặc định. */}
+        <aside
+          className={`
+            fixed lg:sticky inset-y-0 left-0 lg:inset-auto lg:top-24 z-50 lg:z-auto
+            w-[85%] max-w-[320px] lg:w-auto lg:max-w-none
+            h-[100dvh] lg:h-auto
+            flex flex-col lg:block
+            bg-cream lg:bg-transparent
+            transition-transform duration-300 lg:transition-none
+            ${mobileFiltersOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+            self-start
+          `}
+        >
+          {/* Header drawer — chỉ hiện trên mobile, cố định trên cùng, không cuộn */}
+          <div className="lg:hidden flex-shrink-0 flex items-center justify-between px-4 py-4 border-b border-shade bg-cream">
+            <span className="text-base font-bold text-body">Bộ lọc</span>
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              className="w-8 h-8 rounded-full border border-shade flex items-center justify-center text-muted hover:text-body hover:bg-white transition-all"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
           </div>
 
-          {/* Danh mục */}
-          <div className="bg-white border border-shade rounded-xl p-5">
-            <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Danh mục</div>
-            <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-              <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-                <input type="radio" name="category" checked={!filters.category_id} onChange={() => updateFilter('category_id', '')} className="accent-vnpt w-4 h-4" />
-                <span className="text-sm text-body flex-1">Tất cả danh mục</span>
-              </label>
-              {categories.map(c => (
-                <label key={c.id} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="category"
-                    checked={String(filters.category_id) === String(c.id)}
-                    onChange={() => updateFilter('category_id', String(c.id))}
-                    className="accent-vnpt w-4 h-4"
-                  />
-                  <span className="text-sm text-body flex-1">{c.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          {/* Phần giữa — cuộn được, chứa toàn bộ nhóm bộ lọc */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-0 space-y-4">
 
-          {/* Loại sản phẩm */}
-          <div className="bg-white border border-shade rounded-xl p-5">
-            <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Loại sản phẩm</div>
-            <div className="space-y-1">
-              {PRODUCT_TYPES.map(t => (
-                <label key={t.value} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="product_type"
-                    checked={filters.product_type === t.value}
-                    onChange={() => updateFilter('product_type', t.value)}
-                    className="accent-vnpt w-4 h-4"
-                  />
-                  <span className="text-sm text-body">{t.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Khoảng giá */}
-          <div className="bg-white border border-shade rounded-xl p-5">
-            <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Khoảng giá</div>
-            <div className="space-y-1">
-              {PRICE_RANGES.map(r => (
-                <label key={r.label} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="price_range"
-                    checked={filters.price_min === r.min && filters.price_max === r.max}
-                    onChange={() => updateFilters({ price_min: r.min, price_max: r.max })}
-                    className="accent-vnpt w-4 h-4"
-                  />
-                  <span className="text-sm text-body">{r.label}</span>
-                </label>
-              ))}
-            </div>
-            {/* Tùy chỉnh */}
-            <div className="mt-3 pt-3 border-t border-shade">
-              <div className="text-xs text-muted mb-2">Tùy chỉnh (₫)</div>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Tìm kiếm */}
+            <div className="bg-white border border-shade rounded-xl p-5">
+              <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Tìm kiếm</div>
+              <div className="relative">
                 <input
-                  type="number"
-                  placeholder="Từ"
-                  value={filters.price_min}
-                  onChange={e => updateFilter('price_min', e.target.value)}
-                  className="px-3 py-2 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
+                  type="text"
+                  placeholder="Tên sản phẩm..."
+                  value={localSearch}
+                  onChange={handleSearchChange}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
+                  className="w-full px-4 py-2.5 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt transition-colors pr-8"
                 />
-                <input
-                  type="number"
-                  placeholder="Đến"
-                  value={filters.price_max}
-                  onChange={e => updateFilter('price_max', e.target.value)}
-                  className="px-3 py-2 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
-                />
+                {localSearch && (
+                  <button
+                    onClick={() => { setLocalSearch(''); updateFilter('search', '') }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-body"
+                  >✕</button>
+                )}
               </div>
             </div>
+
+            {/* Danh mục */}
+            <div className="bg-white border border-shade rounded-xl p-5">
+              <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Danh mục</div>
+              <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+                  <input type="radio" name="category" checked={!filters.category_id} onChange={() => updateFilter('category_id', '')} className="accent-vnpt w-4 h-4" />
+                  <span className="text-sm text-body flex-1">Tất cả danh mục</span>
+                </label>
+                {categories.map(c => (
+                  <label key={c.id} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="category"
+                      checked={String(filters.category_id) === String(c.id)}
+                      onChange={() => updateFilter('category_id', String(c.id))}
+                      className="accent-vnpt w-4 h-4"
+                    />
+                    <span className="text-sm text-body flex-1">{c.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Loại sản phẩm */}
+            <div className="bg-white border border-shade rounded-xl p-5">
+              <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Loại sản phẩm</div>
+              <div className="space-y-1">
+                {PRODUCT_TYPES.map(t => (
+                  <label key={t.value} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="product_type"
+                      checked={filters.product_type === t.value}
+                      onChange={() => updateFilter('product_type', t.value)}
+                      className="accent-vnpt w-4 h-4"
+                    />
+                    <span className="text-sm text-body">{t.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Khoảng giá */}
+            <div className="bg-white border border-shade rounded-xl p-5">
+              <div className="text-sm font-bold text-body mb-4 pb-3 border-b border-shade">Khoảng giá</div>
+              <div className="space-y-1">
+                {PRICE_RANGES.map(r => (
+                  <label key={r.label} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="price_range"
+                      checked={filters.price_min === r.min && filters.price_max === r.max}
+                      onChange={() => updateFilters({ price_min: r.min, price_max: r.max })}
+                      className="accent-vnpt w-4 h-4"
+                    />
+                    <span className="text-sm text-body">{r.label}</span>
+                  </label>
+                ))}
+              </div>
+              {/* Tùy chỉnh */}
+              <div className="mt-3 pt-3 border-t border-shade">
+                <div className="text-xs text-muted mb-2">Tùy chỉnh (₫)</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    placeholder="Từ"
+                    value={filters.price_min}
+                    onChange={e => updateFilter('price_min', e.target.value)}
+                    className="px-3 py-2 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Đến"
+                    value={filters.price_max}
+                    onChange={e => updateFilter('price_max', e.target.value)}
+                    className="px-3 py-2 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Nút Áp dụng — chỉ hiện trên mobile, cố định dưới cùng, không cuộn */}
+          <div className="lg:hidden flex-shrink-0 px-4 py-3 bg-cream border-t border-shade">
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              className="w-full py-3 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-all"
+            >
+              Xem kết quả
+            </button>
           </div>
         </aside>
 
         {/* ── PRODUCT GRID ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           {/* Toolbar row 1: count + sort */}
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-muted">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-xs sm:text-sm text-muted">
               {loading ? 'Đang tải...' : (
                 <>Hiển thị <strong className="text-body">{products.length}</strong> / <strong className="text-body">{total}</strong> sản phẩm</>
               )}
@@ -314,7 +385,7 @@ export default function ProductsPage() {
           </div>
 
           {/* Toolbar row 2: tags left, clear right — placeholder giữ layout khi không có filter */}
-          <div className="flex items-center justify-between gap-3 mb-4 min-h-[32px]">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 min-h-[32px]">
             <div className="flex flex-wrap items-center gap-2">
               {filters.search && (
                 <span className="inline-flex items-center gap-1 bg-vnpt-light text-vnpt text-xs font-semibold px-3 py-1.5 rounded-full">
@@ -370,7 +441,7 @@ export default function ProductsPage() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-4 items-start">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 items-start">
                 {products.map(p => <ProductCard key={p.id} product={p} />)}
               </div>
               <Pagination page={page} totalPages={totalPages} goTo={goToPage} />

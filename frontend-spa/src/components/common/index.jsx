@@ -233,39 +233,39 @@ export function ProductCard({ product, showProgress = false }) {
         )}
       </div>
 
-      <div className="p-3.5">
+      <div className="p-2.5 sm:p-3.5">
         {product.brand && (
-          <div className="text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">
+          <div className="text-[10px] sm:text-[11px] text-muted font-semibold uppercase tracking-wider mb-1">
             {product.brand}
           </div>
         )}
-        <div className="text-sm font-semibold text-body leading-snug line-clamp-2">
+        <div className="text-xs sm:text-sm font-semibold text-body leading-snug line-clamp-2">
           {product.name}
         </div>
 
         {/* Row cố định: hiện "Còn X sản phẩm" hoặc giá gốc gạch ngang hoặc trống — không bao giờ đẩy nút */}
         <div className="h-5 mb-1.5 mt-1">
           {!isOutOfStock && stockQty !== null && stockQty <= 5 ? (
-            <span className="text-xs text-warning font-semibold">
+            <span className="text-[11px] sm:text-xs text-warning font-semibold">
               Còn {stockQty} sản phẩm
             </span>
           ) : hasDiscount ? (
-            <span className="text-xs text-muted line-through">
+            <span className="text-[11px] sm:text-xs text-muted line-through">
               {formatPrice(originalPrice)}
             </span>
           ) : null}
         </div>
 
         <div className="mb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span
-              className={`text-xl font-black font-display ${isOutOfStock ? "text-muted" : "text-accent"}`}
+              className={`text-base sm:text-xl font-black font-display ${isOutOfStock ? "text-muted" : "text-accent"}`}
             >
               {formatPrice(salePrice)}
             </span>
             {discount > 0 && (
               <span
-                className={`text-sm font-bold px-1.5 py-0.5 rounded ${
+                className={`text-xs sm:text-sm font-bold px-1.5 py-0.5 rounded ${
                   isOutOfStock
                     ? "bg-shade text-muted"
                     : "bg-accent/10 text-accent"
@@ -280,7 +280,7 @@ export function ProductCard({ product, showProgress = false }) {
         <button
           onClick={handleAdd}
           disabled={isOutOfStock}
-          className={`w-full py-2.5 rounded-full text-sm font-semibold transition-colors
+          className={`w-full py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors
             ${
               isOutOfStock
                 ? "bg-shade text-muted cursor-not-allowed"
@@ -400,8 +400,8 @@ export function FlashSaleCard({ product }) {
 // ── Breadcrumb ────────────────────────────────────────────────────────────────
 export function Breadcrumb({ items }) {
   return (
-    <div className="bg-cream border-b border-shade px-10 py-3">
-      <div className="max-w-[1200px] mx-auto flex items-center gap-2 text-sm text-muted flex-wrap">
+    <div className="bg-cream border-b border-shade px-4 sm:px-6 lg:px-10 py-3">
+      <div className="max-w-[1200px] mx-auto flex items-center gap-2 text-xs sm:text-sm text-muted flex-wrap">
         {items.map((item, i) => (
           <span key={i} className="flex items-center gap-2">
             {i > 0 && <span>›</span>}
@@ -574,45 +574,47 @@ export function Pagination({ page, totalPages, goTo }) {
     "w-9 h-9 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center";
 
   return (
-    <div className="flex items-center justify-center gap-1.5 py-8">
-      <button
-        onClick={() => goTo(page - 1)}
-        disabled={page <= 1}
-        className="px-3 h-9 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        ‹
-      </button>
+    <div className="py-6 sm:py-8 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto">
+      <div className="flex items-center justify-center gap-1 sm:gap-1.5 w-max mx-auto">
+        <button
+          onClick={() => goTo(page - 1)}
+          disabled={page <= 1}
+          className="flex-shrink-0 px-2.5 sm:px-3 h-8 sm:h-9 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          ‹
+        </button>
 
-      {getPages().map((p, i) =>
-        p === "..." ? (
-          <span
-            key={`dots-${i}`}
-            className="w-9 h-9 flex items-center justify-center text-sm text-muted select-none"
-          >
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => goTo(p)}
-            className={`${btnBase} ${
-              p === page
-                ? "bg-vnpt text-white"
-                : "border border-shade text-muted hover:border-vnpt hover:text-vnpt"
-            }`}
-          >
-            {p}
-          </button>
-        ),
-      )}
+        {getPages().map((p, i) =>
+          p === "..." ? (
+            <span
+              key={`dots-${i}`}
+              className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 flex items-center justify-center text-sm text-muted select-none"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => goTo(p)}
+              className={`${btnBase} flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 ${
+                p === page
+                  ? "bg-vnpt text-white"
+                  : "border border-shade text-muted hover:border-vnpt hover:text-vnpt"
+              }`}
+            >
+              {p}
+            </button>
+          ),
+        )}
 
-      <button
-        onClick={() => goTo(page + 1)}
-        disabled={page >= totalPages}
-        className="px-3 h-9 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        ›
-      </button>
+        <button
+          onClick={() => goTo(page + 1)}
+          disabled={page >= totalPages}
+          className="flex-shrink-0 px-2.5 sm:px-3 h-8 sm:h-9 border border-shade rounded-lg text-sm text-muted hover:border-vnpt hover:text-vnpt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }
