@@ -146,13 +146,23 @@ const useCartStore = create((set, get) => ({
     }
   },
 
-  // ── Đánh dấu is_selected=true cho các item trước khi checkout ─────────────
-  // itemIds: mảng cart_item id cần select. Nếu không truyền → select tất cả.
+  // ── Đồng bộ is_selected cho toàn bộ giỏ trước khi checkout ────────────────
+  // itemIds: mảng cart_item id cần chọn. Nếu không truyền → chọn tất cả.
+  //
+  // Phải set is_selected cho TẤT CẢ item (true cho id được chọn, false cho
+  // phần còn lại) — không chỉ set true cho ids truyền vào. Vì checkout() ở
+  // BE lấy đơn hàng dựa hoàn toàn vào cờ is_selected trong DB: nếu 1 item
+  // từng được chọn lúc còn hàng, sau đó hết hàng, checkbox bị disable trên
+  // UI (không còn cách nào bấm bỏ chọn), cờ is_selected=true cũ sẽ còn
+  // nguyên mãi nếu không chủ động set false ở đây.
   selectItemsForCheckout: async (itemIds) => {
-    const ids = itemIds ?? get().items.map((i) => i.id);
-    if (ids.length === 0) return;
+    const allIds = get().items.map((i) => i.id);
+    if (allIds.length === 0) return;
+    const selectedSet = new Set(itemIds ?? allIds);
     await Promise.all(
-      ids.map((id) => cartApi.toggleSelect(id, { is_selected: true })),
+      allIds.map((id) =>
+        cartApi.toggleSelect(id, { is_selected: selectedSet.has(id) }),
+      ),
     );
   },
 }));
