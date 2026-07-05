@@ -638,7 +638,7 @@ export default function AdminProducts() {
 
           {/* ── Tab: Ảnh ── */}
           {modal !== "add" && activeTab === "images" && (
-            <ImagesTabContent product={modal} />
+            <ImagesTabContent product={modal} onChange={load} />
           )}
 
           <div className="flex items-center justify-between gap-2.5 mt-6 pt-4 border-t border-shade">
@@ -867,7 +867,7 @@ function SpecsTabContent({ product }) {
 }
 
 // ─── Nội dung tab Ảnh (nhúng trong modal Sửa sản phẩm) ───────────────────────
-function ImagesTabContent({ product }) {
+function ImagesTabContent({ product, onChange }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -895,6 +895,7 @@ function ImagesTabContent({ product }) {
       .then(() => {
         toast.success("Đã thêm ảnh");
         load();
+        onChange?.();
       })
       .catch((err) => toast.error(err.message || "Không thể tải ảnh lên"))
       .finally(() => {
@@ -911,6 +912,7 @@ function ImagesTabContent({ product }) {
       .then(() => {
         toast.success("Đã xoá ảnh");
         load();
+        onChange?.();
       })
       .catch((err) => toast.error(err.message || "Không thể xoá ảnh"))
       .finally(() => setBusyId(null));
@@ -923,6 +925,7 @@ function ImagesTabContent({ product }) {
       .then(() => {
         toast.success("Đã đặt ảnh đại diện");
         load();
+        onChange?.();
       })
       .catch((err) => toast.error(err.message || "Không thể đặt ảnh đại diện"))
       .finally(() => setBusyId(null));
