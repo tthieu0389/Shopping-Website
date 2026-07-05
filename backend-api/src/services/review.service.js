@@ -80,8 +80,8 @@ exports.getProductReviews = async (productId, currentUserId = null) => {
 //   - có comment thực sự (không rỗng/toàn khoảng trắng)
 //   - chưa bị xoá mềm, và sản phẩm liên quan cũng chưa bị xoá mềm
 //   - lấy TỐI ĐA 1 review/sản phẩm để tránh trang chủ toàn review của 1 sản phẩm
-//   - sau khi đã lấy 1 review đại diện/sản phẩm, sắp toàn bộ theo rating desc,
-//     created_at desc rồi cắt còn `limit` review để hiển thị
+//   - lấy TỐI ĐA 1 review/user để tránh 1 user chiếm nhiều vị trí nổi bật
+//   - sau khi đã lọc, sắp toàn bộ theo rating desc, created_at desc rồi cắt còn `limit`
 exports.getFeaturedReviews = async (limit = 6) => {
   const safeLimit =
     isNaN(Number(limit)) || Number(limit) < 1 ? 6 : Number(limit);
@@ -89,26 +89,39 @@ exports.getFeaturedReviews = async (limit = 6) => {
   const { rows } = await knex.raw(
     `
     SELECT * FROM (
-      SELECT DISTINCT ON (r.product_id)
-        r.id,
-        r.rating,
-        r.comment,
-        r.created_at,
-        r.product_id,
-        u.name AS user_name,
-        up.avatar AS user_avatar,
-        p.name AS product_name
-      FROM reviews r
-      JOIN users u ON r.user_id = u.id
-      LEFT JOIN user_profiles up ON up.user_id = u.id
-      JOIN products p ON r.product_id = p.id
-      WHERE r.is_deleted = false
-        AND p.is_deleted = false
-        AND r.rating >= 4
-        AND r.comment IS NOT NULL
-        AND trim(r.comment) <> ''
-      ORDER BY r.product_id, r.rating DESC, r.created_at DESC
-    ) best_per_product
+      SELECT DISTINCT ON (bpp.user_id)
+        bpp.id,
+        bpp.rating,
+        bpp.comment,
+        bpp.created_at,
+        bpp.product_id,
+        bpp.user_name,
+        bpp.user_avatar,
+        bpp.product_name
+      FROM (
+        SELECT DISTINCT ON (r.product_id)
+          r.id,
+          r.user_id,
+          r.rating,
+          r.comment,
+          r.created_at,
+          r.product_id,
+          u.name AS user_name,
+          up.avatar AS user_avatar,
+          p.name AS product_name
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        LEFT JOIN user_profiles up ON up.user_id = u.id
+        JOIN products p ON r.product_id = p.id
+        WHERE r.is_deleted = false
+          AND p.is_deleted = false
+          AND r.rating >= 4
+          AND r.comment IS NOT NULL
+          AND trim(r.comment) <> ''
+        ORDER BY r.product_id, r.rating DESC, r.created_at DESC
+      ) bpp
+      ORDER BY bpp.user_id, bpp.rating DESC, bpp.created_at DESC
+    ) best_per_user
     ORDER BY rating DESC, created_at DESC
     LIMIT ?
     `,
