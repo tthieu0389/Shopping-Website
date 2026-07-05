@@ -94,6 +94,10 @@ const calculateOrderAmount = async (
         product_name: product.name,
         image_url: imageMap.get(item.product_id) || null,
         quantity: item.quantity,
+        // Vẫn giữ giá gốc để FE hiển thị đúng giá cũ (gạch ngang) thay vì
+        // hiện "0đ" — sản phẩm chưa mất, chỉ là chưa có dòng tồn kho.
+        unit_price: Number(product.price),
+        base_price: Number(product.price) * item.quantity,
         is_available: false,
         stock: 0,
         unavailable_reason: "Sản phẩm chưa có thông tin tồn kho",
@@ -114,6 +118,8 @@ const calculateOrderAmount = async (
         product_name: product.name,
         image_url: imageMap.get(item.product_id) || null,
         quantity: item.quantity,
+        unit_price: Number(product.price),
+        base_price: Number(product.price) * item.quantity,
         is_available: false,
         stock: inventory.quantity,
         unavailable_reason: "Sản phẩm hiện đã ngừng kinh doanh",
@@ -134,6 +140,9 @@ const calculateOrderAmount = async (
         product_name: product.name,
         image_url: imageMap.get(item.product_id) || null,
         quantity: item.quantity,
+        // Giữ giá gốc — item hết hàng vẫn phải hiện đúng giá cũ, không phải 0đ.
+        unit_price: Number(product.price),
+        base_price: Number(product.price) * item.quantity,
         is_available: inventory.quantity > 0,
         stock: inventory.quantity,
         unavailable_reason:
