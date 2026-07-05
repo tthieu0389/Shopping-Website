@@ -43,12 +43,31 @@ ${quotedMessage}`
     )
   }
 
+  const GMAIL_URL_SAFE_LIMIT = 7500 // Gmail trả về lỗi 400 Bad Request nếu URL quá dài
+
   const getMailtoLink = () => {
     if (!selected) return '#'
     const to      = encodeURIComponent(selected.email)
     const subject = encodeURIComponent(`[VNPT Shop] Phản hồi liên hệ của ${selected.name}`)
-    const body    = encodeURIComponent(replyBody)
-    return `https://mail.google.com/mail/?view=cm&to=${to}&su=${subject}&body=${body}`
+    const base    = `https://mail.google.com/mail/?view=cm&to=${to}&su=${subject}&body=`
+    const maxBodyLen = GMAIL_URL_SAFE_LIMIT - base.length
+
+    let body = replyBody
+    let encodedBody = encodeURIComponent(body)
+
+    if (encodedBody.length > maxBodyLen) {
+      // Tìm độ dài cắt lớn nhất sao cho phần đã encode vẫn nằm trong giới hạn
+      let lo = 0, hi = body.length
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2)
+        if (encodeURIComponent(body.slice(0, mid)).length <= maxBodyLen) lo = mid
+        else hi = mid - 1
+      }
+      body = body.slice(0, lo) + '\n\n[... nội dung đã bị cắt bớt do quá dài ...]'
+      encodedBody = encodeURIComponent(body)
+    }
+
+    return base + encodedBody
   }
 
   const handleDelete = (c) => {
@@ -148,7 +167,7 @@ ${quotedMessage}`
               {/* Nội dung gốc */}
               <div className="px-6 py-4 border-b border-shade flex-shrink-0">
                 <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Nội dung tin nhắn</div>
-                <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap">
+                <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words max-h-56 overflow-y-auto">
                   {selected.message || <span className="italic text-muted">(Không có nội dung)</span>}
                 </div>
               </div>
