@@ -15,13 +15,16 @@ const useCartStore = create((set, get) => ({
   total: () => get().subtotal(),
 
   // ── Lấy giỏ hàng từ server ───────────────────────────────────────────────
+  // BE (getCartItems) đã tính sẵn is_available + stock chính xác cho từng item.
+  // KHÔNG gọi lại productsApi — vừa dư thừa (N+1 request), vừa dễ lệch dữ liệu
+  // (race condition), vừa sai vì API sản phẩm đơn lẻ không trả field "stock".
   fetchCart: async () => {
     set({ loading: true });
     try {
       const res = await cartApi.get();
       const serverItems = res?.data?.items ?? [];
-      const baseItems = serverItems.map((item) => {
-        const quantity = item.quantity || 1;
+      const items = serverItems.map((item) => {
+        const quantity = item.quantity ?? 1;
         const unitPrice = Number(item.unit_price ?? 0);
         // Giá sau giảm mỗi đơn vị: ưu tiên final_price (đã áp discount) chia cho quantity
         const salePrice =
@@ -37,39 +40,12 @@ const useCartStore = create((set, get) => ({
           img: item.image_url ?? item.thumbnail ?? item.img ?? null,
           brand: item.brand ?? "",
           qty: quantity,
-          stock: null, // sẽ được bổ sung bên dưới
-          is_available: true, // mặc định true, sẽ override sau
+          // BE đã tính chính xác — tin hoàn toàn, không gọi lại API sản phẩm
+          stock: item.stock ?? null,
+          is_available: item.is_available !== false && item.is_available !== 0,
         };
       });
-
-      set({ items: baseItems, loading: false });
-
-      // Bổ sung stock + is_available từ products API
-      if (baseItems.length > 0) {
-        const { productsApi } = await import("../api/index.js");
-        const stockMap = {};
-        await Promise.all(
-          baseItems.map((item) =>
-            productsApi
-              .getById(item.product_id)
-              .then((res) => {
-                const p = res?.data ?? res;
-                stockMap[item.product_id] = {
-                  stock: p?.stock ?? null,
-                  is_available:
-                    p?.is_available !== false && p?.is_available !== 0,
-                };
-              })
-              .catch(() => {}),
-          ),
-        );
-        set({
-          items: get().items.map((i) => ({
-            ...i,
-            ...(stockMap[i.product_id] ?? {}),
-          })),
-        });
-      }
+      set({ items, loading: false });
     } catch {
       set({ loading: false });
     }
