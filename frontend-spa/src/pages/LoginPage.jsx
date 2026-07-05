@@ -5,17 +5,25 @@ import { toast } from '../utils/index.js'
 import useAuthStore from '../store/authStore.js'
 
 export default function LoginPage() {
-  const { login, isLoading, error, clearError } = useAuthStore()
+  const { login, isLoading, clearError } = useAuthStore()
   const navigate = useNavigate()
   const { register, handleSubmit, formState: { errors } } = useForm()
   const [showPassword, setShowPassword] = useState(false)
+  const [loginError, setLoginError] = useState('')
 
   const onSubmit = async (data) => {
     clearError()
+    setLoginError('')
     const res = await login(data)
     if (res.success) {
       toast.success('Đăng nhập thành công!')
       navigate('/')
+    } else {
+      const raw = res.error || ''
+      const msg = raw.toLowerCase().includes('invalid credentials')
+        ? 'Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.'
+        : raw || 'Đăng nhập thất bại, vui lòng thử lại.'
+      setLoginError(msg)
     }
   }
 
@@ -113,9 +121,9 @@ export default function LoginPage() {
             <Link to="/register" className="text-vnpt font-semibold hover:underline">Tạo tài khoản →</Link>
           </p>
 
-          {error && (
+          {loginError && (
             <div className="mb-5 px-4 py-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600 font-medium">
-              {error}
+              {loginError}
             </div>
           )}
 

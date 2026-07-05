@@ -26,11 +26,16 @@ api.interceptors.response.use(
     const message = error.response?.data?.error || error.response?.data?.message || 'Đã có lỗi xảy ra'
 
     if (status === 401) {
-      localStorage.removeItem('vnpt_token')
-      // Xóa đúng key Zustand persist (vnpt_auth) thay vì vnpt_user
-      localStorage.removeItem('vnpt_auth')
-      // Hết phiên đăng nhập -> về trang chủ với vai trò khách, không ép về /login
-      window.location.href = '/'
+      const url = error.config?.url || ''
+      // Không redirect khi chính request login/register bị sai credentials —
+      // để trang login tự hiển thị lỗi tại chỗ.
+      const isAuthRequest = url.includes('/auth/login') || url.includes('/auth/register')
+      if (!isAuthRequest) {
+        localStorage.removeItem('vnpt_token')
+        localStorage.removeItem('vnpt_auth')
+        // Hết phiên đăng nhập -> về trang chủ với vai trò khách
+        window.location.href = '/'
+      }
     }
 
     if (status === 403) {
