@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 // CREATE CONTACT
 exports.createContact = async (data, userId = null) => {
@@ -9,17 +10,18 @@ exports.createContact = async (data, userId = null) => {
 };
 
 // GET ALL (ADMIN/STAFF)
-exports.getContacts = async ({ keyword } = {}) => {
+exports.getContacts = async ({ search } = {}) => {
   const query = knex("contacts as c")
     .leftJoin("users as replier", "c.replied_by", "replier.id")
     .select("c.*", "replier.name as replied_by_name")
     .orderBy("c.created_at", "desc");
 
-  if (keyword) {
+  const kw = normalizeKeyword(search);
+  if (kw) {
     query.andWhere((qb) => {
-      qb.where("c.name", "ilike", `%${keyword}%`)
-        .orWhere("c.email", "ilike", `%${keyword}%`)
-        .orWhere("c.message", "ilike", `%${keyword}%`);
+      qb.where("c.name", "ilike", `%${kw}%`)
+        .orWhere("c.email", "ilike", `%${kw}%`)
+        .orWhere("c.message", "ilike", `%${kw}%`);
     });
   }
 

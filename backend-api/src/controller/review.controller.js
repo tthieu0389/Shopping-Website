@@ -33,6 +33,21 @@ exports.getFeatured = async (req, res, next) => {
   }
 };
 
+// GET ALL REVIEWS (ADMIN)
+exports.getAllForAdmin = async (req, res, next) => {
+  try {
+    const { limit, offset } = req.query;
+    const result = await service.getAllReviewsForAdmin({
+      limit: limit !== undefined ? Number(limit) : undefined,
+      offset: offset !== undefined ? Number(offset) : undefined,
+      search: req.query.q || req.query.search,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.remove = async (req, res, next) => {
   try {
     await service.deleteReview(req.params.id, req.user.id, req.user.role);

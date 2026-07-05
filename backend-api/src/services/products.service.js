@@ -1,5 +1,6 @@
 const knex = require("../database/knex");
 const promotionService = require("./promotion.service");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 const generateSlug = (name) =>
   name
@@ -42,15 +43,12 @@ const applyCommonFilters = (query, countQuery, filters) => {
     ...dynamicFilters
   } = filters;
 
-  const keyword = q || search;
+  const kw = normalizeKeyword(q || search);
 
-  if (keyword) {
-    const kw = keyword.trim();
+  if (kw) {
     const slugKw = kw.toLowerCase().replace(/\s+/g, "-");
     const searchBlock = (builder) => {
-      builder
-        .whereILike("name", `%${kw}%`)
-        .orWhereILike("slug", `%${slugKw}%`);
+      builder.whereILike("name", `%${kw}%`).orWhereILike("slug", `%${slugKw}%`);
     };
     query = query.where(searchBlock);
     countQuery = countQuery.where(searchBlock);
@@ -66,14 +64,16 @@ const applyCommonFilters = (query, countQuery, filters) => {
     countQuery = countQuery.where("product_type", product_type);
   }
 
-  if (brand) {
-    query = query.where("brand", "like", `%${brand}%`);
-    countQuery = countQuery.where("brand", "like", `%${brand}%`);
+  const brandKw = normalizeKeyword(brand);
+  if (brandKw) {
+    query = query.where("brand", "ilike", `%${brandKw}%`);
+    countQuery = countQuery.where("brand", "ilike", `%${brandKw}%`);
   }
 
-  if (model) {
-    query = query.where("model", "like", `%${model}%`);
-    countQuery = countQuery.where("model", "like", `%${model}%`);
+  const modelKw = normalizeKeyword(model);
+  if (modelKw) {
+    query = query.where("model", "ilike", `%${modelKw}%`);
+    countQuery = countQuery.where("model", "ilike", `%${modelKw}%`);
   }
 
   if (is_available !== undefined && is_available !== "") {

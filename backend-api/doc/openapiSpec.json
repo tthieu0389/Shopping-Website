@@ -806,6 +806,21 @@
           },
           "promotion_id": {
             "type": "integer"
+          },
+          "product_name": {
+            "type": "string",
+            "description": "Tên sản phẩm (join từ bảng products)"
+          },
+          "promotion_name": {
+            "type": "string",
+            "description": "Tên chương trình khuyến mãi (join từ bảng promotions)"
+          },
+          "discount_type": {
+            "type": "string",
+            "enum": ["percent", "fixed"]
+          },
+          "discount_value": {
+            "type": "number"
           }
         }
       },
@@ -5489,6 +5504,39 @@
           },
           {
             "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Lọc theo loại thao tác kho",
+            "schema": {
+              "type": "string",
+              "enum": ["import", "export", "adjust", "delete"]
+            }
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "description": "Lọc theo sản phẩm",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo tên sản phẩm, người thao tác hoặc nội dung ghi chú",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6045,7 +6093,7 @@
     "/api/product-promotions": {
       "get": {
         "tags": ["Product Promotions"],
-        "summary": "Lấy tất cả liên kết sản phẩm–khuyến mãi (Public)",
+        "summary": "Lấy danh sách liên kết sản phẩm–khuyến mãi (Public, có phân trang)",
         "responses": {
           "200": {
             "description": "Danh sách",
@@ -6063,6 +6111,18 @@
                           "items": {
                             "$ref": "#/components/schemas/ProductPromotion"
                           }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -6075,7 +6135,47 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listProductPromotions"
+        "operationId": "listProductPromotions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "description": "Lọc theo sản phẩm",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "promotion_id",
+            "in": "query",
+            "description": "Lọc theo chương trình khuyến mãi",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo tên sản phẩm hoặc tên chương trình khuyến mãi",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       },
       "post": {
         "tags": ["Product Promotions"],
@@ -6636,6 +6736,18 @@
                           "items": {
                             "$ref": "#/components/schemas/Blog"
                           }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -6648,7 +6760,31 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listBlogs"
+        "operationId": "listBlogs",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo tiêu đề hoặc slug bài viết",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       },
       "post": {
         "tags": ["Blogs"],
@@ -7501,7 +7637,25 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "listStores"
+        "operationId": "listStores",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo tên, tỉnh/thành hoặc địa chỉ cửa hàng",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       },
       "post": {
         "tags": ["Stores"],
@@ -8259,6 +8413,99 @@
         },
         "operationId": "updatePaymentStatus",
         "description": "**Yêu cầu quyền: admin.**"
+      }
+    },
+    "/api/reviews/admin": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Lấy danh sách tất cả đánh giá (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Tìm kiếm theo tên khách hàng, tên sản phẩm hoặc nội dung đánh giá",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias của tham số search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách đánh giá",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/Review"
+                              },
+                              {
+                                "properties": {
+                                  "product_name": {
+                                    "type": "string",
+                                    "description": "Tên sản phẩm được đánh giá (join từ bảng products)"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "listReviewsForAdmin",
+        "description": "**Yêu cầu quyền: admin.** Dùng cho trang quản trị duyệt/quản lý đánh giá."
       }
     }
   }

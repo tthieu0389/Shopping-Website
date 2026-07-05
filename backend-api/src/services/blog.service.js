@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 const generateSlug = (title) =>
   title
@@ -20,14 +21,27 @@ exports.createBlog = async (data) => {
   return blog;
 };
 
-// GET ALL (có phân trang)
-exports.getBlogs = async ({ limit = 10, offset = 0 } = {}) => {
-  const [{ count }] = await knex("blogs")
-    .where({ is_deleted: false })
-    .count("id as count");
+// GET ALL (có phân trang + tìm theo tiêu đề/slug)
+exports.getBlogs = async ({ limit = 10, offset = 0, search } = {}) => {
+  const kw = normalizeKeyword(search);
 
-  const data = await knex("blogs")
-    .where({ is_deleted: false })
+  const baseQuery = () => {
+    const q = knex("blogs").where({ is_deleted: false });
+    if (kw) {
+      q.andWhere((qb) => {
+        qb.where("title", "ilike", `%${kw}%`).orWhere(
+          "slug",
+          "ilike",
+          `%${kw}%`,
+        );
+      });
+    }
+    return q;
+  };
+
+  const [{ count }] = await baseQuery().count("id as count");
+
+  const data = await baseQuery()
     .orderBy("created_at", "desc")
     .limit(limit)
     .offset(offset);

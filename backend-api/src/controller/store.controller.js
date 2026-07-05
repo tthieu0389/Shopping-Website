@@ -13,7 +13,9 @@ exports.createStore = async (req, res, next) => {
 // Get all stores
 exports.getAllStores = async (req, res, next) => {
   try {
-    const data = await storeService.getAllStores();
+    const data = await storeService.getAllStores({
+      search: req.query.q || req.query.search,
+    });
     res.json({ data });
   } catch (err) {
     next(err);

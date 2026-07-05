@@ -13,9 +13,10 @@ exports.create = async (req, res, next) => {
 // Admin/Staff xem danh sách tất cả
 exports.getAll = async (req, res, next) => {
   try {
-    // Chấp nhận cả 2 tên query param: q (frontend đang dùng) và search
-    const keyword = (req.query.q || req.query.search || "").trim() || undefined;
-    const data = await service.getContacts({ keyword });
+    // Chấp nhận cả 2 tên query param: q và search
+    const data = await service.getContacts({
+      search: req.query.q || req.query.search,
+    });
     res.json({ data });
   } catch (err) {
     next(err);

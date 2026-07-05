@@ -1,5 +1,6 @@
 const knex = require("../database/knex");
 const bcrypt = require("bcrypt");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 exports.createUser = async (data) => {
   const exists = await knex("users")
@@ -14,8 +15,8 @@ exports.createUser = async (data) => {
 };
 
 exports.getAllUsers = async ({ limit = 10, offset = 0, search }) => {
-  // Chuẩn hóa đầu vào ngay từ đầu
-  const searchTerm = typeof search === "string" ? search.trim() : "";
+  // Chuẩn hóa đầu vào ngay từ đầu (trim + gộp khoảng trắng thừa)
+  const searchTerm = normalizeKeyword(search);
   const pageSize = Math.min(Number(limit) || 10, 300);
   const pageOffset = Math.max(Number(offset) || 0, 0);
   // Xây dựng base query (join user_profiles để search được cả theo SĐT)

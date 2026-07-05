@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 // CREATE REVIEW
 exports.createReview = async (userId, data) => {
@@ -115,6 +116,40 @@ exports.getFeaturedReviews = async (limit = 6) => {
   );
 
   return rows;
+};
+
+// GET ALL REVIEWS (ADMIN)
+exports.getAllReviewsForAdmin = async ({
+  limit = 10,
+  offset = 0,
+  search,
+} = {}) => {
+  const baseQuery = () => {
+    const q = knex("reviews as r")
+      .join("users as u", "r.user_id", "u.id")
+      .join("products as p", "r.product_id", "p.id")
+      .where("r.is_deleted", false);
+
+    const kw = normalizeKeyword(search);
+    if (kw) {
+      q.andWhere((qb) => {
+        qb.where("u.name", "ilike", `%${kw}%`)
+          .orWhere("p.name", "ilike", `%${kw}%`)
+          .orWhere("r.comment", "ilike", `%${kw}%`);
+      });
+    }
+    return q;
+  };
+
+  const [{ count }] = await baseQuery().count("r.id as count");
+
+  const data = await baseQuery()
+    .select("r.*", "u.name as user_name", "p.name as product_name")
+    .orderBy("r.created_at", "desc")
+    .limit(limit)
+    .offset(offset);
+
+  return { data, total: Number(count) };
 };
 
 // DELETE (soft) - chu so huu hoac admin (kiem duyet) deu xoa duoc

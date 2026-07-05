@@ -4,6 +4,7 @@ const promotionService = require("./promotion.service");
 const inventoryService = require("./inventory.service");
 const contactService = require("./contact.service");
 const generateOrderCode = require("../utils/generateOrderCode");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 // Ham tinh toan noi bo (Da toi uu hoa truy van batch)
 const calculateOrderAmount = async (
@@ -358,8 +359,9 @@ exports.getAllOrders = async ({ limit = 10, offset = 0, filters = {} }) => {
     countQuery.whereBetween("o.created_at", [start, end]);
   }
 
-  if (filters.search) {
-    const keyword = `%${filters.search}%`;
+  const searchKw = normalizeKeyword(filters.search);
+  if (searchKw) {
+    const keyword = `%${searchKw}%`;
     const applySearch = (qb) => {
       qb.where("o.order_code", "ilike", keyword)
         .orWhere("o.receiver_name", "ilike", keyword)
@@ -414,8 +416,9 @@ exports.getOrdersByUser = async ({
     countQuery.whereBetween("o.created_at", [start, end]);
   }
 
-  if (filters.search) {
-    const keyword = `%${filters.search}%`;
+  const searchKw = normalizeKeyword(filters.search);
+  if (searchKw) {
+    const keyword = `%${searchKw}%`;
     const applySearch = (qb) => {
       qb.where("o.order_code", "ilike", keyword)
         .orWhere("o.receiver_name", "ilike", keyword)
@@ -475,8 +478,9 @@ exports.getOrdersByStaff = async ({
     countQuery.whereBetween("o.created_at", [start, end]);
   }
 
-  if (filters.search) {
-    const keyword = `%${filters.search}%`;
+  const searchKw = normalizeKeyword(filters.search);
+  if (searchKw) {
+    const keyword = `%${searchKw}%`;
     const applySearch = (qb) => {
       qb.where("o.order_code", "ilike", keyword)
         .orWhere("o.receiver_name", "ilike", keyword)

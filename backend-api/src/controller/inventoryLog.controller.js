@@ -12,6 +12,9 @@ exports.getAllInventoryLogs = async (req, res, next) => {
     const result = await inventoryLogService.getAllInventoryLogs({
       limit,
       offset,
+      action: req.query.action,
+      product_id: req.query.product_id,
+      search: req.query.q || req.query.search,
     });
 
     res.json({ data: result.data, total: result.total, page, limit });
