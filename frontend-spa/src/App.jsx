@@ -37,6 +37,7 @@ import StaffProducts    from './pages/staff/StaffProducts.jsx'
 import StaffInventory   from './pages/staff/StaffInventory.jsx'
 import StaffBlogs       from './pages/staff/StaffBlogs.jsx'
 import StaffContacts    from './pages/staff/StaffContacts.jsx'
+import StaffUsers       from './pages/staff/StaffUsers.jsx'
 
 export default function App() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="inventory"     element={<StaffInventory />} />
           <Route path="blogs"         element={<StaffBlogs />} />
           <Route path="contacts"      element={<StaffContacts />} />
+          <Route path="users"         element={<StaffUsers />} />
         </Route>
 
         {/* Main layout */}

@@ -14,6 +14,8 @@ const STAFF_MENU = [
   { section: 'Nội dung' },
   { to: '/staff/blogs',     icon: '📰', label: 'Tin tức' },
   { to: '/staff/contacts',  icon: '💬', label: 'Liên hệ' },
+  { section: 'Người dùng' },
+  { to: '/staff/users',     icon: '👤', label: 'Người dùng' },
 ]
 
 const PAGE_TITLES = {
@@ -23,6 +25,7 @@ const PAGE_TITLES = {
   '/staff/inventory':'Kho hàng',
   '/staff/blogs':    'Tin tức',
   '/staff/contacts': 'Liên hệ',
+  '/staff/users':    'Người dùng',
 }
 
 function StaffSidebar() {
