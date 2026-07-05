@@ -3162,8 +3162,8 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 5000,
-                    "description": "Tối đa 5000 ký tự."
+                    "maxLength": 3000,
+                    "description": "Tối đa 3000 ký tự."
                   },
                   "price": {
                     "type": "number",
@@ -3522,8 +3522,8 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 5000,
-                    "description": "Tối đa 5000 ký tự."
+                    "maxLength": 3000,
+                    "description": "Tối đa 3000 ký tự."
                   },
                   "price": {
                     "type": "number",
@@ -6375,7 +6375,9 @@
                     "maximum": 5
                   },
                   "comment": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 1500,
+                    "description": "Tối đa 1500 ký tự."
                   }
                 }
               }
@@ -7427,14 +7429,18 @@
                 "required": ["name", "email", "message"],
                 "properties": {
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Tối đa 100 ký tự."
                   },
                   "email": {
                     "type": "string",
                     "format": "email"
                   },
                   "message": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 2000,
+                    "description": "Tối đa 2000 ký tự."
                   },
                   "order_id": {
                     "type": "integer",
@@ -8062,7 +8068,8 @@
                 "properties": {
                   "reply": {
                     "type": "string",
-                    "description": "Nội dung phản hồi"
+                    "description": "Nội dung phản hồi. Tối đa 2000 ký tự.",
+                    "maxLength": 2000
                   }
                 }
               }
@@ -8519,6 +8526,55 @@
         },
         "operationId": "listReviewsForAdmin",
         "description": "**Yêu cầu quyền: admin.** Dùng cho trang quản trị duyệt/quản lý đánh giá."
+      }
+    },
+    "/api/products/models/list": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Danh sách mã thiết bị (model) hiện có (Admin, Staff)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mảng các giá trị model duy nhất, đã sắp xếp A-Z. Dùng cho combobox/autocomplete khi Thêm/Sửa sản phẩm — cho phép chọn model cũ hoặc gõ mới nếu chưa có trong danh sách.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": ["iPhone 15", "Galaxy S24", "Xperia 1 V"]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "listDistinctProductModels",
+        "description": "**Yêu cầu quyền: admin, staff.**\n\nTrả về danh sách các giá trị `model` (mã thiết bị) đã từng được dùng trong bảng `products` (không tính sản phẩm đã xoá mềm), loại bỏ trùng lặp và giá trị rỗng/null. Mục đích: giúp FE hiển thị ô nhập model dạng combobox/autocomplete trong form Thêm/Sửa sản phẩm — admin/staff có thể chọn lại 1 model đã có sẵn để tránh gõ sai chính tả gây trùng lặp không mong muốn (ví dụ \"iPhone15\" và \"iphone 15\" bị coi là 2 model khác nhau), hoặc gõ hẳn model mới nếu sản phẩm chưa từng có."
       }
     }
   }

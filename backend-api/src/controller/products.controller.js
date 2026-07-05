@@ -83,6 +83,15 @@ exports.getAllProductsForAdmin = async (req, res, next) => {
   }
 };
 
+exports.getDistinctModels = async (req, res, next) => {
+  try {
+    const models = await productService.getDistinctModels();
+    res.json({ data: models });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.updateProduct = async (req, res, next) => {
   try {
     const data = { ...req.body };

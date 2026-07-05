@@ -29,7 +29,7 @@ const productFieldLabels = {
 // Lấy danh sách toàn bộ sản phẩm (public)
 router.get("/", pagination(), productController.getAllProducts);
 
-// Danh sách sản phẩm cho admin/staff (thấy cả inactive/archived) 
+// Danh sách sản phẩm cho admin/staff (thấy cả inactive/archived)
 // phải đặt trước "/:idOrSlug" để tránh bị route đó "nuốt" mất do cùng 1 segment.
 router.get(
   "/admin/list",
@@ -37,6 +37,15 @@ router.get(
   checkRole("admin", "staff"),
   pagination(),
   productController.getAllProductsForAdmin,
+);
+
+// Danh sách model đã tồn tại (không trùng) - dùng cho combobox/autocomplete
+// khi Thêm/Sửa sản phẩm. Cũng phải đặt trước "/:idOrSlug".
+router.get(
+  "/models/list",
+  verifyToken(),
+  checkRole("admin", "staff"),
+  productController.getDistinctModels,
 );
 
 // Lấy sản phẩm liên quan (xếp trên vì có hậu tố rõ ràng '/related')
