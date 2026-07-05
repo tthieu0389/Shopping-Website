@@ -1,9 +1,17 @@
 const { z } = require("zod");
 
 exports.userProfileSchema = z.object({
-  full_name: z.string().trim().optional(),
+  full_name: z
+    .string()
+    .trim()
+    .max(100, "Họ tên không được vượt quá 100 ký tự")
+    .optional(),
 
-  avatar: z.string().trim().optional(),
+  avatar: z
+    .string()
+    .trim()
+    .max(255, "Đường dẫn avatar không được vượt quá 255 ký tự")
+    .optional(),
 
   phone: z
     .string()

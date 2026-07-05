@@ -15,15 +15,26 @@ const thumbnailUrlSchema = z
   .optional();
 
 exports.createBlogSchema = z.object({
-  title: z.string().min(1),
-  slug: z.string().optional(),
-  content: z.string().min(1),
+  title: z.string().min(1).max(200, "Tiêu đề không được vượt quá 200 ký tự"),
+  slug: z.string().max(200, "Slug không được vượt quá 200 ký tự").optional(),
+  content: z
+    .string()
+    .min(1)
+    .max(20000, "Nội dung bài viết không được vượt quá 20000 ký tự"),
   thumbnail_url: thumbnailUrlSchema,
 });
 
 exports.updateBlogSchema = z.object({
-  title: z.string().min(1).optional(),
-  slug: z.string().optional(),
-  content: z.string().min(1).optional(),
+  title: z
+    .string()
+    .min(1)
+    .max(200, "Tiêu đề không được vượt quá 200 ký tự")
+    .optional(),
+  slug: z.string().max(200, "Slug không được vượt quá 200 ký tự").optional(),
+  content: z
+    .string()
+    .min(1)
+    .max(20000, "Nội dung bài viết không được vượt quá 20000 ký tự")
+    .optional(),
   thumbnail_url: thumbnailUrlSchema,
 });
