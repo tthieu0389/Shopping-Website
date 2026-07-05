@@ -71,6 +71,7 @@ const useAuthStore = create(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
+        // error KHÔNG persist — tránh state lỗi cũ ảnh hưởng lần load mới
       }),
     }
   )
