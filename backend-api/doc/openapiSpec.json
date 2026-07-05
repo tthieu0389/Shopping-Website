@@ -3162,8 +3162,8 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 1500,
-                    "description": "Tối đa 1500 ký tự."
+                    "maxLength": 3000,
+                    "description": "Tối đa 3000 ký tự."
                   },
                   "price": {
                     "type": "number",
@@ -3522,8 +3522,8 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 1500,
-                    "description": "Tối đa 1500 ký tự."
+                    "maxLength": 3000,
+                    "description": "Tối đa 3000 ký tự."
                   },
                   "price": {
                     "type": "number",
@@ -8531,7 +8531,7 @@
     "/api/products/models/list": {
       "get": {
         "tags": ["Products"],
-        "summary": "Danh sách mã thiết bị (model) đã tồn tại, không trùng lặp (Admin, Staff)",
+        "summary": "Danh sách mã thiết bị (model) hiện có (Admin, Staff)",
         "security": [
           {
             "bearerAuth": []
