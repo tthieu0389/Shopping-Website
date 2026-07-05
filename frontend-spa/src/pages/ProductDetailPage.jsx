@@ -46,6 +46,7 @@ export default function ProductDetailPage() {
   const [rating, setRating]         = useState(0)
   const [comment, setComment]       = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [expandedReviews, setExpandedReviews] = useState({})
 
   if (loading) return <LoadingSpinner />
   if (error || !product) return (
@@ -107,7 +108,6 @@ export default function ProductDetailPage() {
   }
 
   const myReview = reviews.find(r => String(r.user_id) === String(user?.id))
-  const [expandedReviews, setExpandedReviews] = useState({})
   const COMMENT_PREVIEW_LEN = 180
   const toggleExpandReview = (id) => setExpandedReviews(p => ({ ...p, [id]: !p[id] }))
 
