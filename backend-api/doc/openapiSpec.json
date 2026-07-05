@@ -2155,10 +2155,14 @@
                     "type": "string"
                   },
                   "latitude": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
                   },
                   "longitude": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
                   },
                   "is_default": {
                     "type": "boolean",
@@ -2306,10 +2310,14 @@
                     "type": "string"
                   },
                   "latitude": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
                   },
                   "longitude": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
                   },
                   "is_default": {
                     "type": "boolean"
@@ -4157,7 +4165,8 @@
                   "quantity": {
                     "type": "integer",
                     "minimum": 1,
-                    "default": 1
+                    "default": 1,
+                    "maximum": 100
                   }
                 }
               }
@@ -4225,7 +4234,8 @@
                 "properties": {
                   "quantity": {
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 1,
+                    "maximum": 100
                   },
                   "is_selected": {
                     "type": "boolean"
@@ -4436,7 +4446,8 @@
                         },
                         "quantity": {
                           "type": "integer",
-                          "minimum": 1
+                          "minimum": 1,
+                          "maximum": 100
                         }
                       }
                     }
@@ -4553,7 +4564,8 @@
                         },
                         "quantity": {
                           "type": "integer",
-                          "minimum": 1
+                          "minimum": 1,
+                          "maximum": 100
                         }
                       }
                     }
@@ -4655,7 +4667,8 @@
                         },
                         "quantity": {
                           "type": "integer",
-                          "minimum": 1
+                          "minimum": 1,
+                          "maximum": 100
                         }
                       }
                     }
@@ -5513,10 +5526,25 @@
         ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/PageParam"
+            "name": "page",
+            "in": "query",
+            "description": "Số trang, bắt đầu từ 1",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
           },
           {
-            "$ref": "#/components/parameters/LimitParam"
+            "name": "limit",
+            "in": "query",
+            "description": "Số item mỗi trang, tối đa 100",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
           },
           {
             "name": "action",
@@ -5855,7 +5883,8 @@
                     "enum": ["percent", "fixed"]
                   },
                   "discount_value": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Nếu discount_type = 'percent': tối đa 100. Nếu discount_type = 'fixed': tối đa 99999999.99 (giới hạn cột NUMERIC(10,2))."
                   },
                   "start_date": {
                     "type": "string",
@@ -5995,7 +6024,8 @@
                     "enum": ["percent", "fixed"]
                   },
                   "discount_value": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Nếu discount_type = 'percent': tối đa 100. Nếu discount_type = 'fixed': tối đa 99999999.99 (giới hạn cột NUMERIC(10,2))."
                   },
                   "start_date": {
                     "type": "string",
@@ -7439,8 +7469,8 @@
                   },
                   "message": {
                     "type": "string",
-                    "maxLength": 2000,
-                    "description": "Tối đa 2000 ký tự."
+                    "maxLength": 2200,
+                    "description": "Tối đa 2200 ký tự."
                   },
                   "order_id": {
                     "type": "integer",
@@ -8068,8 +8098,8 @@
                 "properties": {
                   "reply": {
                     "type": "string",
-                    "description": "Nội dung phản hồi. Tối đa 2000 ký tự.",
-                    "maxLength": 2000
+                    "description": "Nội dung phản hồi. Tối đa 2200 ký tự.",
+                    "maxLength": 2200
                   }
                 }
               }
