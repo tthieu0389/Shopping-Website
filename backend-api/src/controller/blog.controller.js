@@ -33,7 +33,11 @@ exports.getAll = async (req, res, next) => {
       limit: 10,
       offset: 0,
     };
-    const result = await service.getBlogs({ limit, offset });
+    const result = await service.getBlogs({
+      limit,
+      offset,
+      search: req.query.q || req.query.search,
+    });
     res.json({ data: result.data, total: result.total, page, limit });
   } catch (err) {
     next(err);

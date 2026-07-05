@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 const generateSlug = (name) =>
   name
@@ -7,10 +8,11 @@ const generateSlug = (name) =>
     .replace(/\s+/g, "-")
     .replace(/[^\w-]/g, "");
 
-exports.getAllCategories = async ({ keyword } = {}) => {
+exports.getAllCategories = async ({ search } = {}) => {
   const query = knex("categories").where({ is_deleted: false }).select();
-  if (keyword) {
-    query.andWhere("name", "ilike", `%${keyword}%`);
+  const kw = normalizeKeyword(search);
+  if (kw) {
+    query.andWhere("name", "ilike", `%${kw}%`);
   }
   return await query;
 };

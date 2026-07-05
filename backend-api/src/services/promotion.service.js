@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 const pickPromotionFields = (data) => {
   const allowed = [
@@ -25,10 +26,11 @@ exports.createPromotion = async (data) => {
   return promo;
 };
 
-exports.getAllPromotions = async ({ keyword } = {}) => {
+exports.getAllPromotions = async ({ search } = {}) => {
   const query = knex("promotions").orderBy("id", "desc");
-  if (keyword) {
-    query.andWhere("name", "ilike", `%${keyword}%`);
+  const kw = normalizeKeyword(search);
+  if (kw) {
+    query.andWhere("name", "ilike", `%${kw}%`);
   }
   return query;
 };

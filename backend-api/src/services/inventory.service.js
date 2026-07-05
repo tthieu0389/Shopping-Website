@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 // Kiểm tra sản phẩm có đơn hàng nào chưa xử lý xong (pending/confirmed/shipping)
 // hay không — dùng để chặn việc khoá/archive tồn kho giữa chừng khi còn đơn
@@ -72,7 +73,7 @@ exports.createInventory = async (
 };
 
 // GET ALL INVENTORY
-exports.getAllInventory = async ({ limit, offset, keyword, status }) => {
+exports.getAllInventory = async ({ limit, offset, search, status }) => {
   const baseQuery = () => {
     const q = knex("inventory as i").leftJoin(
       "products as p",
@@ -86,9 +87,10 @@ exports.getAllInventory = async ({ limit, offset, keyword, status }) => {
       q.whereIn("i.status", ["active", "inactive"]);
     }
 
-    // Tìm theo tên sản phẩm (q hoặc search từ controller gộp lại thành keyword)
-    if (keyword) {
-      q.andWhere("p.name", "ilike", `%${keyword}%`);
+    // Tìm theo tên sản phẩm (q hoặc search từ controller gộp lại thành search)
+    const kw = normalizeKeyword(search);
+    if (kw) {
+      q.andWhere("p.name", "ilike", `%${kw}%`);
     }
     return q;
   };

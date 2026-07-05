@@ -1,9 +1,43 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
-exports.getAllInventoryLogs = async ({ limit, offset }) => {
-  const data = await knex("inventory_logs as l")
-    .leftJoin("products as p", "l.product_id", "p.id")
-    .leftJoin("users as u", "l.created_by", "u.id")
+// GET ALL (phân trang + lọc theo action/product_id + tìm theo tên sản phẩm,
+// người thao tác hoặc nội dung ghi chú)
+exports.getAllInventoryLogs = async ({
+  limit,
+  offset,
+  action,
+  product_id,
+  search,
+}) => {
+  const validActions = ["import", "export", "adjust", "delete"];
+  const kw = normalizeKeyword(search);
+
+  const baseQuery = () => {
+    const q = knex("inventory_logs as l")
+      .leftJoin("products as p", "l.product_id", "p.id")
+      .leftJoin("users as u", "l.created_by", "u.id");
+
+    if (action && validActions.includes(action)) {
+      q.where("l.action", action);
+    }
+
+    if (product_id) {
+      q.where("l.product_id", product_id);
+    }
+
+    if (kw) {
+      q.andWhere((qb) => {
+        qb.where("p.name", "ilike", `%${kw}%`)
+          .orWhere("u.name", "ilike", `%${kw}%`)
+          .orWhere("l.note", "ilike", `%${kw}%`);
+      });
+    }
+
+    return q;
+  };
+
+  const data = await baseQuery()
     .select(
       "l.id",
       "l.inventory_id",
@@ -23,7 +57,7 @@ exports.getAllInventoryLogs = async ({ limit, offset }) => {
     .limit(limit)
     .offset(offset);
 
-  const [{ count }] = await knex("inventory_logs").count("* as count");
+  const [{ count }] = await baseQuery().count("l.id as count");
 
   return { data, total: Number(count) };
 };

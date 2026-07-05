@@ -1,4 +1,5 @@
 const knex = require("../database/knex");
+const { normalizeKeyword } = require("../utils/searchKeyword");
 
 // Tạo cửa hàng mới
 exports.createStore = async (data) => {
@@ -6,11 +7,20 @@ exports.createStore = async (data) => {
   return store;
 };
 
-// Lấy danh sách cửa hàng chưa bị xóa
-exports.getAllStores = async () => {
-  return await knex("stores")
-    .where({ is_deleted: false })
-    .orderBy("id", "desc");
+// Lấy danh sách cửa hàng chưa bị xóa (có thể tìm theo tên/tỉnh/địa chỉ)
+exports.getAllStores = async ({ search } = {}) => {
+  const query = knex("stores").where({ is_deleted: false });
+
+  const kw = normalizeKeyword(search);
+  if (kw) {
+    query.andWhere((qb) => {
+      qb.where("name", "ilike", `%${kw}%`)
+        .orWhere("province", "ilike", `%${kw}%`)
+        .orWhere("address", "ilike", `%${kw}%`);
+    });
+  }
+
+  return await query.orderBy("id", "desc");
 };
 
 // Cập nhật thông tin cửa hàng
