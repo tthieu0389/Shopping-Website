@@ -40,7 +40,7 @@ export function Toast() {
           </button>
           {t.type === 'success' && '✅'}
           {t.type === 'info'    && 'ℹ️'}
-          <span className="flex-1">{t.msg}</span>
+          <span className="flex-1 whitespace-pre-line">{t.msg}</span>
         </div>
       ))}
     </div>

@@ -197,7 +197,10 @@ export default function CheckoutPage() {
       toast.success("Đặt hàng thành công! 🎉");
       navigate("/checkout/success");
     } catch (err) {
-      toast.error(err.message || "Đặt hàng thất bại, vui lòng thử lại");
+      const friendlyMsg = err.status === 500
+        ? "Giá trị đơn hàng vượt quá giới hạn cho phép của hệ thống.\nNếu bạn có nhu cầu giao dịch với số tiền lớn, vui lòng liên hệ bộ phận hỗ trợ để được tư vấn."
+        : err.message || "Đặt hàng thất bại, vui lòng thử lại";
+      toast.error(friendlyMsg);
     } finally {
       setSubmitting(false);
     }
@@ -492,19 +495,19 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  {/* Tên + đơn giá */}
+                  {/* Tên + đơn giá + thành tiền */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-body leading-snug mb-1">
-                      {item.name}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-[13px] font-semibold text-body leading-snug mb-1 min-w-0 line-clamp-2">
+                        {item.name}
+                      </div>
+                      <div className="text-[13px] font-bold text-body flex-shrink-0 whitespace-nowrap pt-0.5 text-right">
+                        {formatPrice(item.price * item.qty)}
+                      </div>
                     </div>
                     <div className="text-xs text-muted">
                       {formatPrice(item.price)} × {item.qty}
                     </div>
-                  </div>
-
-                  {/* Thành tiền */}
-                  <div className="text-[13px] font-bold text-body flex-shrink-0 whitespace-nowrap pt-0.5">
-                    {formatPrice(item.price * item.qty)}
                   </div>
                 </div>
               ))}
@@ -556,16 +559,16 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t-2 border-shade mb-5">
+            <div className="flex flex-wrap justify-between items-baseline gap-x-2 gap-y-1 pt-4 border-t-2 border-shade mb-5">
               <span className="text-base font-bold flex-shrink-0">
                 Tổng cộng
               </span>
               {previewLoading ? (
-                <span className="text-xl font-bold text-muted font-display whitespace-nowrap">
+                <span className="text-xl font-bold text-muted font-display">
                   ...
                 </span>
               ) : (
-                <span className="text-xl font-bold text-accent font-display whitespace-nowrap">
+                <span className="text-xl font-bold text-accent font-display break-all text-right">
                   {formatPrice(finalTotal)}
                 </span>
               )}
