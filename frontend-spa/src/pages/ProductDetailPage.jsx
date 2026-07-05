@@ -26,10 +26,12 @@ export default function ProductDetailPage() {
 
   const { hash } = useLocation()
   const tabsRef = useRef(null)
+  const commentRefs = useRef({})
 
   const [qty, setQty]               = useState(1)
   const [activeTab, setActiveTab]   = useState(() => hash === '#reviews' ? 'reviews' : 'desc')
   const [activeImg, setActiveImg]   = useState(0)
+  const [overflowReviews, setOverflowReviews] = useState({})
 
   // Auto-scroll to reviews tab when navigated with #reviews hash
   useEffect(() => {
@@ -41,6 +43,15 @@ export default function ProductDetailPage() {
       return () => clearTimeout(id)
     }
   }, [hash, product])
+
+  // Detect which review comments overflow beyond 3 lines (to show "Xem thêm")
+  useEffect(() => {
+    const next = {}
+    Object.entries(commentRefs.current).forEach(([id, el]) => {
+      if (el) next[id] = el.scrollHeight > el.clientHeight + 1
+    })
+    setOverflowReviews(next)
+  }, [reviews, activeTab])
 
   // Review form
   const [rating, setRating]         = useState(0)
@@ -108,7 +119,6 @@ export default function ProductDetailPage() {
   }
 
   const myReview = reviews.find(r => String(r.user_id) === String(user?.id))
-  const COMMENT_PREVIEW_LEN = 180
   const toggleExpandReview = (id) => setExpandedReviews(p => ({ ...p, [id]: !p[id] }))
 
   const handleDeleteReview = async (reviewId) => {
@@ -460,20 +470,25 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="text-warning text-sm mb-2">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
                       {r.comment && (
-                        <p className="text-sm text-muted leading-relaxed break-words whitespace-pre-line">
-                          {r.comment.length > COMMENT_PREVIEW_LEN && !expandedReviews[r.id]
-                            ? r.comment.slice(0, COMMENT_PREVIEW_LEN) + '…'
-                            : r.comment}
-                          {r.comment.length > COMMENT_PREVIEW_LEN && (
+                        <div>
+                          <p
+                            ref={el => { commentRefs.current[r.id] = el }}
+                            className={`text-sm text-muted leading-relaxed break-words whitespace-pre-line ${
+                              expandedReviews[r.id] ? '' : 'line-clamp-3'
+                            }`}
+                          >
+                            {r.comment}
+                          </p>
+                          {overflowReviews[r.id] && (
                             <button
                               type="button"
                               onClick={() => toggleExpandReview(r.id)}
-                              className="text-vnpt font-semibold ml-1.5 hover:underline"
+                              className="text-vnpt font-semibold mt-1 hover:underline"
                             >
                               {expandedReviews[r.id] ? 'Thu gọn' : 'Xem thêm'}
                             </button>
                           )}
-                        </p>
+                        </div>
                       )}
                     </div>
                   ))}
