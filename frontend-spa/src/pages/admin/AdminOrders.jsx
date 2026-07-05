@@ -360,7 +360,7 @@ export default function AdminOrders() {
             </div>
 
             <div className="mb-2 text-[13px] font-bold text-body">
-              Cập nhật trạng thái
+              Trạng thái giao hàng
             </div>
             <div className="flex flex-col gap-1.5">
               {SETTABLE_STATUS.map((key) => {

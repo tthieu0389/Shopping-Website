@@ -39,6 +39,14 @@ const PAYMENT_TRANSITIONS = {
   refunded: [],
 };
 
+// Nhãn hiển thị dễ đọc cho phương thức thanh toán (thay vì "PM #WALLET" khó hiểu)
+const PAYMENT_METHOD_LABELS = {
+  cod: "COD",
+  wallet: "Ví điện tử",
+  card: "Thẻ ngân hàng",
+  bank_transfer: "Chuyển khoản",
+};
+
 // Phương thức thanh toán (khớp giá trị lưu ở cột orders.payment_method bên backend)
 const PAYMENT_METHOD_TABS = [
   ["all", "Tất cả PT"],
@@ -71,8 +79,6 @@ export default function StaffOrders() {
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [updating, setUpdating] = useState(false);
-  const [updatingPayment, setUpdatingPayment] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const debounceRef = useRef(null);
 
@@ -106,66 +112,6 @@ export default function StaffOrders() {
       setSearch(val.trim());
       setPage(1);
     }, 400);
-  };
-
-  const handleStatusChange = (order, newStatus) => {
-    if (
-      newStatus === "cancelled" &&
-      !window.confirm(
-        `Bạn có chắc muốn huỷ đơn hàng ${order.order_code || order.id} không?`,
-      )
-    )
-      return;
-    setUpdating(true);
-    const action =
-      newStatus === "cancelled"
-        ? ordersApi.cancel(order.id)
-        : ordersApi.update(order.id, { status: newStatus });
-    action
-      .then(() => {
-        toast.success("Đã cập nhật trạng thái đơn hàng");
-        setSelected((prev) => {
-          if (!prev || prev.id !== order.id) return prev;
-          const next = { ...prev, status: newStatus };
-          // Backend tự động khoá/chuyển trạng thái thanh toán khi huỷ đơn
-          if (newStatus === "cancelled") {
-            if (prev.payment_status === "paid")
-              next.payment_status = "refunded";
-            else if (["unpaid", "failed"].includes(prev.payment_status))
-              next.payment_status = "failed";
-          }
-          return next;
-        });
-        load();
-      })
-      .catch((err) => toast.error(err.message || "Không thể cập nhật"))
-      .finally(() => setUpdating(false));
-  };
-
-  const handlePaymentStatusChange = (order, newStatus) => {
-    if (
-      newStatus === "refunded" &&
-      !window.confirm(
-        `Xác nhận hoàn tiền cho đơn hàng ${order.order_code || order.id}?`,
-      )
-    )
-      return;
-    setUpdatingPayment(true);
-    ordersApi
-      .updatePaymentStatus(order.id, newStatus)
-      .then(() => {
-        toast.success("Đã cập nhật trạng thái thanh toán");
-        setSelected((prev) =>
-          prev && prev.id === order.id
-            ? { ...prev, payment_status: newStatus }
-            : prev,
-        );
-        load();
-      })
-      .catch((err) =>
-        toast.error(err.message || "Không thể cập nhật thanh toán"),
-      )
-      .finally(() => setUpdatingPayment(false));
   };
 
   const tabs = [
@@ -257,18 +203,16 @@ export default function StaffOrders() {
             "TT Thanh toán",
             "Trạng thái",
             "Ngày tạo",
-            "",
           ]}
           colWidths={[
             "220px", // Mã đơn
-            "130px", // Người nhận
-            "110px", // SĐT
-            "110px", // Tổng tiền
-            "90px",  // Thanh toán
-            "130px", // TT Thanh toán
-            "120px", // Trạng thái
-            "100px", // Ngày tạo
-            "64px",  // Chi tiết
+            "150px", // Người nhận
+            "120px", // SĐT
+            "130px", // Tổng tiền
+            "100px", // Thanh toán
+            "140px", // TT Thanh toán
+            "130px", // Trạng thái
+            "110px", // Ngày tạo
           ]}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
@@ -281,8 +225,10 @@ export default function StaffOrders() {
               <TD bold>{o.receiver_name || "—"}</TD>
               <TD muted>{o.receiver_phone || "—"}</TD>
               <TD bold>{formatPrice(o.total_amount)}</TD>
-              <TD muted className="uppercase text-[11px]">
-                {o.payment_method === "cod" ? "COD" : `PM #${o.payment_method}`}
+              <TD muted className="text-[12px]">
+                {PAYMENT_METHOD_LABELS[o.payment_method] ||
+                  o.payment_method?.toUpperCase() ||
+                  "—"}
               </TD>
               <TD noTruncate>
                 <Badge
@@ -294,9 +240,6 @@ export default function StaffOrders() {
                 <Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} />
               </TD>
               <TD muted>{formatDate(o.created_at)}</TD>
-              <TD noTruncate>
-                <span className="text-vnpt text-xs font-bold">Chi tiết</span>
-              </TD>
             </TR>
           ))}
         </Table>
@@ -353,26 +296,23 @@ export default function StaffOrders() {
               )}
             </div>
 
-            <div className="mb-2 text-[13px] font-bold text-body">
+            <div className="mb-1.5 text-[13px] font-bold text-body">
               Cập nhật trạng thái
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="text-[11px] text-muted italic mb-1.5">
+              Chỉ quản trị viên có thể thay đổi
+            </div>
+            <div className="flex flex-col gap-1.5 opacity-50 pointer-events-none select-none">
               {SETTABLE_STATUS.map((key) => {
                 const { label } = ORDER_STATUS[key];
                 const isCurrent = selected.status === key;
                 return (
                   <button
                     key={key}
-                    disabled={
-                      updating ||
-                      isCurrent ||
-                      selected.status === "cancelled" ||
-                      selected.status === "completed"
-                    }
-                    onClick={() => handleStatusChange(selected, key)}
+                    disabled
                     className={`text-left px-4 py-2.5 rounded-[9px] border text-[13px] transition-all
-                      ${isCurrent ? "border-vnpt bg-vnpt-light text-vnpt font-bold" : "border-shade text-body hover:border-vnpt"}
-                      disabled:cursor-not-allowed disabled:opacity-60`}
+                      ${isCurrent ? "border-vnpt bg-vnpt-light text-vnpt font-bold" : "border-shade text-body"}
+                      disabled:cursor-not-allowed`}
                   >
                     {isCurrent ? "✓ " : ""}
                     {label}
@@ -381,9 +321,8 @@ export default function StaffOrders() {
               })}
               {["pending", "confirmed"].includes(selected.status) && (
                 <button
-                  disabled={updating}
-                  onClick={() => handleStatusChange(selected, "cancelled")}
-                  className="text-left px-4 py-2.5 rounded-[9px] border border-red-200 bg-error/5 text-red-700 text-[13px] font-semibold hover:bg-error/10 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled
+                  className="text-left px-4 py-2.5 rounded-[9px] border border-red-200 bg-error/5 text-red-700 text-[13px] font-semibold disabled:cursor-not-allowed"
                 >
                   ✕ Huỷ đơn hàng
                 </button>
@@ -400,7 +339,10 @@ export default function StaffOrders() {
                     PAYMENT_STATUS.unpaid)}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="text-[11px] text-muted italic mb-1.5">
+                Chỉ quản trị viên có thể thay đổi
+              </div>
+              <div className="flex flex-col gap-1.5 opacity-50 pointer-events-none select-none">
                 {(() => {
                   const allowedTargets = getAllowedPaymentTargets(selected);
                   return Object.entries(PAYMENT_STATUS).map(
@@ -412,19 +354,16 @@ export default function StaffOrders() {
                       return (
                         <button
                           key={key}
-                          disabled={updatingPayment || isCurrent || !allowed}
-                          onClick={() =>
-                            handlePaymentStatusChange(selected, key)
-                          }
+                          disabled
                           className={`text-left px-4 py-2.5 rounded-[9px] border text-[13px] transition-all
                           ${
                             isCurrent
                               ? "border-vnpt bg-vnpt-light text-vnpt font-bold"
                               : isRefund && allowed
-                                ? "border-red-200 bg-error/5 text-red-700 font-semibold hover:bg-error/10"
-                                : "border-shade text-body hover:border-vnpt"
+                                ? "border-red-200 bg-error/5 text-red-700 font-semibold"
+                                : "border-shade text-body"
                           }
-                          disabled:cursor-not-allowed disabled:opacity-60`}
+                          disabled:cursor-not-allowed`}
                         >
                           {isCurrent ? "✓ " : isRefund && allowed ? "↩ " : ""}
                           {label}
