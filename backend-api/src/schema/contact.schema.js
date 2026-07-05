@@ -6,7 +6,7 @@ exports.createContactSchema = z.object({
   message: z
     .string()
     .min(1)
-    .max(2000, "Nội dung không được vượt quá 2000 ký tự"),
+    .max(2200, "Nội dung không được vượt quá 2200 ký tự"),
   order_id: z.coerce.number().int().positive().optional().nullable(),
 });
 
