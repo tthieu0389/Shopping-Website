@@ -66,9 +66,9 @@ function MyRepliesTab() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 border border-shade rounded-2xl overflow-hidden bg-white" style={{ minHeight: 480 }}>
+    <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 border border-shade rounded-2xl overflow-hidden bg-white" style={{ minHeight: 640 }}>
       {/* Danh sách liên hệ */}
-      <div className="flex flex-col border-r border-shade overflow-hidden" style={{ maxHeight: 640 }}>
+      <div className="flex flex-col border-r border-shade overflow-hidden" style={{ maxHeight: 760 }}>
         <div className="px-4 py-3 border-b border-shade text-[13px] font-bold text-body flex-shrink-0">
           Yêu cầu của tôi ({contacts.length})
         </div>
@@ -102,7 +102,7 @@ function MyRepliesTab() {
       </div>
 
       {/* Chi tiết */}
-      <div className="flex flex-col overflow-hidden" style={{ maxHeight: 640 }}>
+      <div className="flex flex-col overflow-hidden" style={{ maxHeight: 760 }}>
         {!selected ? (
           <div className="flex-1 flex items-center justify-center text-muted flex-col gap-2.5">
             <span className="text-4xl">💬</span>
@@ -130,7 +130,7 @@ function MyRepliesTab() {
             {/* Nội dung */}
             <div className="px-6 py-4 border-b border-shade flex-shrink-0">
               <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Nội dung đã gửi</div>
-              <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words h-40 resize-y overflow-y-auto">
+              <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words h-56 resize-y overflow-y-auto">
                 {parseMessage(selected.message).body}
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function ContactPage() {
       )}
 
       {tab === 'mine' && isAuthenticated ? (
-        <div className="max-w-[800px] mx-auto px-10 py-8">
+        <div className="max-w-[1200px] mx-auto px-10 py-8">
           <MyRepliesTab />
         </div>
       ) : (

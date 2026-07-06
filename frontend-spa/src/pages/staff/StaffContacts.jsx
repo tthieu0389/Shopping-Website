@@ -24,10 +24,6 @@ export default function StaffContacts() {
 
   const handleSelect = (c) => {
     setSelected(c)
-    const quotedMessage = (c.message || '')
-      .split('\n')
-      .map(line => `> ${line}`)
-      .join('\n')
     const template =
 `Kính gửi ${c.name},
 
@@ -38,10 +34,7 @@ Cảm ơn bạn đã liên hệ với VNPT Shop. Chúng tôi đã nhận đượ
 Nếu bạn có thêm câu hỏi, vui lòng liên hệ lại với chúng tôi.
 
 Trân trọng,
-Đội ngũ hỗ trợ VNPT Shop
-────────────────────────────
-Tin nhắn gốc từ ${c.name} (${formatDate(c.created_at)}):
-${quotedMessage}`
+Đội ngũ hỗ trợ VNPT Shop`
     // Template dựng sẵn có thể vượt quá giới hạn nếu tin nhắn gốc quá dài
     // (vì có quote lại) — cắt bớt để không vượt REPLY_MAX_LEN ngay từ đầu.
     setReplyBody(template.slice(0, REPLY_MAX_LEN))
