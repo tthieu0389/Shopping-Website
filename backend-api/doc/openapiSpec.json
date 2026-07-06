@@ -4120,7 +4120,7 @@
           }
         },
         "operationId": "uploadProductImages",
-        "description": "**Yêu cầu quyền: admin, staff.**\n\n**Quy tắc tự động chọn ảnh thumbnail:**\n- Nếu trong danh sách ảnh upload có ảnh được đánh dấu `is_thumbnail = true`, ảnh đó sẽ là thumbnail.\n- Nếu không có ảnh nào được đánh dấu thumbnail:\n  - Nếu sản phẩm **đã có** thumbnail từ trước → giữ nguyên thumbnail cũ, các ảnh mới upload đều có `is_thumbnail = false`.\n  - Nếu sản phẩm **chưa có** thumbnail nào → ảnh **đầu tiên** trong danh sách upload sẽ tự động được đặt làm thumbnail.\n- Mỗi sản phẩm chỉ có tối đa 1 ảnh thumbnail tại một thời điểm (ràng buộc unique index ở database)."
+        "description": "**Yêu cầu quyền: admin, staff.**\n\n**Quy tắc tự động chọn ảnh thumbnail (áp dụng như nhau dù upload 1 ảnh hay nhiều ảnh cùng lúc):**\n- Request không có field `is_thumbnail` theo từng ảnh — tất cả ảnh gửi lên đều được ghi nhận mặc định là `false`.\n- Hệ thống sau đó tự kiểm tra: nếu sản phẩm **đã có** thumbnail từ trước → giữ nguyên thumbnail cũ, toàn bộ ảnh mới upload là `is_thumbnail = false`.\n- Nếu sản phẩm **chưa có** thumbnail nào → ảnh **đầu tiên** trong danh sách gửi lên (`images[0]`) sẽ tự động được đặt làm thumbnail; nếu chỉ upload đúng 1 ảnh thì ảnh đó nghiễm nhiên thành thumbnail.\n- Muốn đổi thumbnail theo ý muốn (không theo mặc định trên), gọi tiếp `PATCH /api/product-images/{id}/thumbnail` sau khi upload.\n- Mỗi sản phẩm chỉ có tối đa 1 ảnh thumbnail tại một thời điểm (ràng buộc unique index ở database)."
       }
     },
     "/api/product-images/product/{productId}": {
@@ -4283,7 +4283,7 @@
           }
         },
         "operationId": "setThumbnail",
-        "description": "**Yêu cầu quyền: admin, staff.**\n\nĐặt ảnh có `id` truyền vào làm thumbnail duy nhất của sản phẩm; tất cả ảnh khác của sản phẩm đó sẽ tự động được set `is_thumbnail = false`."
+        "description": "**Yêu cầu quyền: admin, staff.**\n\nĐặt ảnh có `id` truyền vào làm thumbnail duy nhất của sản phẩm; toàn bộ ảnh khác của sản phẩm đó tự động được set `is_thumbnail = false`.\n\nEndpoint này **độc lập** với quy tắc auto-set thumbnail lúc upload hoặc auto-chuyển thumbnail lúc xóa ảnh — luôn ghi đè theo `id` được truyền vào, bất kể trạng thái thumbnail hiện tại đến từ đâu. Dùng khi FE đã cho user upload xong toàn bộ ảnh rồi mới cho chọn ảnh đại diện thật sự."
       }
     },
     "/api/cart": {
