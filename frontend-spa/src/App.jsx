@@ -29,6 +29,7 @@ import AdminInventory   from './pages/admin/AdminInventory.jsx'
 import AdminUsers       from './pages/admin/AdminUsers.jsx'
 import AdminContacts    from './pages/admin/AdminContacts.jsx'
 import AdminBlogs       from './pages/admin/AdminBlogs.jsx'
+import AdminReviews     from './pages/admin/AdminReviews.jsx'
 
 import StaffLayout      from './pages/staff/StaffLayout.jsx'
 import StaffDashboard   from './pages/staff/StaffDashboard.jsx'
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="users"         element={<AdminUsers />} />
           <Route path="contacts"      element={<AdminContacts />} />
           <Route path="blogs"         element={<AdminBlogs />} />
+          <Route path="reviews"       element={<AdminReviews />} />
         </Route>
 
         {/* Staff — own layout, role check inside StaffLayout (staff + admin) */}
