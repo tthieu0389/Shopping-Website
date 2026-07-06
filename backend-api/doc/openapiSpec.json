@@ -4120,7 +4120,7 @@
           }
         },
         "operationId": "uploadProductImages",
-        "description": "**Yêu cầu quyền: admin, staff.**"
+        "description": "**Yêu cầu quyền: admin, staff.**\n\n**Quy tắc tự động chọn ảnh thumbnail:**\n- Nếu trong danh sách ảnh upload có ảnh được đánh dấu `is_thumbnail = true`, ảnh đó sẽ là thumbnail.\n- Nếu không có ảnh nào được đánh dấu thumbnail:\n  - Nếu sản phẩm **đã có** thumbnail từ trước → giữ nguyên thumbnail cũ, các ảnh mới upload đều có `is_thumbnail = false`.\n  - Nếu sản phẩm **chưa có** thumbnail nào → ảnh **đầu tiên** trong danh sách upload sẽ tự động được đặt làm thumbnail.\n- Mỗi sản phẩm chỉ có tối đa 1 ảnh thumbnail tại một thời điểm (ràng buộc unique index ở database)."
       }
     },
     "/api/product-images/product/{productId}": {
@@ -4189,7 +4189,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "new_thumbnail": {
+                              "allOf": [
+                                {
+                                  "$ref": "#/components/schemas/ProductImage"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "Ảnh được tự động đặt làm thumbnail mới nếu ảnh vừa xóa là thumbnail cũ. `null` nếu ảnh xóa không phải thumbnail, hoặc không còn ảnh nào khác."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -4208,7 +4230,7 @@
           }
         },
         "operationId": "deleteProductImage",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.**\n\n**Quy tắc tự động chuyển thumbnail khi xóa:**\n- Nếu ảnh bị xóa **không phải** thumbnail → xóa bình thường, không ảnh hưởng đến thumbnail hiện tại.\n- Nếu ảnh bị xóa **là thumbnail** → hệ thống tự động chọn ảnh còn lại **cũ nhất** (theo `id` tăng dần) của sản phẩm đó làm thumbnail mới.\n- Nếu sau khi xóa sản phẩm không còn ảnh nào → `new_thumbnail` trả về `null`."
       }
     },
     "/api/product-images/{id}/thumbnail": {
@@ -4261,7 +4283,7 @@
           }
         },
         "operationId": "setThumbnail",
-        "description": "**Yêu cầu quyền: admin, staff.**"
+        "description": "**Yêu cầu quyền: admin, staff.**\n\nĐặt ảnh có `id` truyền vào làm thumbnail duy nhất của sản phẩm; tất cả ảnh khác của sản phẩm đó sẽ tự động được set `is_thumbnail = false`."
       }
     },
     "/api/cart": {

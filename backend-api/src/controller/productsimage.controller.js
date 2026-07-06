@@ -44,9 +44,18 @@ exports.getByProductId = async (req, res, next) => {
 // DELETE IMAGE
 exports.deleteImage = async (req, res, next) => {
   try {
-    await productImageService.deleteImage(req.params.id);
+    const result = await productImageService.deleteImage(req.params.id);
 
-    res.json({ message: "Image deleted" });
+    if (!result) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    res.json({
+      message: "Image deleted",
+      data: {
+        new_thumbnail: result.newThumbnail || null,
+      },
+    });
   } catch (err) {
     next(err);
   }

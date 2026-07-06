@@ -62,6 +62,9 @@ exports.up = function (knex) {
     )
     .raw(
       "CREATE UNIQUE INDEX idx_categories_slug_unique ON categories (slug) WHERE is_deleted = FALSE",
+    )
+    .raw(
+      "CREATE UNIQUE INDEX idx_product_images_one_thumbnail ON product_images(product_id) WHERE is_thumbnail = TRUE",
     );
 };
 

@@ -93,6 +93,11 @@ CREATE TABLE product_images (
     is_thumbnail BOOLEAN DEFAULT FALSE
 );
 
+-- Đảm bảo mỗi product chỉ có tối đa 1 ảnh thumbnail
+CREATE UNIQUE INDEX idx_product_images_one_thumbnail
+    ON product_images(product_id)
+    WHERE is_thumbnail = TRUE;
+
 CREATE TABLE product_details (
     id SERIAL PRIMARY KEY,
     product_id INT REFERENCES products(id) ON DELETE CASCADE,
