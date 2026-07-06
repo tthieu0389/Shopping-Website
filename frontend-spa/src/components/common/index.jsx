@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import {
   formatPrice,
   calcDiscount,
@@ -164,6 +164,7 @@ export function AvatarUploadModal({ currentAvatarUrl, onClose, onSuccess }) {
 // ── ProductCard ───────────────────────────────────────────────────────────────
 export function ProductCard({ product, showProgress = false }) {
   const addItem = useCartStore((s) => s.addItem);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const salePrice = product.sale_price ?? product.price;
   const originalPrice = product.original_price ?? salePrice;
@@ -193,6 +194,10 @@ export function ProductCard({ product, showProgress = false }) {
   const handleAdd = (e) => {
     e.preventDefault();
     if (isOutOfStock) return;
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      return;
+    }
     addItem(product)
       .then(() => toast.success(`Đã thêm ${product.name} vào giỏ!`))
       .catch((err) => toast.error(err?.message || "Không thể thêm vào giỏ"));
@@ -297,6 +302,7 @@ export function ProductCard({ product, showProgress = false }) {
 // ── FlashSaleCard ─────────────────────────────────────────────────────────────
 export function FlashSaleCard({ product }) {
   const addItem = useCartStore((s) => s.addItem);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const salePrice = product.sale_price ?? product.price;
   const originalPrice = product.original_price ?? salePrice;
@@ -329,6 +335,10 @@ export function FlashSaleCard({ product }) {
 
   const handleAdd = (e) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      return;
+    }
     addItem(product);
     toast.success(`Đã thêm ${product.name} vào giỏ!`);
   };
@@ -512,7 +522,9 @@ export function CountdownTimer({ h, m, s }) {
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
 export function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const location = useLocation();
+  if (!isAuthenticated)
+    return <Navigate to="/login" state={{ from: location }} replace />;
   return children;
 }
 
