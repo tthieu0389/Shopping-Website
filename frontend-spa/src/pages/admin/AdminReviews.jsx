@@ -2,9 +2,9 @@ import { useEffect, useState, useRef } from 'react'
 import { reviewsApi, categoriesApi } from '../../api/index.js'
 import {
   Card, Table, TR, TD, Badge, Btn,
-  AdminPagination, SearchInput, SelectPill, Toolbar,
+  AdminPagination, SearchInput, SelectPill,
 } from './ui.jsx'
-import { toast, debounce, resolveImageUrl, formatDate } from '../../utils/index.js'
+import { toast, resolveImageUrl, formatDate } from '../../utils/index.js'
 
 const LIMIT = 10
 
@@ -115,11 +115,13 @@ export default function AdminReviews() {
   const [total, setTotal]               = useState(0)
   const [page, setPage]                 = useState(1)
   const [search, setSearch]             = useState('')
+  const [searchInput, setSearchInput]   = useState('')
   const [ratingFilter, setRatingFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [loading, setLoading]           = useState(true)
   const [deleteTarget, setDeleteTarget] = useState(null) // review to confirm delete
   const [deleting, setDeleting]         = useState(false)
+  const debounceRef = useRef(null)
 
   // Load categories once
   useEffect(() => {
@@ -150,10 +152,24 @@ export default function AdminReviews() {
 
   useEffect(() => { load() }, [page, search, ratingFilter, categoryFilter])
 
-  const handleSearchChange = debounce((v) => {
+  const handleSearchInput = (val) => {
+    setSearchInput(val)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      setSearch(val.trim())
+      setPage(1)
+    }, 400)
+  }
+
+  const hasActiveFilters = !!search || !!ratingFilter || !!categoryFilter
+
+  const clearFilters = () => {
+    setSearchInput('')
+    setSearch('')
+    setRatingFilter('')
+    setCategoryFilter('')
     setPage(1)
-    setSearch(v)
-  }, 400)
+  }
 
   const handleDelete = () => {
     if (!deleteTarget) return
@@ -175,6 +191,9 @@ export default function AdminReviews() {
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
 
+  // Label giữ nguyên số lượng sao tương ứng (⭐ x n). Không truyền thêm icon
+  // cho SelectPill nữa vì icon sẽ cộng dư 1 sao vào label (vd chọn "3 sao"
+  // nhưng hiển thị thành 4 sao do icon + label cộng lại).
   const ratingOptions = [
     ['', 'Tất cả sao'],
     ['5', '⭐⭐⭐⭐⭐ 5 sao'],
@@ -191,27 +210,37 @@ export default function AdminReviews() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ── Toolbar ── */}
-      <Toolbar>
+      {/* ── Toolbar (đồng bộ layout với trang Đơn hàng) ── */}
+      <div className="flex items-center gap-2.5 flex-wrap">
         <SearchInput
-          defaultValue={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={searchInput}
+          onChange={(e) => handleSearchInput(e.target.value)}
           placeholder="Tìm tên khách hàng hoặc sản phẩm..."
-          wrapperClassName="w-72 flex-shrink-0"
+          wrapperClassName="flex-1 min-w-[220px]"
         />
+
         <SelectPill
           value={ratingFilter}
           onChange={(v) => { setPage(1); setRatingFilter(v) }}
           options={ratingOptions}
-          icon="⭐"
         />
+
         <SelectPill
           value={categoryFilter}
           onChange={(v) => { setPage(1); setCategoryFilter(v) }}
           options={categoryOptions}
           icon="🗂️"
         />
-      </Toolbar>
+
+        <button
+          onClick={clearFilters}
+          disabled={!hasActiveFilters}
+          className={`px-3.5 py-2 rounded-full text-xs font-bold transition-colors flex-shrink-0
+            ${hasActiveFilters ? 'text-muted hover:text-vnpt hover:bg-vnpt-light cursor-pointer' : 'text-transparent pointer-events-none select-none'}`}
+        >
+          ✕ Xoá lọc
+        </button>
+      </div>
 
       {/* ── Summary ── */}
       {!loading && (
