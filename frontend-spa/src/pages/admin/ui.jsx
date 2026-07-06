@@ -198,9 +198,9 @@ export function Textarea({ label, required, rows = 4, ...props }) {
 }
 
 // ─── Card ───────────────────────────────────────────────────────────────────
-export function Card({ children, className = "" }) {
+export function Card({ children, className = "", style }) {
   return (
-    <div className={`bg-canvas border border-shade rounded-xl ${className}`}>
+    <div className={`bg-canvas border border-shade rounded-xl ${className}`} style={style}>
       {children}
     </div>
   );

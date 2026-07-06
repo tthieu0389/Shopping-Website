@@ -4,6 +4,9 @@ import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Textarea } from './ui.js
 import { toast, formatDate, resolveImageUrl } from '../../utils/index.js'
 
 const LIMIT = 10
+const MAX_TITLE = 200
+const MAX_SLUG = 200
+const MAX_CONTENT = 10000
 const emptyForm = { title: '', slug: '', content: '', thumbnail_url: '' }
 
 // Tạo slug từ tiêu đề (bỏ dấu tiếng Việt, khoảng trắng -> gạch ngang)
@@ -49,7 +52,8 @@ export default function AdminBlogs() {
   }
 
   const handleTitleChange = (v) => {
-    setForm(p => ({ ...p, title: v, slug: slugTouched ? p.slug : slugify(v) }))
+    const capped = v.slice(0, MAX_TITLE)
+    setForm(p => ({ ...p, title: capped, slug: slugTouched ? p.slug : slugify(capped) }))
   }
 
   const handleThumbnailUpload = (e) => {
@@ -96,7 +100,7 @@ export default function AdminBlogs() {
       <Card>
         <Table
           headers={['Ảnh', 'Tiêu đề', 'Slug', 'Ngày đăng', '']}
-          colWidths={['80px', '320px', '200px', '110px', '100px']}
+          colWidths={['64px', '35%', '30%', '110px', '100px']}
           loading={loading}
           empty={!loading && 'Chưa có bài viết nào'}
         >
@@ -110,12 +114,12 @@ export default function AdminBlogs() {
                 )}
               </TD>
               <TD bold>{b.title}</TD>
-              <TD muted noTruncate>{b.slug || <Badge label="Chưa có slug" tone="warning" />}</TD>
+              <TD muted>{b.slug || <Badge label="Chưa có slug" tone="warning" />}</TD>
               <TD muted>{formatDate(b.created_at)}</TD>
-              <TD noTruncate>
+              <TD noTruncate className="w-[100px] min-w-[100px] flex-shrink-0">
                 <div className="flex gap-3">
-                  <span className="text-vnpt font-bold cursor-pointer text-xs" onClick={() => openEdit(b)}>Sửa</span>
-                  <span className="text-accent font-bold cursor-pointer text-xs" onClick={() => handleDelete(b)}>Xoá</span>
+                  <span className="text-vnpt font-bold cursor-pointer text-xs whitespace-nowrap" onClick={() => openEdit(b)}>Sửa</span>
+                  <span className="text-accent font-bold cursor-pointer text-xs whitespace-nowrap" onClick={() => handleDelete(b)}>Xoá</span>
                 </div>
               </TD>
             </TR>
@@ -139,16 +143,43 @@ export default function AdminBlogs() {
       )}
 
       {modal && (
-        <Modal title={modal === 'add' ? 'Đăng bài viết mới' : `Sửa: ${modal.title}`} onClose={() => setModal(null)} width="max-w-[640px]">
+        <Modal
+          title={modal === 'add' ? 'Đăng bài viết mới' : (
+            <span className="block truncate max-w-[520px]" title={`Sửa: ${modal.title}`}>
+              Sửa: {modal.title}
+            </span>
+          )}
+          onClose={() => setModal(null)} width="max-w-[640px]"
+        >
           <div className="flex flex-col gap-4">
-            <Input label="Tiêu đề" required value={form.title} onChange={e => handleTitleChange(e.target.value)} placeholder="VD: VNPT ra mắt gói cước 5G mới" />
-            <Input
-              label="Slug (đường dẫn URL)"
-              required
-              value={form.slug}
-              onChange={e => { setSlugTouched(true); setForm(p => ({ ...p, slug: slugify(e.target.value) })) }}
-              placeholder="vnpt-ra-mat-goi-cuoc-5g-moi"
-            />
+            <div>
+              <label className="block text-[13px] font-semibold text-body mb-1.5">Tiêu đề <span className="text-accent">*</span></label>
+              <textarea
+                rows={2}
+                value={form.title}
+                onChange={e => handleTitleChange(e.target.value)}
+                placeholder="VD: VNPT ra mắt gói cước 5G mới"
+                maxLength={MAX_TITLE}
+                className="w-full border border-shade rounded-lg px-3 py-2 text-[13px] text-body bg-canvas resize-y focus:outline-none focus:border-vnpt break-all"
+              />
+              <p className={`text-right text-[11px] mt-0.5 ${form.title.length >= MAX_TITLE ? 'text-accent font-semibold' : 'text-muted'}`}>
+                {form.title.length}/{MAX_TITLE}
+              </p>
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-body mb-1.5">Slug (đường dẫn URL) <span className="text-accent">*</span></label>
+              <textarea
+                rows={2}
+                value={form.slug}
+                onChange={e => { setSlugTouched(true); setForm(p => ({ ...p, slug: slugify(e.target.value).slice(0, MAX_SLUG) })) }}
+                placeholder="vnpt-ra-mat-goi-cuoc-5g-moi"
+                maxLength={MAX_SLUG}
+                className="w-full border border-shade rounded-lg px-3 py-2 text-[13px] text-body bg-canvas resize-y focus:outline-none focus:border-vnpt break-all font-mono"
+              />
+              <p className={`text-right text-[11px] mt-0.5 ${form.slug.length >= MAX_SLUG ? 'text-accent font-semibold' : 'text-muted'}`}>
+                {form.slug.length}/{MAX_SLUG}
+              </p>
+            </div>
 
             <div>
               <label className="block text-[13px] font-semibold text-body mb-1.5">Ảnh đại diện</label>
@@ -165,7 +196,12 @@ export default function AdminBlogs() {
               </div>
             </div>
 
-            <Textarea label="Nội dung" required rows={10} value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="Nội dung bài viết..." />
+            <div>
+              <Textarea label="Nội dung" required rows={10} value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value.slice(0, MAX_CONTENT) }))} placeholder="Nội dung bài viết..." maxLength={MAX_CONTENT} />
+              <p className={`text-right text-[11px] mt-0.5 ${form.content.length >= MAX_CONTENT ? 'text-accent font-semibold' : 'text-muted'}`}>
+                {form.content.length.toLocaleString('vi-VN')}/{MAX_CONTENT.toLocaleString('vi-VN')}
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-shade">
