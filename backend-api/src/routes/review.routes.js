@@ -6,6 +6,7 @@ const verifyToken = require("../middlewares/verifyToken");
 const validate = require("../middlewares/validate");
 const checkRole = require("../middlewares/checkRole");
 const checkOwnership = require("../middlewares/checkOwnership");
+const pagination = require("../middlewares/pagination");
 
 const { createReviewSchema } = require("../schema/review.schema");
 
@@ -17,18 +18,25 @@ router.get(
   "/admin",
   verifyToken(),
   checkRole("admin"),
+  pagination(),
   reviewController.getAllForAdmin,
 );
 
 // Get reviews by query
 // optional: true - route vẫn public (không bắt buộc đăng nhập)
 // nhưng nếu có token hợp lệ thì req.user sẽ được gắn để review của bản thân được pin lên đầu
-router.get("/", verifyToken({ optional: true }), reviewController.getByProduct);
+router.get(
+  "/",
+  verifyToken({ optional: true }),
+  pagination(),
+  reviewController.getByProduct,
+);
 
 // Get reviews by param
 router.get(
   "/product/:productId",
   verifyToken({ optional: true }),
+  pagination(),
   reviewController.getByProduct,
 );
 

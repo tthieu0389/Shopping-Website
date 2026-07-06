@@ -58,10 +58,15 @@ CREATE TABLE user_payment_methods (
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) UNIQUE,
+    slug VARCHAR(100),
     description TEXT,
     is_deleted BOOLEAN DEFAULT FALSE
 );
+
+-- Chặn trùng tên/slug, chỉ tính các category đang active
+-- (is_deleted = false), để có thể tái sử dụng tên/slug sau khi soft-delete
+CREATE UNIQUE INDEX idx_categories_name_unique ON categories (LOWER(name)) WHERE is_deleted = FALSE;
+CREATE UNIQUE INDEX idx_categories_slug_unique ON categories (slug) WHERE is_deleted = FALSE;
 
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,

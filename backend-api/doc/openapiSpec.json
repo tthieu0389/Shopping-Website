@@ -2990,12 +2990,22 @@
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
+          "409": {
+            "description": "Tên hoặc slug danh mục đã tồn tại",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
         },
         "operationId": "createCategory",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.** Trả về 409 nếu tên hoặc slug đã tồn tại ở một danh mục đang active khác."
       }
     },
     "/api/categories/{id}": {
@@ -3068,6 +3078,16 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "409": {
+            "description": "Tên hoặc slug danh mục đã tồn tại (ở một danh mục active khác)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -3076,7 +3096,7 @@
           }
         },
         "operationId": "updateCategory",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.** Trả về 409 nếu tên hoặc slug mới trùng với một danh mục đang active khác."
       },
       "delete": {
         "tags": ["Categories"],

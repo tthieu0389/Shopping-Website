@@ -61,17 +61,34 @@ exports.createReview = async (userId, data) => {
 // currentUserId (tuỳ chọn): nếu truyền vào, review của chính user đang xem
 // sẽ được ưu tiên hiển thị lên đầu danh sách
 // các review còn lại sắp theo mới nhất trước (created_at desc)
-exports.getProductReviews = async (productId, currentUserId = null) => {
-  return knex("reviews as r")
-    .join("users as u", "r.user_id", "u.id")
-    .leftJoin("user_profiles as up", "r.user_id", "up.user_id")
-    .where("r.product_id", productId)
-    .andWhere("r.is_deleted", false)
+exports.getProductReviews = async (
+  productId,
+  currentUserId = null,
+  { limit, offset } = {},
+) => {
+  const baseQuery = () =>
+    knex("reviews as r")
+      .join("users as u", "r.user_id", "u.id")
+      .leftJoin("user_profiles as up", "r.user_id", "up.user_id")
+      .where("r.product_id", productId)
+      .andWhere("r.is_deleted", false);
+
+  const [{ count }] = await baseQuery().count("r.id as count");
+  const total = Number(count || 0);
+
+  const safeLimit = isNaN(Number(limit)) ? 10 : Number(limit);
+  const safeOffset = isNaN(Number(offset)) ? 0 : Number(offset);
+
+  const data = await baseQuery()
     .select("r.*", "u.name as user_name", "up.avatar as user_avatar")
     .orderByRaw(
       "(CASE WHEN r.user_id = ? THEN 0 ELSE 1 END) ASC, r.created_at DESC",
       [currentUserId],
-    );
+    )
+    .limit(safeLimit)
+    .offset(safeOffset);
+
+  return { data, total };
 };
 
 // GET FEATURED REVIEWS (dùng cho trang chủ - "Khách hàng nói gì?")
@@ -97,7 +114,8 @@ exports.getFeaturedReviews = async (limit = 6) => {
         bpp.product_id,
         bpp.user_name,
         bpp.user_avatar,
-        bpp.product_name
+        bpp.product_name,
+        bpp.thumbnail_url
       FROM (
         SELECT DISTINCT ON (r.product_id)
           r.id,
@@ -108,11 +126,18 @@ exports.getFeaturedReviews = async (limit = 6) => {
           r.product_id,
           u.name AS user_name,
           up.avatar AS user_avatar,
-          p.name AS product_name
+          p.name AS product_name,
+          pi.image_url AS thumbnail_url
         FROM reviews r
         JOIN users u ON r.user_id = u.id
         LEFT JOIN user_profiles up ON up.user_id = u.id
         JOIN products p ON r.product_id = p.id
+        LEFT JOIN LATERAL (
+          SELECT image_url
+          FROM product_images
+          WHERE product_id = p.id AND is_thumbnail = true
+          LIMIT 1
+        ) pi ON true
         WHERE r.is_deleted = false
           AND p.is_deleted = false
           AND r.rating >= 4
@@ -171,21 +196,26 @@ exports.getAllReviewsForAdmin = async ({
 
   const [{ count }] = await baseQuery().count("r.id as count");
 
+  const safeLimit = isNaN(Number(limit)) ? 10 : Number(limit);
+  const safeOffset = isNaN(Number(offset)) ? 0 : Number(offset);
+
   const data = await baseQuery()
     .select(
       "r.*",
       "u.name as user_name",
       "p.name as product_name",
+      // Đồng bộ cách lấy thumbnail với products.service.js (dùng whereRaw
+      // cho vế correlated subquery thay vì where + knex.raw)
       knex("product_images")
-        .where("product_id", knex.raw("p.id"))
-        .where("is_thumbnail", true)
         .select("image_url")
+        .whereRaw("product_id = p.id")
+        .where("is_thumbnail", true)
         .limit(1)
         .as("thumbnail_url"),
     )
     .orderBy("r.created_at", "desc")
-    .limit(limit)
-    .offset(offset);
+    .limit(safeLimit)
+    .offset(safeOffset);
 
   return { data, total: Number(count) };
 };

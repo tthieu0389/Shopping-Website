@@ -56,6 +56,12 @@ exports.up = function (knex) {
     )
     .raw(
       "CREATE INDEX idx_products_attributes ON products USING gin (attributes)",
+    )
+    .raw(
+      "CREATE UNIQUE INDEX idx_categories_name_unique ON categories (LOWER(name)) WHERE is_deleted = FALSE",
+    )
+    .raw(
+      "CREATE UNIQUE INDEX idx_categories_slug_unique ON categories (slug) WHERE is_deleted = FALSE",
     );
 };
 

@@ -16,8 +16,13 @@ exports.getByProduct = async (req, res, next) => {
     // Route này không bắt buộc đăng nhập nên req.user có thể không tồn tại.
     // Nếu đã đăng nhập, truyền userId để review của bản thân được ưu tiên lên đầu.
     const currentUserId = req.user?.id ?? null;
-    const data = await service.getProductReviews(productId, currentUserId);
-    res.json({ data });
+    const { page, limit, offset } = req.pagination;
+    const { data, total } = await service.getProductReviews(
+      productId,
+      currentUserId,
+      { limit, offset },
+    );
+    res.json({ data, total, page, limit });
   } catch (err) {
     next(err);
   }
@@ -36,10 +41,11 @@ exports.getFeatured = async (req, res, next) => {
 // GET ALL REVIEWS (ADMIN)
 exports.getAllForAdmin = async (req, res, next) => {
   try {
-    const { limit, offset, rating, category_id } = req.query;
+    const { rating, category_id } = req.query;
+    const { page, limit, offset } = req.pagination;
     const result = await service.getAllReviewsForAdmin({
-      limit: limit !== undefined ? Number(limit) : undefined,
-      offset: offset !== undefined ? Number(offset) : undefined,
+      limit,
+      offset,
       search: req.query.q || req.query.search,
       rating: rating !== undefined ? Number(rating) : undefined,
       category_id:
@@ -47,7 +53,7 @@ exports.getAllForAdmin = async (req, res, next) => {
           ? Number(category_id)
           : undefined,
     });
-    res.json(result);
+    res.json({ ...result, page, limit });
   } catch (err) {
     next(err);
   }
