@@ -187,6 +187,7 @@ export const contactApi = {
   send: (data) => api.post("/contacts", data),
   // Admin
   getAll: () => api.get("/contacts"),
+  updateStatus: (id, status) => api.patch(`/contacts/${id}/status`, { status }),
   remove: (id) => api.delete(`/contacts/${id}`),
 };
 

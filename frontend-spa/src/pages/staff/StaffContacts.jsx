@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { contactApi } from '../../api/index.js'
-import { Card, FilterTabs, SearchInput } from '../admin/ui.jsx'
+import { Card, SearchInput, SelectPill } from '../admin/ui.jsx'
 import { toast, formatDate } from '../../utils/index.js'
 
 export default function StaffContacts() {
@@ -8,7 +8,8 @@ export default function StaffContacts() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [replyBody, setReplyBody] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
 
   const load = () => {
@@ -70,37 +71,73 @@ ${quotedMessage}`
     return base + encodedBody
   }
 
-  const filtered = (filter === 'all'
-    ? contacts
-    : filter === 'newsletter'
-      ? contacts.filter(c => c.name === 'Newsletter')
-      : contacts.filter(c => c.name !== 'Newsletter')
-  ).filter(c =>
-    !search.trim() ||
-    c.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-    c.email.toLowerCase().includes(search.trim().toLowerCase())
-  )
+  const hasActiveFilters = typeFilter !== 'all' || statusFilter !== 'all' || !!search.trim()
+
+  const clearFilters = () => {
+    setSearch('')
+    setTypeFilter('all')
+    setStatusFilter('all')
+    setSelected(null)
+  }
+
+  const handleToggleStatus = (c) => {
+    const newStatus = c.status === 'resolved' ? 'pending' : 'resolved'
+    contactApi.updateStatus(c.id, newStatus)
+      .then(() => {
+        const updated = { ...c, status: newStatus }
+        setContacts(prev => prev.map(x => x.id === c.id ? updated : x))
+        if (selected?.id === c.id) setSelected(updated)
+        toast.success(newStatus === 'resolved' ? 'Đã đánh dấu giải quyết' : 'Đã đánh dấu chưa giải quyết')
+      })
+      .catch(err => toast.error(err.message || 'Không thể cập nhật'))
+  }
+
+  const filtered = contacts
+    .filter(c => typeFilter === 'all' || (typeFilter === 'newsletter' ? c.name === 'Newsletter' : c.name !== 'Newsletter'))
+    .filter(c => statusFilter === 'all' || (statusFilter === 'resolved' ? c.status === 'resolved' : c.status !== 'resolved'))
+    .filter(c =>
+      !search.trim() ||
+      c.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+      c.email.toLowerCase().includes(search.trim().toLowerCase())
+    )
 
   if (loading) return <div className="py-16 text-center text-muted text-sm">Đang tải...</div>
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Search + filter tabs */}
+      {/* Search + filter dropdowns */}
       <div className="flex items-center gap-2.5 flex-wrap">
         <SearchInput
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Tìm theo tên hoặc email..."
         />
-        <FilterTabs
+        <SelectPill
+          value={typeFilter}
+          onChange={(v) => { setTypeFilter(v); setSelected(null) }}
           options={[
-            ['all', 'Tất cả', contacts.length],
-            ['contact', 'Liên hệ', contacts.filter(c => c.name !== 'Newsletter').length],
-            ['newsletter', 'Đăng ký email', contacts.filter(c => c.name === 'Newsletter').length],
+            ['all', 'Loại liên hệ'],
+            ['contact', 'Liên hệ'],
+            ['newsletter', 'Đăng ký email'],
           ]}
-          value={filter}
-          onChange={(v) => { setFilter(v); setSelected(null) }}
         />
+        <SelectPill
+          value={statusFilter}
+          onChange={(v) => { setStatusFilter(v); setSelected(null) }}
+          options={[
+            ['all', 'Trạng thái'],
+            ['pending', 'Chưa giải quyết'],
+            ['resolved', 'Đã giải quyết'],
+          ]}
+        />
+        <button
+          onClick={clearFilters}
+          disabled={!hasActiveFilters}
+          className={`px-3.5 py-2 rounded-full text-xs font-bold transition-colors flex-shrink-0
+            ${hasActiveFilters ? 'text-muted hover:text-primary hover:bg-primary-light cursor-pointer' : 'text-transparent pointer-events-none select-none'}`}
+        >
+          ✕ Xoá lọc
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4" style={{ minHeight: 480 }}>
@@ -123,9 +160,14 @@ ${quotedMessage}`
               >
                 <div className="flex items-center justify-between mb-0.5">
                   <div className="font-bold text-[13px] text-body truncate flex-1">{c.name}</div>
-                  {c.name === 'Newsletter' && (
-                    <span className="text-[10px] bg-blue-100 text-blue-600 font-bold px-1.5 py-0.5 rounded-full ml-1 flex-shrink-0">EMAIL</span>
-                  )}
+                  <div className="flex items-center gap-1 ml-1 flex-shrink-0">
+                    {c.name === 'Newsletter' && (
+                      <span className="text-[10px] bg-blue-100 text-blue-600 font-bold px-1.5 py-0.5 rounded-full">EMAIL</span>
+                    )}
+                    {c.status === 'resolved' && (
+                      <span className="text-[10px] bg-success/10 text-green-600 font-bold px-1.5 py-0.5 rounded-full">✓</span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-xs text-muted truncate mb-1">{c.email}</div>
                 <div className="text-[11px] text-muted">{formatDate(c.created_at)}</div>
@@ -145,9 +187,24 @@ ${quotedMessage}`
           ) : (
             <>
               {/* Header */}
-              <div className="px-6 py-4 border-b border-shade">
-                <div className="font-extrabold text-base text-body mb-0.5">{selected.name}</div>
-                <div className="text-[13px] text-muted">{selected.email} · {formatDate(selected.created_at)}</div>
+              <div className="px-6 py-4 border-b border-shade flex justify-between items-start gap-3">
+                <div>
+                  <div className="font-extrabold text-base text-body mb-0.5">{selected.name}</div>
+                  <div className="text-[13px] text-muted">{selected.email} · {formatDate(selected.created_at)}</div>
+                </div>
+                <button
+                  onClick={() => handleToggleStatus(selected)}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-colors border flex-shrink-0 ${
+                    selected.status === 'resolved'
+                      ? 'bg-success/10 border-success/30 text-green-700 hover:bg-success/20'
+                      : 'bg-cream border-shade text-muted hover:bg-success/10 hover:border-success/30 hover:text-green-700'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  {selected.status === 'resolved' ? 'Đã xử lý' : 'Đánh dấu xử lý'}
+                </button>
               </div>
 
               {/* Nội dung gốc */}
