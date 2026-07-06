@@ -4443,7 +4443,9 @@
                     "enum": ["cod", "card", "wallet"]
                   },
                   "note": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 1000,
+                    "description": "Ghi chú đơn hàng, tối đa 1000 ký tự"
                   },
                   "items": {
                     "type": "array",
