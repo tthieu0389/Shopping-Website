@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useLocation } from 'react-router-dom'
 import { useProduct, useRelatedProducts, useReviews } from '../hooks/index.js'
-import { Breadcrumb, LoadingSpinner, EmptyState, ProductCard, StarRating } from '../components/common/index.jsx'
+import { Breadcrumb, LoadingSpinner, EmptyState, ProductCard, StarRating, Pagination } from '../components/common/index.jsx'
 import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
 import { reviewsApi } from '../api/index.js'
 import useCartStore from '../store/cartStore.js'
@@ -12,6 +12,10 @@ const TABS = [
   { id: 'specs',   label: 'Thông số kỹ thuật' },
   { id: 'reviews', label: 'Đánh giá' },
 ]
+
+const REVIEWS_PER_PAGE = 4
+const DESC_COLLAPSE_HEIGHT = 320
+const SPECS_COLLAPSE_HEIGHT = 320
 
 export default function ProductDetailPage() {
   const { slug } = useParams()
@@ -27,11 +31,18 @@ export default function ProductDetailPage() {
   const { hash } = useLocation()
   const tabsRef = useRef(null)
   const commentRefs = useRef({})
+  const descRef = useRef(null)
+  const specsRef = useRef(null)
 
   const [qty, setQty]               = useState(1)
   const [activeTab, setActiveTab]   = useState(() => hash === '#reviews' ? 'reviews' : 'desc')
   const [activeImg, setActiveImg]   = useState(0)
   const [overflowReviews, setOverflowReviews] = useState({})
+  const [reviewPage, setReviewPage] = useState(1)
+  const [descExpanded, setDescExpanded]   = useState(false)
+  const [specsExpanded, setSpecsExpanded] = useState(false)
+  const [descOverflow, setDescOverflow]   = useState(false)
+  const [specsOverflow, setSpecsOverflow] = useState(false)
 
   // Auto-scroll to reviews tab when navigated with #reviews hash
   useEffect(() => {
@@ -53,6 +64,30 @@ export default function ProductDetailPage() {
     setOverflowReviews(next)
   }, [reviews, activeTab])
 
+  // Reset về trang 1 mỗi khi danh sách đánh giá thay đổi (thêm mới, xoá...)
+  useEffect(() => {
+    setReviewPage(1)
+  }, [reviews.length, product?.id])
+
+  // Reset trạng thái "Xem thêm" khi đổi sản phẩm
+  useEffect(() => {
+    setDescExpanded(false)
+    setSpecsExpanded(false)
+  }, [product?.id])
+
+  // Phát hiện mô tả/thông số có bị tràn quá chiều cao thu gọn không
+  useEffect(() => {
+    if (activeTab === 'desc' && descRef.current) {
+      setDescOverflow(descRef.current.scrollHeight > DESC_COLLAPSE_HEIGHT + 1)
+    }
+  }, [activeTab, product?.description])
+
+  useEffect(() => {
+    if (activeTab === 'specs' && specsRef.current) {
+      setSpecsOverflow(specsRef.current.scrollHeight > SPECS_COLLAPSE_HEIGHT + 1)
+    }
+  }, [activeTab, product?.details])
+
   // Review form
   const [rating, setRating]         = useState(0)
   const [comment, setComment]       = useState('')
@@ -73,6 +108,12 @@ export default function ProductDetailPage() {
   const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : 0
+
+  const totalReviewPages = Math.ceil(reviews.length / REVIEWS_PER_PAGE)
+  const pagedReviews = reviews.slice(
+    (reviewPage - 1) * REVIEWS_PER_PAGE,
+    reviewPage * REVIEWS_PER_PAGE,
+  )
 
   const handleAdd = async () => {
     if (!isAuthenticated) { toast.error('Vui lòng đăng nhập để thêm vào giỏ'); return }
@@ -339,11 +380,33 @@ export default function ProductDetailPage() {
 
           {/* Mô tả */}
           {activeTab === 'desc' && (
-            <div className="prose max-w-none text-sm text-muted leading-relaxed">
-              {product.description
-                ? <p style={{overflowWrap:"anywhere",whiteSpace:"pre-wrap"}}>{product.description}</p>
-                : <p className="text-muted italic">Chưa có mô tả sản phẩm.</p>
-              }
+            <div>
+              <div className="relative">
+                <div
+                  ref={descRef}
+                  className="prose max-w-none text-sm text-muted leading-relaxed overflow-hidden transition-[max-height] duration-300"
+                  style={{ maxHeight: descExpanded ? 'none' : `${DESC_COLLAPSE_HEIGHT}px` }}
+                >
+                  {product.description
+                    ? <p style={{overflowWrap:"anywhere",whiteSpace:"pre-wrap"}}>{product.description}</p>
+                    : <p className="text-muted italic">Chưa có mô tả sản phẩm.</p>
+                  }
+                </div>
+                {!descExpanded && descOverflow && (
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                )}
+              </div>
+              {descOverflow && (
+                <div className="text-center mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setDescExpanded(v => !v)}
+                    className="text-vnpt font-semibold text-sm hover:underline"
+                  >
+                    {descExpanded ? 'Thu gọn' : 'Xem thêm'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -351,16 +414,40 @@ export default function ProductDetailPage() {
           {activeTab === 'specs' && (
             <div>
               {product.details && product.details.length > 0 ? (
-                <table className="w-full text-sm border border-shade rounded-xl overflow-hidden">
-                  <tbody>
-                    {product.details.map((d, i) => (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
-                        <td className="py-3 px-5 font-semibold text-body w-1/3 border-r border-shade">{d.detail_name}</td>
-                        <td className="py-3 px-5 text-body">{d.detail_value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <>
+                  <div className="relative">
+                    <div
+                      ref={specsRef}
+                      className="overflow-hidden transition-[max-height] duration-300"
+                      style={{ maxHeight: specsExpanded ? 'none' : `${SPECS_COLLAPSE_HEIGHT}px` }}
+                    >
+                      <table className="w-full text-sm border border-shade rounded-xl overflow-hidden">
+                        <tbody>
+                          {product.details.map((d, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
+                              <td className="py-3 px-5 font-semibold text-body w-1/3 border-r border-shade">{d.detail_name}</td>
+                              <td className="py-3 px-5 text-body">{d.detail_value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {!specsExpanded && specsOverflow && (
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                    )}
+                  </div>
+                  {specsOverflow && (
+                    <div className="text-center mt-3">
+                      <button
+                        type="button"
+                        onClick={() => setSpecsExpanded(v => !v)}
+                        className="text-vnpt font-semibold text-sm hover:underline"
+                      >
+                        {specsExpanded ? 'Thu gọn' : 'Xem thêm'}
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-muted italic text-sm">Chưa có thông số kỹ thuật.</p>
               )}
@@ -443,7 +530,7 @@ export default function ProductDetailPage() {
                 <p className="text-muted text-sm text-center py-8">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
               ) : (
                 <div className="space-y-4">
-                  {reviews.map(r => (
+                  {pagedReviews.map(r => (
                     <div key={r.id} className="bg-white border border-shade rounded-xl p-5">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -493,6 +580,10 @@ export default function ProductDetailPage() {
                     </div>
                   ))}
                 </div>
+              )}
+
+              {totalReviewPages > 1 && (
+                <Pagination page={reviewPage} totalPages={totalReviewPages} goTo={setReviewPage} />
               )}
             </div>
           )}
