@@ -12,7 +12,7 @@ import {
   AdminPagination,
   SearchInput,
   SelectPill,
-} from "../admin/ui.jsx";
+} from "./ui.jsx";
 import { CreateOrderDrawer } from "../admin/CreateOrderDrawer.jsx";
 import { formatPrice, formatDate, toast } from "../../utils/index.js";
 

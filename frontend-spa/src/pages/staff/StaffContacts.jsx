@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { contactApi } from '../../api/index.js'
-import { Card, SearchInput, SelectPill } from '../admin/ui.jsx'
+import { Card, SearchInput, SelectPill } from './ui.jsx'
 import { toast, formatDate } from '../../utils/index.js'
 
 export default function StaffContacts() {

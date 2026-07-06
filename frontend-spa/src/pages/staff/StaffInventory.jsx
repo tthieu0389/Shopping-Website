@@ -6,14 +6,10 @@ import {
   TR,
   TD,
   Badge,
-  Btn,
   StatCard,
-  Modal,
-  Input,
-  Select,
   AdminPagination,
   SearchInput,
-} from "../admin/ui.jsx";
+} from "./ui.jsx";
 import { toast, formatDate, debounce } from "../../utils/index.js";
 
 const LIMIT = 10;
@@ -38,10 +34,6 @@ export default function StaffInventory() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [adjustItem, setAdjustItem] = useState(null);
-  const [delta, setDelta] = useState("");
-  const [status, setStatus] = useState("active");
-  const [saving, setSaving] = useState(false);
   // Dữ liệu toàn bộ kho (không phân trang) — chỉ dùng để tính 3 thẻ thống kê phía trên
   const [statsItems, setStatsItems] = useState([]);
 
@@ -85,36 +77,6 @@ export default function StaffInventory() {
   }, 400);
   const items = allItems;
 
-  const openAdjust = (item) => {
-    setDelta("");
-    setStatus(item.status || "active");
-    setAdjustItem(item);
-  };
-
-  const handleAdjust = () => {
-    const d = parseInt(delta, 10) || 0;
-    const payload = {};
-    if (d) payload.quantity = Math.max(0, adjustItem.quantity + d);
-    if (status !== (adjustItem.status || "active")) payload.status = status;
-    if (Object.keys(payload).length === 0) return;
-
-    setSaving(true);
-    inventoryApi
-      .update(adjustItem.id, payload)
-      .then(() => {
-        toast.success("Đã cập nhật tồn kho");
-        setAdjustItem(null);
-        load();
-        loadStats();
-      })
-      .catch((err) => toast.error(err.message || "Không thể cập nhật"))
-      .finally(() => setSaving(false));
-  };
-
-  const hasChange =
-    (parseInt(delta, 10) || 0) !== 0 ||
-    (adjustItem && status !== (adjustItem.status || "active"));
-
   const okCount = statsItems.filter((i) => i.quantity > i.min_quantity).length;
   const lowCount = statsItems.filter(
     (i) => i.quantity > 0 && i.quantity <= i.min_quantity,
@@ -152,7 +114,6 @@ export default function StaffInventory() {
             "Trạng thái",
             "Quản lý kho",
             "Cập nhật",
-            "",
           ]}
           colWidths={[
             "260px",
@@ -161,7 +122,6 @@ export default function StaffInventory() {
             "110px",
             "120px",
             "110px",
-            "130px",
           ]}
           loading={loading}
           empty={
@@ -190,56 +150,12 @@ export default function StaffInventory() {
                 />
               </TD>
               <TD muted>{formatDate(item.updated_at)}</TD>
-              <TD noTruncate>
-                <span
-                  className="text-vnpt text-xs font-bold cursor-pointer"
-                  onClick={() => openAdjust(item)}
-                >
-                  Điều chỉnh
-                </span>
-              </TD>
             </TR>
           ))}
         </Table>
       </Card>
 
       <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
-
-      {adjustItem && (
-        <Modal
-          title={`Điều chỉnh kho — ${adjustItem.product_name || ""}`}
-          onClose={() => setAdjustItem(null)}
-          width="max-w-[400px]"
-        >
-          <div className="bg-cream rounded-lg p-3 mb-4 text-sm text-body">
-            Tồn kho hiện tại: <strong>{adjustItem.quantity}</strong>
-          </div>
-          <Input
-            label="Số lượng thay đổi (+nhập / -xuất)"
-            type="number"
-            value={delta}
-            onChange={(e) => setDelta(e.target.value)}
-            placeholder="VD: +20 hoặc -5"
-          />
-          <Select
-            label="Trạng thái quản lý kho"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            options={[
-              ["active", "Đang quản lý"],
-              ["inactive", "Tạm khoá kho"],
-            ]}
-          />
-          <div className="flex justify-end gap-2.5 mt-3">
-            <Btn variant="ghost" onClick={() => setAdjustItem(null)}>
-              Huỷ
-            </Btn>
-            <Btn onClick={handleAdjust} disabled={saving || !hasChange}>
-              {saving ? "Đang lưu..." : "Lưu thay đổi"}
-            </Btn>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }

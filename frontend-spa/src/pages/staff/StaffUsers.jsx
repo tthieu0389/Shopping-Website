@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminUsersApi } from '../../api/index.js'
-import { Card, Table, TR, TD, Badge, FilterTabs, AdminPagination, SearchInput } from '../admin/ui.jsx'
+import { Card, Table, TR, TD, Badge, FilterTabs, AdminPagination, SearchInput } from './ui.jsx'
 import { toast, formatDate, getInitials, debounce } from '../../utils/index.js'
 
 const LIMIT = 10

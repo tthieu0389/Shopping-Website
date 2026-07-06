@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { blogsApi } from '../../api/index.js'
-import { Card, Table, TR, TD, AdminPagination } from '../admin/ui.jsx'
+import { Card, Table, TR, TD, AdminPagination } from './ui.jsx'
 import { toast, formatDate, debounce, resolveImageUrl } from '../../utils/index.js'
 
 const LIMIT = 10

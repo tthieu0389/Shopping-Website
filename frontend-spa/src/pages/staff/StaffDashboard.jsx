@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ordersApi, contactApi, inventoryApi } from '../../api/index.js'
-import { Card, CardHeader, StatCard, Badge, Table, TR, TD } from '../admin/ui.jsx'
+import { Card, CardHeader, StatCard, Badge, Table, TR, TD } from './ui.jsx'
 import { formatPrice, formatDate } from '../../utils/index.js'
 
 const ORDER_STATUS = {
