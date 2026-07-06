@@ -29,4 +29,6 @@ Thumbs.db
 .cache/
 .tmp/
 
+# env
 backend-api/.env
+.env
