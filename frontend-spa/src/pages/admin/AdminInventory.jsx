@@ -11,6 +11,7 @@ import {
   Modal,
   Input,
   Select,
+  SelectPill,
   AdminPagination,
   SearchInput,
 } from "./ui.jsx";
@@ -44,8 +45,17 @@ export default function AdminInventory() {
   const [minQty, setMinQty] = useState("");
   const [status, setStatus] = useState("active");
   const [saving, setSaving] = useState(false);
+  // Bộ lọc trạng thái quản lý kho cho bảng danh sách (không liên quan đến
+  // `status` ở trên — đó là trạng thái đang chọn trong modal điều chỉnh).
+  // "all" = xem tất cả (mặc định), giúp không bỏ sót các dòng đang bị tạm
+  // khoá kho khi chỉ nhìn lướt qua 3 thẻ thống kê phía trên.
+  const [filterStatus, setFilterStatus] = useState("all");
   // Dữ liệu toàn bộ kho (không phân trang) — chỉ dùng để tính 3 thẻ thống kê phía trên
   const [statsItems, setStatsItems] = useState([]);
+  // Các dòng đang bị tạm khoá kho (status=inactive) — tách riêng để hiện
+  // thẻ cảnh báo, vì 3 thẻ "Còn hàng đủ/Sắp hết/Hết hàng" chỉ tính trên
+  // dòng active nên các sản phẩm tạm khoá dễ bị bỏ sót nếu không có ô này.
+  const [inactiveItems, setInactiveItems] = useState([]);
 
   const load = () => {
     setLoading(true);
@@ -54,6 +64,7 @@ export default function AdminInventory() {
         page,
         limit: LIMIT,
         ...(search.trim() ? { q: search.trim() } : {}),
+        ...(filterStatus !== "all" ? { status: filterStatus } : {}),
       })
       .then((res) => {
         setAllItems(res.data || []);
@@ -66,15 +77,25 @@ export default function AdminInventory() {
   const loadStats = () => {
     // Backend chưa có endpoint thống kê riêng nên tạm lấy toàn bộ bản ghi
     // (limit lớn) để tính số liệu trên toàn bộ kho thay vì chỉ trang hiện tại.
+    // Chỉ định status="active" để khớp với /inventory/low-stock (Dashboard) —
+    // dòng "inactive" (tạm khoá kho) không được tính là còn quản lý bán nên
+    // không nên gộp vào 3 số liệu này.
     inventoryApi
-      .getAll({ page: 1, limit: 100000 })
+      .getAll({ page: 1, limit: 100000, status: "active" })
       .then((res) => setStatsItems(res.data || []))
+      .catch(() => {});
+    // Lấy riêng danh sách các dòng tạm khoá kho để hiện thẻ "Tạm khoá kho"
+    // — tránh trường hợp admin chỉ nhìn 3 thẻ "Hết hàng/Sắp hết/Còn hàng"
+    // rồi tưởng nhầm đã thấy hết toàn bộ sản phẩm hết hàng thực tế.
+    inventoryApi
+      .getAll({ page: 1, limit: 100000, status: "inactive" })
+      .then((res) => setInactiveItems(res.data || []))
       .catch(() => {});
   };
 
   useEffect(() => {
     load();
-  }, [page, search]);
+  }, [page, search, filterStatus]);
   useEffect(() => {
     loadStats();
   }, []);
@@ -145,11 +166,13 @@ export default function AdminInventory() {
     (i) => i.quantity > 0 && i.quantity <= i.min_quantity,
   ).length;
   const outCount = statsItems.filter((i) => i.quantity === 0).length;
+  const inactiveCount = inactiveItems.length;
+  const inactiveOutCount = inactiveItems.filter((i) => i.quantity === 0).length;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
           icon="✅"
           label="Còn hàng đủ"
@@ -158,6 +181,26 @@ export default function AdminInventory() {
         />
         <StatCard icon="⚠️" label="Sắp hết" value={lowCount} tone="warning" />
         <StatCard icon="❌" label="Hết hàng" value={outCount} tone="error" />
+        <div
+          onClick={() => {
+            setFilterStatus("inactive");
+            setPage(1);
+          }}
+          className="cursor-pointer"
+          title="Xem danh sách các sản phẩm đang tạm khoá kho"
+        >
+          <StatCard
+            icon="🔒"
+            label="Tạm khoá kho"
+            value={inactiveCount}
+            sub={
+              inactiveOutCount > 0
+                ? `Trong đó ${inactiveOutCount} sản phẩm đang hết hàng`
+                : undefined
+            }
+            tone="info"
+          />
+        </div>
       </div>
 
       <div className="flex justify-between items-center flex-wrap gap-3">
@@ -165,6 +208,18 @@ export default function AdminInventory() {
           defaultValue={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Tìm theo tên sản phẩm..."
+        />
+        <SelectPill
+          value={filterStatus}
+          onChange={(v) => {
+            setFilterStatus(v);
+            setPage(1);
+          }}
+          options={[
+            ["all", "Tất cả trạng thái quản lý"],
+            ["active", "Đang quản lý"],
+            ["inactive", "Tạm khoá kho"],
+          ]}
         />
       </div>
 
@@ -193,7 +248,11 @@ export default function AdminInventory() {
             !loading &&
             (search.trim()
               ? "Không tìm thấy sản phẩm phù hợp trong trang này"
-              : "Chưa có dữ liệu kho")
+              : filterStatus === "inactive"
+                ? "Không có sản phẩm nào đang tạm khoá kho"
+                : filterStatus === "active"
+                  ? "Không có sản phẩm nào đang quản lý"
+                  : "Chưa có dữ liệu kho")
           }
         >
           {items.map((item, i) => (
