@@ -15,7 +15,7 @@ const {
 router.post(
   "/upload",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   upload("blogs").single("image"),
   validate(uploadBlogImageSchema),
   blogImageController.uploadImage,
@@ -28,7 +28,7 @@ router.get("/blog/:blogId", blogImageController.getByBlogId);
 router.patch(
   "/:id/attach",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   validate(attachBlogImageSchema),
   blogImageController.attach,
 );
@@ -37,7 +37,7 @@ router.patch(
 router.post(
   "/blog/:blogId/prune",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   blogImageController.pruneUnused,
 );
 
@@ -45,7 +45,7 @@ router.post(
 router.delete(
   "/:id",
   verifyToken(),
-  checkRole("admin"),
+  checkRole("admin", "staff"),
   blogImageController.deleteImage,
 );
 

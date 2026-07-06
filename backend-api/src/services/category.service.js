@@ -55,6 +55,19 @@ exports.deleteCategory = async (id) => {
     throw err;
   }
 
+  // Chặn xoá category nếu còn sản phẩm (chưa bị xoá) đang gán vào category này
+  const [{ count }] = await knex("products")
+    .where({ category_id: id, is_deleted: false })
+    .count("id as count");
+
+  if (Number(count) > 0) {
+    const err = new Error(
+      `Không thể xoá danh mục này vì còn ${count} sản phẩm đang thuộc danh mục. Vui lòng chuyển sản phẩm sang danh mục khác trước khi xoá.`,
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
   await knex("categories").where({ id }).update({ is_deleted: true });
 
   return category;

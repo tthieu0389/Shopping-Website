@@ -62,8 +62,53 @@ exports.getAllUsers = async ({ limit = 10, offset = 0, search, role }) => {
   return { data, total };
 };
 
-exports.updateUser = async (id, data) => {
+// Đếm số admin đang hoạt động (chưa xoá) — dùng để chặn hạ quyền/xoá admin
+// cuối cùng, tránh hệ thống mất sạch tài khoản admin (không ai tạo lại được
+// admin mới vì tạo user cần quyền admin).
+const countActiveAdmins = async (excludeId = null) => {
+  let q = knex("users").where({ role: "admin", is_deleted: false });
+  if (excludeId) q = q.whereNot("id", excludeId);
+  const [{ count }] = await q.count("id as count");
+  return Number(count);
+};
+
+exports.updateUser = async (id, data, currentUserId = null) => {
   const payload = { ...data };
+
+  if (payload.role !== undefined) {
+    if (!ALLOWED_ROLES.includes(payload.role)) {
+      const err = new Error("Role không hợp lệ");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Chặn tự đổi role của chính mình — tránh admin tự hạ quyền bản thân
+    // rồi mất quyền quản trị giữa chừng, không ai khôi phục lại được.
+    if (currentUserId !== null && Number(id) === Number(currentUserId)) {
+      const err = new Error("Không thể tự thay đổi role của chính mình");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Nếu đang hạ quyền 1 admin xuống role khác
+    // thì chặn nếu đây là admin cuối cùng còn lại trong hệ thống.
+    if (payload.role !== "admin") {
+      const target = await knex("users")
+        .where({ id, is_deleted: false })
+        .first();
+      if (target && target.role === "admin") {
+        const remaining = await countActiveAdmins(id);
+        if (remaining === 0) {
+          const err = new Error(
+            "Không thể hạ quyền admin cuối cùng trong hệ thống",
+          );
+          err.statusCode = 409;
+          throw err;
+        }
+      }
+    }
+  }
+
   if (payload.password) {
     payload.password = await bcrypt.hash(payload.password, 10);
   }
@@ -74,12 +119,35 @@ exports.updateUser = async (id, data) => {
   return user;
 };
 
-exports.deleteUser = async (id) => {
+exports.deleteUser = async (id, currentUserId = null) => {
+  // Chặn tự xoá tài khoản đang đăng nhập của chính mình.
+  if (currentUserId !== null && Number(id) === Number(currentUserId)) {
+    const err = new Error("Không thể tự xoá tài khoản của chính mình");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const target = await knex("users").where({ id, is_deleted: false }).first();
+  if (!target) {
+    const err = new Error("User not found or already deleted");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // Chặn xoá admin cuối cùng còn lại trong hệ thống.
+  if (target.role === "admin") {
+    const remaining = await countActiveAdmins(id);
+    if (remaining === 0) {
+      const err = new Error("Không thể xoá admin cuối cùng trong hệ thống");
+      err.statusCode = 409;
+      throw err;
+    }
+  }
+
   const [user] = await knex("users")
     .where({ id, is_deleted: false })
     .update({ is_deleted: true })
     .returning(["id", "name", "email", "role"]);
 
-  if (!user) throw new Error("User not found or already deleted");
   return user;
 };

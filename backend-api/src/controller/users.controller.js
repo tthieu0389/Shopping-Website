@@ -40,7 +40,13 @@ exports.updateUser = async (req, res, next) => {
     if (!isValidId(req.params.id)) {
       return res.status(400).json({ message: "Id không hợp lệ" });
     }
-    const user = await userService.updateUser(req.params.id, req.body);
+    // req.user.id lấy từ verifyToken — cần để service chặn tự đổi role
+    // của chính mình / hạ quyền admin cuối cùng.
+    const user = await userService.updateUser(
+      req.params.id,
+      req.body,
+      req.user.id,
+    );
     res.json({ message: "User updated", data: user });
   } catch (err) {
     next(err);
@@ -52,7 +58,9 @@ exports.deleteUser = async (req, res, next) => {
     if (!isValidId(req.params.id)) {
       return res.status(400).json({ message: "Id không hợp lệ" });
     }
-    await userService.deleteUser(req.params.id);
+    // req.user.id lấy từ verifyToken — cần để service chặn tự xoá chính
+    // mình / xoá admin cuối cùng.
+    await userService.deleteUser(req.params.id, req.user.id);
     res.json({ message: "User deleted" });
   } catch (err) {
     next(err);

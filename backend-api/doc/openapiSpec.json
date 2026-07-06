@@ -1763,12 +1763,22 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "409": {
+            "description": "Không thể hạ quyền admin cuối cùng trong hệ thống",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
         },
         "operationId": "updateUser",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.** Không thể tự đổi role của chính tài khoản đang đăng nhập (400). Không thể hạ quyền admin cuối cùng còn lại trong hệ thống xuống role khác (409)."
       },
       "delete": {
         "tags": ["Users"],
@@ -1794,6 +1804,9 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -1803,12 +1816,22 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "409": {
+            "description": "Không thể xoá admin cuối cùng trong hệ thống",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
         },
         "operationId": "deleteUser",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.** Không thể tự xoá tài khoản đang đăng nhập của chính mình (400). Không thể xoá admin cuối cùng còn lại trong hệ thống (409)."
       }
     },
     "/api/user-profile": {
@@ -3050,12 +3073,22 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "409": {
+            "description": "Không thể xoá danh mục vì còn sản phẩm đang thuộc danh mục này",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
         },
         "operationId": "deleteCategory",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.** Không thể xoá nếu danh mục còn sản phẩm (chưa xoá) đang thuộc về nó — trả về 409."
       }
     },
     "/api/products": {
@@ -6324,6 +6357,16 @@
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
+          "409": {
+            "description": "Sản phẩm này đã được gán vào chương trình khuyến mãi này rồi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
@@ -6334,7 +6377,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.** Cặp (product_id, promotion_id) là duy nhất (UNIQUE constraint) — gán trùng sẽ trả về 409."
       }
     },
     "/api/product-promotions/{id}": {
@@ -7174,8 +7217,8 @@
     "/api/blog-images/upload": {
       "post": {
         "tags": ["Blog Images"],
-        "summary": "Upload ảnh blog (Admin)",
-        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach. **Yêu cầu quyền: admin.**",
+        "summary": "Upload ảnh blog (Admin/Staff)",
+        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach. **Yêu cầu quyền: admin, staff.**",
         "security": [
           {
             "bearerAuth": []
@@ -7296,8 +7339,8 @@
     "/api/blog-images/{id}/attach": {
       "patch": {
         "tags": ["Blog Images"],
-        "summary": "Gắn ảnh mồ côi vào blog (Admin)",
-        "description": "Sau khi blog mới được lưu lần đầu và có ID, dùng endpoint này để gắn các ảnh đã upload trước đó (blog_id = null) vào đúng blog. **Yêu cầu quyền: admin.**",
+        "summary": "Gắn ảnh mồ côi vào blog (Admin/Staff)",
+        "description": "Sau khi blog mới được lưu lần đầu và có ID, dùng endpoint này để gắn các ảnh đã upload trước đó (blog_id = null) vào đúng blog. **Yêu cầu quyền: admin, staff.**",
         "security": [
           {
             "bearerAuth": []
@@ -7375,8 +7418,8 @@
     "/api/blog-images/blog/{blogId}/prune": {
       "post": {
         "tags": ["Blog Images"],
-        "summary": "Dọn ảnh không còn dùng trong blog (Admin)",
-        "description": "Sau khi lưu bài viết, gọi endpoint này với content mới nhất để xoá các ảnh đã upload vào blog nhưng cuối cùng không được dùng trong nội dung. **Yêu cầu quyền: admin.**",
+        "summary": "Dọn ảnh không còn dùng trong blog (Admin/Staff)",
+        "description": "Sau khi lưu bài viết, gọi endpoint này với content mới nhất để xoá các ảnh đã upload vào blog nhưng cuối cùng không được dùng trong nội dung. **Yêu cầu quyền: admin, staff.**",
         "security": [
           {
             "bearerAuth": []
@@ -7454,7 +7497,7 @@
     "/api/blog-images/{id}": {
       "delete": {
         "tags": ["Blog Images"],
-        "summary": "Xoá ảnh blog (Admin)",
+        "summary": "Xoá ảnh blog (Admin/Staff)",
         "security": [
           {
             "bearerAuth": []
@@ -7502,7 +7545,7 @@
           }
         },
         "operationId": "deleteBlogImage",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin, staff.**"
       }
     },
     "/api/contacts": {
