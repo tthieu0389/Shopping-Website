@@ -670,6 +670,11 @@
           },
           "product_name": {
             "type": "string"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ảnh thumbnail hiện tại của sản phẩm (product_images.is_thumbnail = true), null nếu sản phẩm chưa có ảnh."
           }
         }
       },
@@ -3133,7 +3138,7 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Tìm theo tên/slug sản phẩm",
+            "description": "Tìm theo tên, slug, thương hiệu (brand) hoặc model sản phẩm",
             "schema": {
               "type": "string"
             }
@@ -3408,7 +3413,7 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Tìm theo tên/slug sản phẩm",
+            "description": "Tìm theo tên, slug, thương hiệu (brand) hoặc model sản phẩm",
             "schema": {
               "type": "string"
             }
@@ -3715,6 +3720,16 @@
               }
             }
           },
+          "409": {
+            "description": "Không thể xoá sản phẩm vì đã có đơn hàng tham chiếu tới hoặc còn tồn kho",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -3729,7 +3744,7 @@
           }
         },
         "operationId": "deleteProduct",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.**\n\nXoá mềm (is_deleted = true), không xoá vĩnh viễn khỏi DB. Bị chặn (409) nếu sản phẩm đang được tham chiếu trong order_items (đã từng có trong đơn hàng bất kỳ) hoặc còn tồn kho (quantity > 0) — cần đưa tồn kho về 0 hoặc dùng is_available để ẩn thay vì xoá."
       }
     },
     "/api/product-details/product/{productId}": {
@@ -5214,6 +5229,15 @@
             "schema": {
               "type": "string",
               "enum": ["active", "inactive"]
+            }
+          },
+          {
+            "name": "stock_status",
+            "in": "query",
+            "description": "Lọc theo tình trạng số lượng tồn, tính động từ quantity so với min_quantity (không phải cột status). in_stock: quantity > min_quantity. low_stock: 0 < quantity <= min_quantity. out_of_stock: quantity = 0. Không truyền thì không lọc theo tiêu chí này.",
+            "schema": {
+              "type": "string",
+              "enum": ["in_stock", "low_stock", "out_of_stock"]
             }
           }
         ],
@@ -8248,6 +8272,69 @@
         },
         "operationId": "replyContact",
         "description": "**Yêu cầu quyền: admin, staff.**"
+      }
+    },
+    "/api/contacts/{id}/resolve": {
+      "patch": {
+        "tags": ["Contacts"],
+        "summary": "Đánh dấu liên hệ đã xử lý (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đã đánh dấu resolved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Contact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "Liên hệ này đã được xử lý (resolved) trước đó",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "operationId": "resolveContact",
+        "description": "**Yêu cầu quyền: admin.** Đánh dấu liên hệ đã được xử lý (pending -> resolved) mà không cần gọi reply — dùng khi liên hệ được trả lời qua email bên ngoài hệ thống. Chỉ cho phép 1 chiều pending -> resolved, không nhận status tuỳ ý từ body."
       }
     },
     "/api/user-profile/avatar": {

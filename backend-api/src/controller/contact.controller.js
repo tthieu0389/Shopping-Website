@@ -68,6 +68,16 @@ exports.reply = async (req, res, next) => {
   }
 };
 
+// Admin đánh dấu liên hệ đã xử lý (pending -> resolved)
+exports.resolve = async (req, res, next) => {
+  try {
+    const data = await service.resolveContact(req.params.id);
+    res.json({ message: "Đã đánh dấu resolved", data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Xóa liên hệ
 exports.remove = async (req, res, next) => {
   try {

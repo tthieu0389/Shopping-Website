@@ -25,15 +25,15 @@ exports.getAllInventory = async (req, res, next) => {
       limit: 10,
       offset: 0,
     };
-    // Chấp nhận cả 2 tên query param: q và search
-    // Lọc theo status ("active" | "inactive"), không truyền thì lấy cả hai
     const status = req.query.status;
+    const stock_status = req.query.stock_status;
 
     const result = await inventoryService.getAllInventory({
       limit,
       offset,
       search: req.query.q || req.query.search,
       status,
+      stock_status,
     });
     res.json({
       data: result.data,

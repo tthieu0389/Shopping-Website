@@ -73,7 +73,16 @@ exports.createInventory = async (
 };
 
 // GET ALL INVENTORY
-exports.getAllInventory = async ({ limit, offset, search, status }) => {
+// stock_status: "in_stock" (còn hàng, quantity > min_quantity)
+//             | "low_stock" (sắp hết hàng, 0 < quantity <= min_quantity)
+//             | "out_of_stock" (hết hàng, quantity = 0)
+exports.getAllInventory = async ({
+  limit,
+  offset,
+  search,
+  status,
+  stock_status,
+}) => {
   const baseQuery = () => {
     const q = knex("inventory as i").leftJoin(
       "products as p",
@@ -92,6 +101,17 @@ exports.getAllInventory = async ({ limit, offset, search, status }) => {
     if (kw) {
       q.andWhere("p.name", "ilike", `%${kw}%`);
     }
+
+    if (stock_status === "out_of_stock") {
+      q.andWhere("i.quantity", 0);
+    } else if (stock_status === "low_stock") {
+      q.andWhere("i.quantity", ">", 0).andWhereRaw(
+        "i.quantity <= i.min_quantity",
+      );
+    } else if (stock_status === "in_stock") {
+      q.andWhereRaw("i.quantity > i.min_quantity");
+    }
+
     return q;
   };
 
@@ -105,6 +125,14 @@ exports.getAllInventory = async ({ limit, offset, search, status }) => {
       "i.min_quantity",
       "i.status",
       "i.updated_at",
+    )
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = i.product_id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
     )
     // Đẩy các dòng hết hàng (quantity = 0) xuống cuối danh sách
     .orderByRaw("CASE WHEN i.quantity = 0 THEN 1 ELSE 0 END ASC")
@@ -358,6 +386,14 @@ exports.getLowStockItems = async () => {
       "i.quantity",
       "i.min_quantity",
     )
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = i.product_id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
+    )
     .where("i.status", "active")
     .andWhereRaw("i.quantity <= i.min_quantity");
 };
@@ -375,6 +411,14 @@ exports.getInventoryByProductId = async (product_id) => {
       "i.min_quantity",
       "i.status",
       "i.updated_at",
+    )
+    .select(
+      knex("product_images")
+        .select("image_url")
+        .whereRaw("product_id = i.product_id")
+        .where("is_thumbnail", true)
+        .limit(1)
+        .as("thumbnail_url"),
     )
     .where("i.product_id", product_id)
     .first();

@@ -55,6 +55,15 @@ router.patch(
   contactController.reply,
 );
 
+// ADMIN ĐÁNH DẤU ĐÃ XỬ LÝ (không qua reply, dùng khi FE xử lý qua email)
+// Chỉ 1 chiều pending -> resolved, không cho set status tuỳ ý, chỉ admin
+router.patch(
+  "/:id/resolve",
+  verifyToken(),
+  checkRole("admin"),
+  contactController.resolve,
+);
+
 // ADMIN DELETE CONTACT
 router.delete(
   "/:id",

@@ -47,8 +47,16 @@ const applyCommonFilters = (query, countQuery, filters) => {
 
   if (kw) {
     const slugKw = kw.toLowerCase().replace(/\s+/g, "-");
+    // Search chung gõ 1 ô: khớp tên, slug, thương hiệu, model — không gồm
+    // description vì cột này quá dài (có thể vài nghìn từ), ilike trên đó
+    // vừa tốn chi phí vừa không có ý nghĩa tìm kiếm (không ai gõ trúng 1 đoạn
+    // trong mô tả dài để tìm sản phẩm).
     const searchBlock = (builder) => {
-      builder.whereILike("name", `%${kw}%`).orWhereILike("slug", `%${slugKw}%`);
+      builder
+        .whereILike("name", `%${kw}%`)
+        .orWhereILike("slug", `%${slugKw}%`)
+        .orWhereILike("brand", `%${kw}%`)
+        .orWhereILike("model", `%${kw}%`);
     };
     query = query.where(searchBlock);
     countQuery = countQuery.where(searchBlock);
@@ -396,11 +404,34 @@ exports.updateProduct = async (id, data) => {
   return product;
 };
 
+// Xoá sản phẩm (Admin)
 exports.deleteProduct = async (id) => {
   const product = await knex("products")
     .where({ id, is_deleted: false })
     .first();
   if (!product) throw new Error("Product not found");
+
+  const [{ count: orderItemCount }] = await knex("order_items")
+    .where({ product_id: id })
+    .count("id as count");
+
+  if (Number(orderItemCount) > 0) {
+    const err = new Error(
+      `Không thể xoá sản phẩm này vì đã có ${orderItemCount} đơn hàng tham chiếu tới. Có thể ẩn sản phẩm (is_available) thay vì xoá.`,
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
+  const inventory = await knex("inventory").where({ product_id: id }).first();
+
+  if (inventory && inventory.quantity > 0) {
+    const err = new Error(
+      `Không thể xoá sản phẩm này vì còn ${inventory.quantity} sản phẩm trong kho. Vui lòng đưa tồn kho về 0 trước khi xoá.`,
+    );
+    err.statusCode = 409;
+    throw err;
+  }
 
   const [deletedProduct] = await knex("products")
     .where("id", id)
