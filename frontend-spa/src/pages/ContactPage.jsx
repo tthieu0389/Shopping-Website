@@ -169,10 +169,6 @@ export default function ContactPage() {
   const [tab, setTab] = useState('send') // 'send' | 'mine'
 
   const onSubmit = async (data) => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để gửi yêu cầu liên hệ')
-      return
-    }
     setSending(true)
     try {
       await contactApi.send({
