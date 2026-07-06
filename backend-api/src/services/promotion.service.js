@@ -123,11 +123,13 @@ exports.attachPromotionInfo = async (products, trx = knex) => {
       promotionsMap[product.id] || [],
     );
     const basePrice = Number(product.price);
-    const discountAmount = exports.calculateTotalDiscount(
+    const rawDiscountAmount = exports.calculateTotalDiscount(
       basePrice,
       promotions,
     );
-    const salePrice = Math.max(0, basePrice - discountAmount);
+    // Không cho phép giảm giá vượt quá giá gốc, tránh discount_percent hiện > 100%
+    const discountAmount = Math.min(Math.max(0, rawDiscountAmount), basePrice);
+    const salePrice = basePrice - discountAmount;
     const discountPercent =
       basePrice > 0 ? Math.round((discountAmount / basePrice) * 100) : 0;
 

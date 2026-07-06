@@ -140,13 +140,30 @@ const runQueryAndFormat = async ({
     price_desc: { column: "price", direction: "desc" },
     name_asc: { column: "name", direction: "asc" },
   };
-  const currentSort = sortMapping[sort] || sortMapping.newest;
 
-  const data = await query
-    .orderByRaw(
-      `CASE WHEN is_available = false OR COALESCE((select quantity from inventory where product_id = p.id and status = 'active' limit 1), 0) = 0 THEN 1 ELSE 0 END ASC`,
-    )
-    .orderBy(currentSort.column, currentSort.direction)
+  let orderedQuery = query.orderByRaw(
+    `CASE WHEN is_available = false OR COALESCE((select quantity from inventory where product_id = p.id and status = 'active' limit 1), 0) = 0 THEN 1 ELSE 0 END ASC`,
+  );
+
+  if (sort === "best_seller") {
+    // Sắp xếp theo tổng số lượng đã bán, chỉ tính từ đơn hàng đã hoàn tất
+    orderedQuery = orderedQuery.orderByRaw(
+      `COALESCE((
+        SELECT SUM(oi.quantity)
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE oi.product_id = p.id AND o.status = 'completed'
+      ), 0) DESC`,
+    );
+  } else {
+    const currentSort = sortMapping[sort] || sortMapping.newest;
+    orderedQuery = orderedQuery.orderBy(
+      currentSort.column,
+      currentSort.direction,
+    );
+  }
+
+  const data = await orderedQuery
     .orderBy("p.id", "asc")
     .limit(safeLimit)
     .offset(safeOffset);
@@ -404,34 +421,11 @@ exports.updateProduct = async (id, data) => {
   return product;
 };
 
-// Xoá sản phẩm (Admin)
 exports.deleteProduct = async (id) => {
   const product = await knex("products")
     .where({ id, is_deleted: false })
     .first();
   if (!product) throw new Error("Product not found");
-
-  const [{ count: orderItemCount }] = await knex("order_items")
-    .where({ product_id: id })
-    .count("id as count");
-
-  if (Number(orderItemCount) > 0) {
-    const err = new Error(
-      `Không thể xoá sản phẩm này vì đã có ${orderItemCount} đơn hàng tham chiếu tới. Có thể ẩn sản phẩm (is_available) thay vì xoá.`,
-    );
-    err.statusCode = 409;
-    throw err;
-  }
-
-  const inventory = await knex("inventory").where({ product_id: id }).first();
-
-  if (inventory && inventory.quantity > 0) {
-    const err = new Error(
-      `Không thể xoá sản phẩm này vì còn ${inventory.quantity} sản phẩm trong kho. Vui lòng đưa tồn kho về 0 trước khi xoá.`,
-    );
-    err.statusCode = 409;
-    throw err;
-  }
 
   const [deletedProduct] = await knex("products")
     .where("id", id)

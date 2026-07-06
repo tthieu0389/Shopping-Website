@@ -14,11 +14,12 @@ const {
 
 const addressFieldLabels = {
   user_id: "User ID",
-  address: "Địa chỉ",
+  receiver_name: "Tên người nhận",
   phone: "Số điện thoại",
-  city: "Thành phố",
+  province: "Tỉnh/thành",
   district: "Quận/Huyện",
   ward: "Phường/Xã",
+  address_line: "Địa chỉ chi tiết",
   is_default: "Địa chỉ mặc định",
 };
 

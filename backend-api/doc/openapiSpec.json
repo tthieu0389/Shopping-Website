@@ -440,6 +440,20 @@
                 }
               }
             }
+          },
+          "original_price": {
+            "type": "number",
+            "description": "Giá gốc trước khi áp khuyến mãi"
+          },
+          "sale_price": {
+            "type": "number",
+            "description": "Giá sau khi áp khuyến mãi tốt nhất (đã cap, không âm, không vượt giá gốc)"
+          },
+          "discount_percent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "% giảm giá thực tế, đã làm tròn và cap ở 100%"
           }
         }
       },
@@ -796,7 +810,9 @@
           },
           "discount_percent": {
             "type": "integer",
-            "description": "% giảm giá thực tế, đã làm tròn"
+            "description": "% giảm giá thực tế, đã làm tròn",
+            "minimum": 0,
+            "maximum": 100
           }
         }
       },
@@ -1452,6 +1468,16 @@
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "409": {
+            "description": "Email đã được đăng ký",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "operationId": "registerUser"
@@ -2247,7 +2273,14 @@
                     "type": "boolean",
                     "description": "Optional. Nếu không truyền, hệ thống sẽ tự động set true nếu đây là địa chỉ đầu tiên (chưa có địa chỉ nào) của user, ngược lại mặc định là false. Nếu truyền true, các địa chỉ khác của user sẽ tự động được unset default."
                   }
-                }
+                },
+                "required": [
+                  "receiver_name",
+                  "phone",
+                  "province",
+                  "district",
+                  "address_line"
+                ]
               }
             }
           }
@@ -2288,7 +2321,7 @@
           }
         },
         "operationId": "createAddress",
-        "description": "Nếu không truyền `is_default`, hệ thống sẽ tự động đặt địa chỉ này làm mặc định khi đây là địa chỉ đầu tiên của user."
+        "description": "Nếu không truyền `is_default`, hệ thống sẽ tự động đặt địa chỉ này làm mặc định khi đây là địa chỉ đầu tiên của user. Các trường receiver_name, phone, province, district, address_line là bắt buộc; ward là tuỳ chọn."
       }
     },
     "/api/user-address/user/{userId}": {
@@ -3184,8 +3217,15 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["newest", "price_asc", "price_desc", "name_asc"],
-              "default": "newest"
+              "enum": [
+                "newest",
+                "price_asc",
+                "price_desc",
+                "name_asc",
+                "best_seller"
+              ],
+              "default": "newest",
+              "description": "best_seller: sắp xếp theo tổng số lượng đã bán từ các đơn hàng completed"
             }
           }
         ],
@@ -3440,8 +3480,15 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["newest", "price_asc", "price_desc", "name_asc"],
-              "default": "newest"
+              "enum": [
+                "newest",
+                "price_asc",
+                "price_desc",
+                "name_asc",
+                "best_seller"
+              ],
+              "default": "newest",
+              "description": "best_seller: sắp xếp theo tổng số lượng đã bán từ các đơn hàng completed"
             }
           }
         ],
@@ -8255,7 +8302,14 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/BadRequest"
+            "description": "Dữ liệu không hợp lệ, hoặc liên hệ này gửi ẩn danh (không có tài khoản) nên không thể phản hồi qua hệ thống — cần liên hệ trực tiếp qua email người gửi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

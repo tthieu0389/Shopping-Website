@@ -13,7 +13,7 @@ exports.register = async (data) => {
     const exists = await trx("users").where("email", email).first();
 
     if (exists) {
-      const err = new Error("Email already registered");
+      const err = new Error("Dữ liệu đã tồn tại (trùng khóa duy nhất).");
       err.statusCode = 409;
       throw err;
     }

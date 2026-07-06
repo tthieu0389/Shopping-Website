@@ -84,6 +84,18 @@ exports.replyContact = async (id, replierId, reply) => {
     throw err;
   }
 
+  // Liên hệ ẩn danh (không đăng nhập khi gửi) không có tài khoản để đăng
+  // nhập lại và xem `reply` (route /contacts/mine yêu cầu token) -> phản
+  // hồi qua tính năng này sẽ không ai đọc được, chặn lại và yêu cầu admin
+  // liên hệ trực tiếp qua email người gửi đã để lại.
+  if (!contact.user_id) {
+    const err = new Error(
+      "Liên hệ này gửi ẩn danh (không có tài khoản), không thể phản hồi qua hệ thống. Vui lòng liên hệ trực tiếp qua email người gửi đã cung cấp.",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
   const [updated] = await knex("contacts")
     .where({ id })
     .update({
