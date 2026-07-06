@@ -41,8 +41,9 @@ const useAuthStore = create(
           set({ isLoading: false })
           return { success: true }
         } catch (err) {
-          set({ isLoading: false, error: err.message })
-          return { success: false, error: err.message }
+          const msg = err.message || err?.raw?.error || err?.raw?.message || 'Đăng ký thất bại'
+          set({ isLoading: false, error: msg })
+          return { success: false, error: msg }
         }
       },
 
