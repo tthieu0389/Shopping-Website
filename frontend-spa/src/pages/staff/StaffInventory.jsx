@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { inventoryApi } from "../../api/index.js";
 import {
   Card,
@@ -11,7 +11,7 @@ import {
   SearchInput,
   SelectPill,
 } from "./ui.jsx";
-import { toast, formatDate, debounce, resolveImageUrl } from "../../utils/index.js";
+import { toast, formatDate, resolveImageUrl } from "../../utils/index.js";
 
 const LIMIT = 10;
 
@@ -34,11 +34,16 @@ export default function StaffInventory() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const debounceRef = useRef(null);
   // Bộ lọc trạng thái quản lý kho cho bảng danh sách — "all" (mặc định) để
   // không bỏ sót các dòng đang bị tạm khoá kho khi chỉ nhìn lướt qua thẻ
   // thống kê phía trên.
   const [filterStatus, setFilterStatus] = useState("all");
+  // Bộ lọc trạng thái tồn kho (còn hàng đủ / sắp hết / hết hàng) — khớp với
+  // tham số stock_status mà backend GET /inventory đã hỗ trợ sẵn.
+  const [stockStatus, setStockStatus] = useState("all");
   // Dữ liệu toàn bộ kho (không phân trang) — chỉ dùng để tính 3 thẻ thống kê phía trên
   const [statsItems, setStatsItems] = useState([]);
   // Các dòng đang bị tạm khoá kho (status=inactive) — tách riêng để hiện
@@ -46,14 +51,15 @@ export default function StaffInventory() {
   // dòng active nên các sản phẩm tạm khoá dễ bị bỏ sót nếu không có ô này.
   const [inactiveItems, setInactiveItems] = useState([]);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     inventoryApi
       .getAll({
         page,
         limit: LIMIT,
-        ...(search.trim() ? { q: search.trim() } : {}),
+        ...(search ? { q: search } : {}),
         ...(filterStatus !== "all" ? { status: filterStatus } : {}),
+        ...(stockStatus !== "all" ? { stock_status: stockStatus } : {}),
       })
       .then((res) => {
         setAllItems(res.data || []);
@@ -61,7 +67,7 @@ export default function StaffInventory() {
       })
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
-  };
+  }, [page, search, filterStatus, stockStatus]);
 
   const loadStats = () => {
     // Backend chưa có endpoint thống kê riêng nên tạm lấy toàn bộ bản ghi
@@ -84,17 +90,19 @@ export default function StaffInventory() {
 
   useEffect(() => {
     load();
-  }, [page, search, filterStatus]);
+  }, [load]);
   useEffect(() => {
     loadStats();
   }, []);
 
-  // Search giờ đã lấy trực tiếp từ backend (/inventory hỗ trợ q — search theo
-  // tên sản phẩm, join products), không còn giới hạn trong dữ liệu trang hiện tại.
-  const handleSearchChange = debounce((v) => {
-    setPage(1);
-    setSearch(v);
-  }, 400);
+  const handleSearchInput = (val) => {
+    setSearchInput(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(val.trim());
+      setPage(1);
+    }, 400);
+  };
   const items = allItems;
 
   const okCount = statsItems.filter((i) => i.quantity > i.min_quantity).length;
@@ -106,20 +114,59 @@ export default function StaffInventory() {
   const inactiveOutCount = inactiveItems.filter((i) => i.quantity === 0).length;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
+  const hasActiveFilters =
+    filterStatus !== "all" || stockStatus !== "all" || !!search;
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setSearch("");
+    setFilterStatus("all");
+    setStockStatus("all");
+    setPage(1);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <StatCard
-          icon="✅"
-          label="Còn hàng đủ"
-          value={okCount}
-          tone="success"
-        />
-        <StatCard icon="⚠️" label="Sắp hết" value={lowCount} tone="warning" />
-        <StatCard icon="❌" label="Hết hàng" value={outCount} tone="error" />
+        <div
+          onClick={() => {
+            setStockStatus("in_stock");
+            setPage(1);
+          }}
+          className="cursor-pointer"
+          title="Xem sản phẩm còn hàng đủ"
+        >
+          <StatCard
+            icon="✅"
+            label="Còn hàng đủ"
+            value={okCount}
+            tone="success"
+          />
+        </div>
+        <div
+          onClick={() => {
+            setStockStatus("low_stock");
+            setPage(1);
+          }}
+          className="cursor-pointer"
+          title="Xem sản phẩm sắp hết hàng"
+        >
+          <StatCard icon="⚠️" label="Sắp hết" value={lowCount} tone="warning" />
+        </div>
+        <div
+          onClick={() => {
+            setStockStatus("out_of_stock");
+            setPage(1);
+          }}
+          className="cursor-pointer"
+          title="Xem sản phẩm hết hàng"
+        >
+          <StatCard icon="❌" label="Hết hàng" value={outCount} tone="error" />
+        </div>
         <div
           onClick={() => {
             setFilterStatus("inactive");
+            setStockStatus("all");
             setPage(1);
           }}
           className="cursor-pointer"
@@ -139,12 +186,14 @@ export default function StaffInventory() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center flex-wrap gap-3">
+      <div className="flex items-center gap-2.5 flex-wrap">
         <SearchInput
-          defaultValue={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={searchInput}
+          onChange={(e) => handleSearchInput(e.target.value)}
           placeholder="Tìm theo tên sản phẩm..."
+          wrapperClassName="flex-1 min-w-[220px]"
         />
+
         <SelectPill
           value={filterStatus}
           onChange={(v) => {
@@ -157,6 +206,29 @@ export default function StaffInventory() {
             ["inactive", "Tạm khoá kho"],
           ]}
         />
+
+        <SelectPill
+          value={stockStatus}
+          onChange={(v) => {
+            setStockStatus(v);
+            setPage(1);
+          }}
+          options={[
+            ["all", "Tất cả tồn kho"],
+            ["in_stock", "Còn hàng đủ"],
+            ["low_stock", "Sắp hết"],
+            ["out_of_stock", "Hết hàng"],
+          ]}
+        />
+
+        <button
+          onClick={clearFilters}
+          disabled={!hasActiveFilters}
+          className={`px-3.5 py-2 rounded-full text-xs font-bold transition-colors flex-shrink-0
+            ${hasActiveFilters ? "text-muted hover:text-vnpt hover:bg-vnpt-light cursor-pointer" : "text-transparent pointer-events-none select-none"}`}
+        >
+          ✕ Xoá lọc
+        </button>
       </div>
 
       <Card>
@@ -184,12 +256,18 @@ export default function StaffInventory() {
           empty={
             !loading &&
             (search.trim()
-              ? "Không tìm thấy sản phẩm phù hợp trong trang này"
-              : filterStatus === "inactive"
-                ? "Không có sản phẩm nào đang tạm khoá kho"
-                : filterStatus === "active"
-                  ? "Không có sản phẩm nào đang quản lý"
-                  : "Chưa có dữ liệu kho")
+              ? "Không tìm thấy sản phẩm phù hợp"
+              : stockStatus !== "all"
+                ? {
+                    in_stock: "Không có sản phẩm nào còn hàng đủ",
+                    low_stock: "Không có sản phẩm nào sắp hết hàng",
+                    out_of_stock: "Không có sản phẩm nào hết hàng",
+                  }[stockStatus]
+                : filterStatus === "inactive"
+                  ? "Không có sản phẩm nào đang tạm khoá kho"
+                  : filterStatus === "active"
+                    ? "Không có sản phẩm nào đang quản lý"
+                    : "Chưa có dữ liệu kho")
           }
         >
           {items.map((item, i) => {

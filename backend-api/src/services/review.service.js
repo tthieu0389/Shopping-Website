@@ -172,7 +172,17 @@ exports.getAllReviewsForAdmin = async ({
   const [{ count }] = await baseQuery().count("r.id as count");
 
   const data = await baseQuery()
-    .select("r.*", "u.name as user_name", "p.name as product_name")
+    .select(
+      "r.*",
+      "u.name as user_name",
+      "p.name as product_name",
+      knex("product_images")
+        .where("product_id", knex.raw("p.id"))
+        .where("is_thumbnail", true)
+        .select("image_url")
+        .limit(1)
+        .as("thumbnail_url"),
+    )
     .orderBy("r.created_at", "desc")
     .limit(limit)
     .offset(offset);
