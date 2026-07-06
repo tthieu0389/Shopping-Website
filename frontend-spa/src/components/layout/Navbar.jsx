@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import useCartStore from '../../store/cartStore.js'
+import useContactStore from '../../store/contactStore.js'
 import { useSearch, useAvatarUrl } from '../../hooks/index.js'
 import { formatPrice, resolveImageUrl } from '../../utils/index.js'
 
@@ -105,7 +106,19 @@ export default function Navbar() {
   const avatarUrl = useAvatarUrl()
   const items = useCartStore(s => s.items)
   const cartCount = items.length
+  const contactUnread = useContactStore(s => s.unreadCount)
+  const fetchContactUnread = useContactStore(s => s.fetchUnread)
   const navigate = useNavigate()
+
+  // Lấy số phản hồi liên hệ chưa đọc khi đăng nhập, và poll định kỳ để
+  // chấm đỏ tự cập nhật nếu admin/staff vừa phản hồi trong lúc user đang
+  // duyệt web (không cần reload trang).
+  useEffect(() => {
+    if (!isAuthenticated) return
+    fetchContactUnread()
+    const interval = setInterval(fetchContactUnread, 30000) // 30s
+    return () => clearInterval(interval)
+  }, [isAuthenticated, fetchContactUnread])
 
   const { query, setQuery, results, loading } = useSearch()
   const [searchOpen, setSearchOpen] = useState(false)
@@ -209,9 +222,12 @@ export default function Navbar() {
                 key={to}
                 to={to}
                 end
-                className={({ isActive }) => navLinkClass(to, isActive, 'px-2.5 py-2 rounded-md text-sm font-medium')}
+                className={({ isActive }) => navLinkClass(to, isActive, 'relative px-2.5 py-2 rounded-md text-sm font-medium')}
               >
                 {label}
+                {to === '/contact' && contactUnread > 0 && (
+                  <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-accent rounded-full border border-white" />
+                )}
               </NavLink>
             ))}
           </div>
@@ -329,9 +345,12 @@ export default function Navbar() {
                   to={to}
                   end
                   onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) => navLinkClass(to, isActive, 'px-3.5 py-2.5 rounded-md text-sm font-medium')}
+                  className={({ isActive }) => navLinkClass(to, isActive, 'relative flex items-center gap-1.5 px-3.5 py-2.5 rounded-md text-sm font-medium')}
                 >
                   {label}
+                  {to === '/contact' && contactUnread > 0 && (
+                    <span className="w-2 h-2 bg-accent rounded-full flex-shrink-0" />
+                  )}
                 </NavLink>
               ))}
             </div>

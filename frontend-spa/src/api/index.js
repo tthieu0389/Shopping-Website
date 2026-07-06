@@ -185,10 +185,12 @@ export const userApi = {
 // ── CONTACT ──────────────────────────────────────────────────────────────────
 export const contactApi = {
   send: (data) => api.post("/contacts", data),
-  // Admin
+  // Admin/Staff
   getAll: () => api.get("/contacts"),
-  updateStatus: (id, status) => api.patch(`/contacts/${id}/status`, { status }),
+  reply: (id, reply) => api.patch(`/contacts/${id}/reply`, { reply }),
   remove: (id) => api.delete(`/contacts/${id}`),
+  // User (khách hàng)
+  getMine: () => api.get("/contacts/mine"),
 };
 
 // ── PRODUCT DETAILS / THÔNG SỐ KỸ THUẬT (ADMIN) ─────────────────────────────

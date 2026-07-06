@@ -8,6 +8,7 @@ export default function StaffContacts() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [replyBody, setReplyBody] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -27,7 +28,7 @@ export default function StaffContacts() {
       .split('\n')
       .map(line => `> ${line}`)
       .join('\n')
-    setReplyBody(
+    const template =
 `Kính gửi ${c.name},
 
 Cảm ơn bạn đã liên hệ với VNPT Shop. Chúng tôi đã nhận được yêu cầu của bạn và xin phản hồi như sau:
@@ -41,10 +42,13 @@ Trân trọng,
 ────────────────────────────
 Tin nhắn gốc từ ${c.name} (${formatDate(c.created_at)}):
 ${quotedMessage}`
-    )
+    // Template dựng sẵn có thể vượt quá giới hạn nếu tin nhắn gốc quá dài
+    // (vì có quote lại) — cắt bớt để không vượt REPLY_MAX_LEN ngay từ đầu.
+    setReplyBody(template.slice(0, REPLY_MAX_LEN))
   }
 
   const GMAIL_URL_SAFE_LIMIT = 7500 // Gmail trả về lỗi 400 Bad Request nếu URL quá dài
+  const REPLY_MAX_LEN = 2000 // BE giới hạn 2200 ký tự, chừa buffer an toàn
 
   const getMailtoLink = () => {
     if (!selected) return '#'
@@ -80,16 +84,21 @@ ${quotedMessage}`
     setSelected(null)
   }
 
-  const handleToggleStatus = (c) => {
-    const newStatus = c.status === 'resolved' ? 'pending' : 'resolved'
-    contactApi.updateStatus(c.id, newStatus)
-      .then(() => {
-        const updated = { ...c, status: newStatus }
-        setContacts(prev => prev.map(x => x.id === c.id ? updated : x))
-        if (selected?.id === c.id) setSelected(updated)
-        toast.success(newStatus === 'resolved' ? 'Đã đánh dấu giải quyết' : 'Đã đánh dấu chưa giải quyết')
+  // Gửi phản hồi thật sự vào hệ thống — khách hàng (nếu có tài khoản) sẽ
+  // thấy phản hồi này trong tab "Phản hồi của tôi" ở trang Liên hệ, kèm
+  // chấm đỏ thông báo ở Navbar.
+  const handleSendReply = () => {
+    if (!selected || !replyBody.trim()) return
+    setSendingReply(true)
+    contactApi.reply(selected.id, replyBody.trim())
+      .then((res) => {
+        const updated = res.data
+        setContacts(prev => prev.map(x => x.id === selected.id ? { ...x, ...updated } : x))
+        setSelected(prev => ({ ...prev, ...updated }))
+        toast.success('Đã gửi phản hồi cho khách hàng')
       })
-      .catch(err => toast.error(err.message || 'Không thể cập nhật'))
+      .catch(err => toast.error(err.message || 'Không thể gửi phản hồi'))
+      .finally(() => setSendingReply(false))
   }
 
   const filtered = contacts
@@ -165,7 +174,12 @@ ${quotedMessage}`
                       <span className="text-[10px] bg-blue-100 text-blue-600 font-bold px-1.5 py-0.5 rounded-full">EMAIL</span>
                     )}
                     {c.status === 'resolved' && (
-                      <span className="text-[10px] bg-success/10 text-green-600 font-bold px-1.5 py-0.5 rounded-full">✓</span>
+                      <span
+                        className="text-[10px] bg-success/10 text-green-600 font-bold px-1.5 py-0.5 rounded-full"
+                        title={c.replied_by_name ? `Đã xử lý bởi ${c.replied_by_name}` : 'Đã xử lý'}
+                      >
+                        ✓
+                      </span>
                     )}
                   </div>
                 </div>
@@ -182,7 +196,7 @@ ${quotedMessage}`
             <div className="flex-1 flex items-center justify-center text-muted flex-col gap-2.5">
               <span className="text-4xl">💬</span>
               <span className="text-sm font-semibold">Chọn một tin nhắn để xem và trả lời</span>
-              <span className="text-xs">Bạn có thể trả lời trực tiếp qua email</span>
+              <span className="text-xs">Phản hồi sẽ được gửi trực tiếp cho khách hàng qua hệ thống</span>
             </div>
           ) : (
             <>
@@ -192,58 +206,79 @@ ${quotedMessage}`
                   <div className="font-extrabold text-base text-body mb-0.5">{selected.name}</div>
                   <div className="text-[13px] text-muted">{selected.email} · {formatDate(selected.created_at)}</div>
                 </div>
-                <button
-                  onClick={() => handleToggleStatus(selected)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-colors border flex-shrink-0 ${
-                    selected.status === 'resolved'
-                      ? 'bg-success/10 border-success/30 text-green-700 hover:bg-success/20'
-                      : 'bg-cream border-shade text-muted hover:bg-success/10 hover:border-success/30 hover:text-green-700'
-                  }`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  {selected.status === 'resolved' ? 'Đã xử lý' : 'Đánh dấu xử lý'}
-                </button>
               </div>
 
               {/* Nội dung gốc */}
               <div className="px-6 py-4 border-b border-shade flex-shrink-0">
                 <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Nội dung tin nhắn</div>
-                <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words max-h-56 overflow-y-auto">
+                <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words h-56 resize-y overflow-y-auto">
                   {selected.message || <span className="italic text-muted">(Không có nội dung)</span>}
                 </div>
               </div>
 
-              {/* Soạn phản hồi */}
-              <div className="flex-1 overflow-y-auto px-6 py-4">
-                <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Soạn phản hồi</div>
-                <textarea
-                  value={replyBody}
-                  onChange={e => setReplyBody(e.target.value)}
-                  rows={7}
-                  className="w-full px-4 py-3 rounded-xl border border-shade text-sm text-body outline-none focus:border-vnpt transition-colors bg-canvas font-body resize-vertical"
-                  placeholder="Nhập nội dung phản hồi..."
-                />
-                <div className="text-xs text-muted mt-1">
-                  Nhấn "Gửi phản hồi" sẽ mở ứng dụng email với nội dung soạn sẵn gửi đến <strong>{selected.email}</strong>
+              {/* Đã phản hồi bởi ai — chỉ hiện khi liên hệ này đã được xử lý */}
+              {selected.status === 'resolved' && selected.reply && (
+                <div className="px-6 py-4 border-b border-shade flex-shrink-0 bg-success/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[11px] font-bold text-green-700 uppercase tracking-wider">
+                      ✓ Đã phản hồi
+                    </div>
+                    <div className="text-xs text-muted">
+                      bởi <strong className="text-body">{selected.replied_by_name || 'Không rõ'}</strong>
+                      {selected.replied_at && <> · {formatDate(selected.replied_at)}</>}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-success/20 rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+                    {selected.reply}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Soạn phản hồi — mỗi liên hệ chỉ được phản hồi 1 lần, ẩn hẳn
+                  phần soạn sau khi đã resolved để tránh gửi đè/gửi thêm */}
+              {selected.status !== 'resolved' && (
+                <div className="flex-1 overflow-y-auto px-6 py-4">
+                  <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Soạn phản hồi</div>
+                  <textarea
+                    value={replyBody}
+                    onChange={e => setReplyBody(e.target.value)}
+                    rows={7}
+                    maxLength={REPLY_MAX_LEN}
+                    className="w-full px-4 py-3 rounded-xl border border-shade text-sm text-body outline-none focus:border-vnpt transition-colors bg-canvas font-body resize-vertical"
+                    placeholder="Nhập nội dung phản hồi..."
+                  />
+                  <div className={`text-xs mt-1 text-right ${replyBody.length >= REPLY_MAX_LEN ? 'text-accent font-semibold' : 'text-muted'}`}>
+                    {replyBody.length}/{REPLY_MAX_LEN}
+                  </div>
+                  <div className="text-xs text-muted mt-1">
+                    Nhấn "Gửi phản hồi" để lưu phản hồi vào hệ thống — khách hàng sẽ thấy trong mục "Phản hồi của tôi" kèm thông báo.
+                  </div>
+                </div>
+              )}
+              {selected.status === 'resolved' && <div className="flex-1" />}
 
               {/* Footer */}
-              <div className="px-6 py-3.5 border-t border-shade flex items-center justify-between">
-                <a href={`mailto:${selected.email}`} className="text-xs font-bold text-muted hover:text-vnpt transition-colors">
-                  ✉️ {selected.email}
-                </a>
+              <div className="px-6 py-3.5 border-t border-shade flex items-center justify-between gap-3">
                 <a
-                  href={getMailtoLink()}
+                  href={selected.status === 'resolved' ? undefined : getMailtoLink()}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() => replyBody.trim() && toast.success('Đã mở Gmail để gửi phản hồi')}
-                  className={`px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors inline-flex items-center gap-2 ${!replyBody.trim() ? 'opacity-50 pointer-events-none' : ''}`}
+                  aria-disabled={selected.status === 'resolved' || !replyBody.trim()}
+                  title={selected.status === 'resolved' ? 'Liên hệ này đã được phản hồi' : undefined}
+                  className={`text-xs font-bold text-muted hover:text-vnpt transition-colors whitespace-nowrap ${
+                    selected.status === 'resolved' || !replyBody.trim() ? 'opacity-50 pointer-events-none' : ''
+                  }`}
                 >
-                  📤 Gửi phản hồi qua Gmail
+                  ✉️ Mở Gmail thay thế
                 </a>
+                <button
+                  onClick={handleSendReply}
+                  disabled={selected.status === 'resolved' || !replyBody.trim() || sendingReply}
+                  title={selected.status === 'resolved' ? 'Liên hệ này đã được phản hồi' : undefined}
+                  className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                >
+                  {sendingReply ? '⏳ Đang gửi...' : '📤 Gửi phản hồi'}
+                </button>
               </div>
             </>
           )}

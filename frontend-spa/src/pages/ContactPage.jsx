@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Breadcrumb } from '../components/common/index.jsx'
-import { toast } from '../utils/index.js'
+import { toast, formatDate } from '../utils/index.js'
 import { contactApi } from '../api/index.js'
+import useAuthStore from '../store/authStore.js'
+import useContactStore from '../store/contactStore.js'
 
 const CONTACT_INFO = [
   { icon: '📞', title: 'Hotline miễn phí', value: '1800 1234',       sub: 'Hỗ trợ 24/7' },
@@ -19,11 +21,152 @@ const REQUEST_TYPES = [
   'Khác',
 ]
 
+// ── TAB: PHẢN HỒI CỦA TÔI ─────────────────────────────────────────────────
+// Layout kiểu email/trang admin: danh sách liên hệ bên trái, chi tiết +
+// phản hồi (nếu có) bên phải. Khi tab này được mở, tự động đánh dấu đã đọc
+// để tắt chấm đỏ ở Navbar.
+function MyRepliesTab() {
+  const [contacts, setContacts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState(null)
+  const markAllRead = useContactStore(s => s.markAllRead)
+
+  useEffect(() => {
+    contactApi.getMine()
+      .then(res => {
+        const data = res.data || []
+        setContacts(data)
+        setSelected(prev => prev ?? data[0] ?? null)
+        // Đánh dấu đã đọc + tắt chấm đỏ ngay khi mở tab, không cần chờ
+        // user click vào từng tin nhắn — vì họ đã chủ động vào xem rồi.
+        markAllRead(data)
+      })
+      .catch(err => toast.error(err.message || 'Không thể tải phản hồi'))
+      .finally(() => setLoading(false))
+  }, [markAllRead])
+
+  if (loading) {
+    return <div className="py-16 text-center text-muted text-sm">Đang tải...</div>
+  }
+
+  if (contacts.length === 0) {
+    return (
+      <div className="py-16 text-center text-muted flex flex-col items-center gap-2">
+        <span className="text-4xl">📭</span>
+        <span className="text-sm font-semibold">Bạn chưa gửi yêu cầu liên hệ nào</span>
+      </div>
+    )
+  }
+
+  // Tách phần "[Loại yêu cầu]" khỏi nội dung message để hiện làm tiêu đề gọn
+  // trong danh sách, giống cách phân loại ở trang quản trị.
+  const parseMessage = (msg = '') => {
+    const m = msg.match(/^\[(.+?)\]\s*([\s\S]*)$/)
+    return m ? { type: m[1], body: m[2] } : { type: null, body: msg }
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 border border-shade rounded-2xl overflow-hidden bg-white" style={{ minHeight: 480 }}>
+      {/* Danh sách liên hệ */}
+      <div className="flex flex-col border-r border-shade overflow-hidden" style={{ maxHeight: 640 }}>
+        <div className="px-4 py-3 border-b border-shade text-[13px] font-bold text-body flex-shrink-0">
+          Yêu cầu của tôi ({contacts.length})
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {contacts.map(c => {
+            const { type, body } = parseMessage(c.message)
+            return (
+              <div
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className={`px-4 py-3.5 border-b border-shade cursor-pointer transition-colors ${
+                  selected?.id === c.id ? 'bg-vnpt-light border-l-2 border-l-vnpt' : 'hover:bg-cream'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-0.5 gap-2">
+                  <div className="font-bold text-[13px] text-body truncate flex-1">{type || 'Liên hệ'}</div>
+                  <span
+                    className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      c.status === 'resolved' ? 'bg-success/10 text-green-600' : 'bg-amber-100 text-amber-700'
+                    }`}
+                  >
+                    {c.status === 'resolved' ? '✓' : '⏳'}
+                  </span>
+                </div>
+                <div className="text-xs text-muted truncate mb-1">{body}</div>
+                <div className="text-[11px] text-muted">{formatDate(c.created_at)}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Chi tiết */}
+      <div className="flex flex-col overflow-hidden" style={{ maxHeight: 640 }}>
+        {!selected ? (
+          <div className="flex-1 flex items-center justify-center text-muted flex-col gap-2.5">
+            <span className="text-4xl">💬</span>
+            <span className="text-sm font-semibold">Chọn một yêu cầu để xem chi tiết</span>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-shade flex justify-between items-start gap-3 flex-shrink-0">
+              <div>
+                <div className="font-extrabold text-base text-body mb-0.5">
+                  {parseMessage(selected.message).type || 'Liên hệ'}
+                </div>
+                <div className="text-[13px] text-muted">{formatDate(selected.created_at)}</div>
+              </div>
+              <span
+                className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                  selected.status === 'resolved' ? 'bg-success/10 text-green-700' : 'bg-amber-100 text-amber-700'
+                }`}
+              >
+                {selected.status === 'resolved' ? '✓ Đã phản hồi' : '⏳ Đang chờ'}
+              </span>
+            </div>
+
+            {/* Nội dung */}
+            <div className="px-6 py-4 border-b border-shade flex-shrink-0">
+              <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Nội dung đã gửi</div>
+              <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words h-40 resize-y overflow-y-auto">
+                {parseMessage(selected.message).body}
+              </div>
+            </div>
+
+            {/* Phản hồi */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {selected.reply ? (
+                <>
+                  <div className="text-[11px] font-bold text-vnpt uppercase tracking-wider mb-2">
+                    Phản hồi từ VNPT Shop{selected.replied_at ? ` · ${formatDate(selected.replied_at)}` : ''}
+                  </div>
+                  <div className="bg-vnpt-light/40 border border-vnpt/20 rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words">
+                    {selected.reply}
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted flex flex-col items-center justify-center h-full gap-2">
+                  <span className="text-3xl">⏳</span>
+                  <span>Chưa có phản hồi — chúng tôi sẽ liên hệ trong 2–4 giờ</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function ContactPage() {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
   const [sending, setSending] = useState(false)
   const message = watch('message', '')
   const MESSAGE_MAX_LEN = 2000
+  const { isAuthenticated } = useAuthStore()
+  const [tab, setTab] = useState('send') // 'send' | 'mine'
 
   const onSubmit = async (data) => {
     setSending(true)
@@ -54,6 +197,33 @@ export default function ContactPage() {
 
       <Breadcrumb items={[{ to: '/', label: 'Trang chủ' }, { label: 'Liên hệ' }]} />
 
+      {/* ── TABS ─────────────────────────────────────────────────────────── */}
+      {isAuthenticated && (
+        <div className="max-w-[1200px] mx-auto px-10 pt-8 flex gap-2">
+          <button
+            onClick={() => setTab('send')}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
+              tab === 'send' ? 'bg-vnpt text-white' : 'bg-cream text-muted hover:text-vnpt'
+            }`}
+          >
+            Gửi yêu cầu
+          </button>
+          <button
+            onClick={() => setTab('mine')}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
+              tab === 'mine' ? 'bg-vnpt text-white' : 'bg-cream text-muted hover:text-vnpt'
+            }`}
+          >
+            Phản hồi của tôi
+          </button>
+        </div>
+      )}
+
+      {tab === 'mine' && isAuthenticated ? (
+        <div className="max-w-[800px] mx-auto px-10 py-8">
+          <MyRepliesTab />
+        </div>
+      ) : (
       <div className="max-w-[1200px] mx-auto px-10 py-12 grid grid-cols-[1fr_380px] gap-8">
 
         {/* ── FORM ─────────────────────────────────────────────────────────── */}
@@ -157,6 +327,7 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }
