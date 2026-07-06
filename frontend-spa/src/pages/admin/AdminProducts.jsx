@@ -314,16 +314,17 @@ export default function AdminProducts() {
             "",
           ]}
           colWidths={[
-            "56px",
-            "240px",
-            "110px",
-            "100px",
-            "100px",
-            "130px",
-            "130px",
-            "100px",
-            "110px",
+            "5%",
+            "24%",
+            "10%",
+            "9%",
+            "9%",
+            "12%",
+            "12%",
+            "9%",
+            "10%",
           ]}
+          alignRight={[4]}
           loading={loading}
           empty={!loading && "Không có sản phẩm nào"}
         >
@@ -354,7 +355,7 @@ export default function AdminProducts() {
                   {categories.find((c) => c.id === p.category_id)?.name || "—"}
                 </TD>
                 <TD muted>{p.brand}</TD>
-                <TD bold>{formatPrice(p.price)}</TD>
+                <TD bold align="right">{formatPrice(p.price)}</TD>
                 <TD noTruncate>
                   <Badge
                     label={

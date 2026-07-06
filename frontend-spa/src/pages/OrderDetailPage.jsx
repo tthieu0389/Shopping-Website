@@ -642,7 +642,18 @@ export default function OrderDetailPage() {
             {/* Ghi chú */}
             {order.note && (
               <InfoBlock title="Ghi chú đơn hàng">
-                <p className="text-sm text-body leading-relaxed">{order.note}</p>
+                <div
+                  className="text-sm text-body leading-relaxed overflow-y-auto rounded-lg bg-cream px-3 py-2.5"
+                  style={{
+                    minHeight: "56px",
+                    maxHeight: "180px",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {order.note}
+                </div>
               </InfoBlock>
             )}
 

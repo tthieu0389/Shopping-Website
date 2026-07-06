@@ -205,15 +205,16 @@ export default function StaffOrders() {
             "Ngày tạo",
           ]}
           colWidths={[
-            "220px", // Mã đơn
-            "150px", // Người nhận
-            "120px", // SĐT
-            "130px", // Tổng tiền
-            "100px", // Thanh toán
-            "140px", // TT Thanh toán
-            "130px", // Trạng thái
-            "110px", // Ngày tạo
+            "20%", // Mã đơn
+            "14%", // Người nhận
+            "11%", // SĐT
+            "11%", // Tổng tiền
+            "9%",  // Thanh toán
+            "13%", // TT Thanh toán
+            "12%", // Trạng thái
+            "10%", // Ngày tạo
           ]}
+          alignRight={[3]}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
         >
@@ -224,7 +225,7 @@ export default function StaffOrders() {
               </TD>
               <TD bold>{o.receiver_name || "—"}</TD>
               <TD muted>{o.receiver_phone || "—"}</TD>
-              <TD bold>{formatPrice(o.total_amount)}</TD>
+              <TD bold align="right">{formatPrice(o.total_amount)}</TD>
               <TD muted className="text-[12px]">
                 {PAYMENT_METHOD_LABELS[o.payment_method] ||
                   o.payment_method?.toUpperCase() ||

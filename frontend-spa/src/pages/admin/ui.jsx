@@ -285,7 +285,7 @@ export function Modal({
 // colWidths: array of CSS width strings per column, e.g. ["220px","120px",...]
 // Providing colWidths locks column widths via <colgroup> so filters/data changes
 // never cause columns to shift or reflow.
-export function Table({ headers, children, loading, empty, colWidths }) {
+export function Table({ headers, children, loading, empty, colWidths, alignRight }) {
   const hasRows = Children.count(children) > 0;
   return (
     <div className="overflow-x-auto">
@@ -302,7 +302,7 @@ export function Table({ headers, children, loading, empty, colWidths }) {
             {headers.map((h, i) => (
               <th
                 key={i}
-                className="px-4 py-2.5 text-left text-muted font-bold text-xs whitespace-nowrap border-b border-shade overflow-hidden"
+                className={`px-4 py-2.5 text-muted font-bold text-xs whitespace-nowrap border-b border-shade overflow-hidden ${alignRight?.includes(i) ? "text-right" : "text-left"}`}
               >
                 {h}
               </th>
@@ -350,13 +350,14 @@ export function TR({ children, onClick, striped }) {
   );
 }
 
-export function TD({ children, className = "", muted, bold, noTruncate }) {
+export function TD({ children, className = "", muted, bold, noTruncate, align }) {
   return (
     <td
-      className={`px-4 py-3 ${muted ? "text-muted" : "text-body"} ${bold ? "font-bold" : ""} ${noTruncate ? "" : "overflow-hidden"} ${className}`}
+      className={`px-4 py-3 ${muted ? "text-muted" : "text-body"} ${bold ? "font-bold" : ""} ${align === "right" ? "text-right" : ""} ${noTruncate ? "" : "overflow-hidden"} ${className}`}
     >
       {/* Inner wrapper truncates long text so it never pushes the column wider */}
-      <div className={noTruncate ? "" : "truncate"}>{children}</div>
+      {/* tabular-nums giữ độ rộng chữ số bằng nhau để các hàng đơn vị/chục/trăm... thẳng cột khi căn phải */}
+      <div className={`${noTruncate ? "" : "truncate"} ${align === "right" ? "tabular-nums" : ""}`}>{children}</div>
     </td>
   );
 }

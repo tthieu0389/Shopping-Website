@@ -406,17 +406,32 @@ export default function CheckoutPage() {
                 ? addresses.length > 0
                 : stores.length > 0) && (
                 <div className="mt-4 pt-4 border-t border-shade">
-                  <label className="text-sm font-semibold block mb-1.5">
-                    Ghi chú
-                  </label>
-                  <input
-                    {...register("note")}
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-sm font-semibold">Ghi chú</label>
+                    <span className={`text-xs tabular-nums ${(watch("note") || "").length >= 1000 ? "text-error font-semibold" : "text-muted"}`}>
+                      {(watch("note") || "").length}/1000
+                    </span>
+                  </div>
+                  <textarea
+                    {...register("note", { maxLength: 1000 })}
+                    onInput={(e) => {
+                      // Chặn cứng ký tự vượt 1000
+                      if (e.target.value.length > 1000) {
+                        e.target.value = e.target.value.slice(0, 1000);
+                      }
+                      // Auto-grow chiều cao
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
                     placeholder={
                       deliveryMode === "delivery"
                         ? "Giao giờ hành chính, gọi trước 30 phút..."
                         : "Thời gian dự kiến đến nhận..."
                     }
-                    className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt"
+                    rows={3}
+                    maxLength={1000}
+                    className="w-full px-4 py-3 border border-shade rounded-lg text-sm font-body outline-none focus:border-vnpt resize-none overflow-y-auto transition-colors"
+                    style={{ minHeight: "80px", maxHeight: "240px", wordBreak: "break-word", overflowWrap: "break-word", whiteSpace: "pre-wrap" }}
                   />
                 </div>
               )}

@@ -6,7 +6,7 @@ import useCartStore from "../store/cartStore.js";
 import useAuthStore from "../store/authStore.js";
 
 export default function CartPage() {
-  const { items, updateQty, removeItem, fetchCart, loading, syncing } =
+  const { items, updateQty, removeItem, fetchCart, clearCart, loading, syncing } =
     useCartStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const navigate = useNavigate();
@@ -32,6 +32,16 @@ export default function CartPage() {
   };
 
   const [showOos, setShowOos] = useState(false);
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearCart = async () => {
+    setClearing(true);
+    await clearCart();
+    setSelectedIds(new Set());
+    setClearing(false);
+    setShowConfirmClear(false);
+  };
   const availableItems = items.filter((i) => !isOutOfStock(i));
   const oosItems = items.filter((i) => isOutOfStock(i));
   const allChecked =
@@ -274,10 +284,22 @@ export default function CartPage() {
                 >
                   ← Tiếp tục mua hàng
                 </Link>
-                <span className="text-xs text-muted">
-                  Đã chọn {selectedItems.length}/{availableItems.length} sản
-                  phẩm
-                </span>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-muted">
+                    Đã chọn {selectedItems.length}/{availableItems.length} sản phẩm
+                  </span>
+                  <button
+                    onClick={() => setShowConfirmClear(true)}
+                    disabled={syncing || items.length === 0}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed group"
+                    title="Xóa toàn bộ giỏ hàng"
+                  >
+                    <span className="w-6 h-6 rounded-[9px] border border-shade bg-white group-hover:border-red-200 group-hover:bg-red-50 flex items-center justify-center transition-colors text-sm">
+                      🗑
+                    </span>
+                    Xóa tất cả
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -473,6 +495,60 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      {/* ── CONFIRM CLEAR MODAL ─────────────────────────────────────────────── */}
+      {showConfirmClear && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center px-4"
+          style={{ backgroundColor: "rgba(29,78,216,0.55)" }}
+          onClick={() => !clearing && setShowConfirmClear(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-lg w-full max-w-[360px] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon + heading */}
+            <div className="flex flex-col items-center pt-8 pb-4 px-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-2xl mb-4">
+                🗑️
+              </div>
+              <h3 className="font-display text-lg font-bold text-body mb-1.5">
+                Xóa toàn bộ giỏ hàng?
+              </h3>
+              <p className="text-sm text-muted leading-relaxed">
+                Tất cả{" "}
+                <span className="font-semibold text-body">{items.length} sản phẩm</span>{" "}
+                sẽ bị xóa khỏi giỏ hàng. Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 px-6 pb-6 pt-2">
+              <button
+                onClick={() => setShowConfirmClear(false)}
+                disabled={clearing}
+                className="flex-1 py-2.5 rounded-full border border-shade bg-white text-body text-sm font-bold hover:bg-cream transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleClearCart}
+                disabled={clearing}
+                className="flex-1 py-2.5 rounded-full bg-error/10 text-red-700 border border-red-200 text-sm font-bold hover:bg-error/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {clearing ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                    Đang xóa...
+                  </>
+                ) : (
+                  "Xóa tất cả"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
