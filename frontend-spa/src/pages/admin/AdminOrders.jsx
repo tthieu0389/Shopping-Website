@@ -264,26 +264,29 @@ export default function AdminOrders() {
             "Người nhận",
             "SĐT",
             "Tổng tiền",
+            "Nguồn đơn",
             "Thanh toán",
             "TT Thanh toán",
             "Trạng thái",
             "Ngày tạo",
           ]}
           colWidths={[
-            "20%",  // Mã đơn
-            "14%",  // Người nhận
-            "11%",  // SĐT
-            "11%",  // Tổng tiền
-            "9%",   // Thanh toán
-            "13%",  // TT Thanh toán
-            "12%",  // Trạng thái
-            "10%",  // Ngày tạo
+            "17%",  // Mã đơn
+            "12%",  // Người nhận
+            "10%",  // SĐT
+            "10%",  // Tổng tiền
+            "12%",  // Nguồn đơn
+            "8%",   // Thanh toán
+            "12%",  // TT Thanh toán
+            "11%",  // Trạng thái
+            "8%",   // Ngày tạo
           ]}
           alignRight={[3]}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
         >
-          {orders.map((o, i) => (
+          {orders.map((o, i) => {
+            return (
             <TR key={o.id} striped={i % 2 !== 0} onClick={() => {
               setSelected(o);
               setOrderDetail(null);
@@ -299,6 +302,13 @@ export default function AdminOrders() {
               <TD bold>{o.receiver_name || "—"}</TD>
               <TD muted>{o.receiver_phone || "—"}</TD>
               <TD bold align="right">{formatPrice(o.total_amount)}</TD>
+              <TD noTruncate>
+                {o.created_by_staff_name ? (
+                  <Badge label="Tạo hộ" tone="info" />
+                ) : (
+                  <Badge label="Khách đặt" tone="muted" />
+                )}
+              </TD>
               <TD muted className="text-[12px]">
                 {PAYMENT_METHOD_LABELS[o.payment_method] ||
                   o.payment_method?.toUpperCase() ||
@@ -315,7 +325,8 @@ export default function AdminOrders() {
               </TD>
               <TD muted>{formatDate(o.created_at)}</TD>
             </TR>
-          ))}
+            );
+          })}
         </Table>
       </Card>
 
@@ -329,7 +340,18 @@ export default function AdminOrders() {
         {selected && (
           <div className="flex flex-col gap-5">
 
-            {/* ── Thông tin khách hàng & đơn hàng ── */}
+            {/* ── Nguồn đơn hàng ── */}
+            {selected.created_by_staff_name ? (
+              <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-primary-light border border-primary/20 text-[12px] text-primary font-semibold">
+                <span>🧾</span>
+                <span>Đơn do <strong>{selected.created_by_staff_name}</strong> tạo hộ khách</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-cream border border-shade text-[12px] text-muted font-semibold">
+                <span>🛒</span>
+                <span>Khách hàng <strong>tự đặt</strong></span>
+              </div>
+            )}
             <div className="bg-cream rounded-xl p-4">
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
                 {[

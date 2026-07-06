@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ordersApi } from "../../api/index.js";
+import useAuthStore from "../../store/authStore.js";
 import {
   Card,
   Table,
@@ -69,6 +70,7 @@ const getAllowedPaymentTargets = (order) => {
 const LIMIT = 10;
 
 export default function StaffOrders() {
+  const { user } = useAuthStore();
   const [orders, setOrders] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -84,8 +86,10 @@ export default function StaffOrders() {
 
   const load = useCallback(() => {
     setLoading(true);
+    // Dùng /orders/staff/mine: chỉ lấy đơn staff tự mua (vai trò khách)
+    // HOẶC đơn staff tạo hộ khách — không hiện toàn bộ đơn hệ thống
     ordersApi
-      .getAll({
+      .getStaffMine({
         page,
         limit: LIMIT,
         ...(status !== "all" ? { status } : {}),
@@ -196,6 +200,7 @@ export default function StaffOrders() {
         <Table
           headers={[
             "Mã đơn",
+            "Loại đơn",
             "Người nhận",
             "SĐT",
             "Tổng tiền",
@@ -205,23 +210,34 @@ export default function StaffOrders() {
             "Ngày tạo",
           ]}
           colWidths={[
-            "20%", // Mã đơn
-            "14%", // Người nhận
-            "11%", // SĐT
-            "11%", // Tổng tiền
-            "9%",  // Thanh toán
-            "13%", // TT Thanh toán
-            "12%", // Trạng thái
-            "10%", // Ngày tạo
+            "18%", // Mã đơn
+            "11%", // Loại đơn
+            "13%", // Người nhận
+            "10%", // SĐT
+            "10%", // Tổng tiền
+            "8%",  // Thanh toán
+            "12%", // TT Thanh toán
+            "11%", // Trạng thái
+            "9%",  // Ngày tạo
           ]}
-          alignRight={[3]}
+          alignRight={[4]}
           loading={loading}
           empty={!loading && "Không có đơn hàng nào"}
         >
-          {orders.map((o, i) => (
+          {orders.map((o, i) => {
+            // Phân loại đơn: staff tạo hộ khách (created_by_staff_id = mình)
+            // vs staff tự mua với vai trò khách hàng (user_id = mình)
+            const isCreatedByMe = o.created_by_staff_id === user?.id;
+            const orderSourceBadge = isCreatedByMe
+              ? { label: "Tạo hộ", tone: "info" }
+              : { label: "Tự mua", tone: "muted" };
+            return (
             <TR key={o.id} striped={i % 2 !== 0} onClick={() => setSelected(o)}>
               <TD bold className="text-vnpt">
                 {o.order_code}
+              </TD>
+              <TD noTruncate>
+                <Badge {...orderSourceBadge} />
               </TD>
               <TD bold>{o.receiver_name || "—"}</TD>
               <TD muted>{o.receiver_phone || "—"}</TD>
@@ -242,7 +258,8 @@ export default function StaffOrders() {
               </TD>
               <TD muted>{formatDate(o.created_at)}</TD>
             </TR>
-          ))}
+            );
+          })}
         </Table>
       </Card>
 
@@ -255,6 +272,18 @@ export default function StaffOrders() {
       >
         {selected && (
           <div>
+            {/* Banner phân loại loại đơn */}
+            {selected.created_by_staff_id === user?.id ? (
+              <div className="mb-4 flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-primary-light border border-primary/20 text-[12px] text-primary font-semibold">
+                <span>🧾</span>
+                <span>Đơn bạn <strong>tạo hộ khách hàng</strong></span>
+              </div>
+            ) : (
+              <div className="mb-4 flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-cream border border-shade text-[12px] text-muted font-semibold">
+                <span>🛒</span>
+                <span>Đơn bạn <strong>tự đặt</strong> với vai trò khách hàng</span>
+              </div>
+            )}
             <div className="bg-cream rounded-xl p-4 mb-5">
               <div className="grid grid-cols-2 gap-3 text-[13px]">
                 {[
@@ -264,9 +293,8 @@ export default function StaffOrders() {
                   ["Phí ship", formatPrice(selected.shipping_fee)],
                   [
                     "Thanh toán",
-                    selected.payment_method === "cod"
-                      ? "COD"
-                      : `PM #${selected.payment_method}`,
+                    PAYMENT_METHOD_LABELS[selected.payment_method] ||
+                      selected.payment_method?.toUpperCase() || "—",
                   ],
                   ["Ngày tạo", formatDate(selected.created_at)],
                 ].map(([k, v]) => (

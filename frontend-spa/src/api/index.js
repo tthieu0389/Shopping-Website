@@ -112,6 +112,8 @@ export const ordersApi = {
   // (backend tự nhận diện qua req.user.role, user_id sẽ bị bỏ qua nếu người gọi là user thường)
   create: (data) => api.post("/orders", data),
   getAll: (params) => api.get("/orders", { params }),
+  // Staff: chỉ lấy đơn staff tự mua (vai trò khách) + đơn staff tạo hộ khách
+  getStaffMine: (params) => api.get("/orders/staff/mine", { params }),
   getById: (id) => api.get(`/orders/${id}`),
   cancel: (id) => api.post(`/orders/${id}/cancel`),
   // Admin
