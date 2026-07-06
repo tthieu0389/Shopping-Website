@@ -1,6 +1,8 @@
 const knex = require("../database/knex");
 const { normalizeKeyword } = require("../utils/searchKeyword");
 
+const ALLOWED_CONTACT_STATUSES = ["pending", "resolved"];
+
 // CREATE CONTACT
 exports.createContact = async (data, userId = null) => {
   const [contact] = await knex("contacts")
@@ -9,8 +11,8 @@ exports.createContact = async (data, userId = null) => {
   return contact;
 };
 
-// GET ALL (ADMIN/STAFF)
-exports.getContacts = async ({ search } = {}) => {
+// GET ALL (ADMIN/STAFF) — hỗ trợ filter theo trạng thái đã/chưa phản hồi
+exports.getContacts = async ({ search, status } = {}) => {
   const query = knex("contacts as c")
     .leftJoin("users as replier", "c.replied_by", "replier.id")
     .select("c.*", "replier.name as replied_by_name")
@@ -23,6 +25,10 @@ exports.getContacts = async ({ search } = {}) => {
         .orWhere("c.email", "ilike", `%${kw}%`)
         .orWhere("c.message", "ilike", `%${kw}%`);
     });
+  }
+
+  if (status && ALLOWED_CONTACT_STATUSES.includes(status)) {
+    query.andWhere("c.status", status);
   }
 
   return query;

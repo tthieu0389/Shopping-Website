@@ -16,6 +16,7 @@ exports.getAll = async (req, res, next) => {
     // Chấp nhận cả 2 tên query param: q và search
     const data = await service.getContacts({
       search: req.query.q || req.query.search,
+      status: req.query.status,
     });
     res.json({ data });
   } catch (err) {

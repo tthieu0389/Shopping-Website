@@ -4958,7 +4958,7 @@
       },
       "put": {
         "tags": ["Orders"],
-        "summary": "Cập nhật trạng thái đơn hàng (Admin/staff)",
+        "summary": "Cập nhật trạng thái đơn hàng (Admin)",
         "security": [
           {
             "bearerAuth": []
@@ -5027,7 +5027,7 @@
           }
         },
         "operationId": "updateOrder",
-        "description": "**Yêu cầu quyền: admin, staff.**"
+        "description": "**Yêu cầu quyền: admin.** Staff KHÔNG có quyền gọi endpoint này (dù giao diện Staff Panel có thể hiển thị nút đổi trạng thái — xem ST-09)."
       },
       "delete": {
         "tags": ["Orders"],
