@@ -3,18 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { Breadcrumb, EmptyState } from "../components/common/index.jsx";
 import { formatPrice, resolveImageUrl } from "../utils/index.js";
 import useCartStore from "../store/cartStore.js";
+import useAuthStore from "../store/authStore.js";
 
 export default function CartPage() {
   const { items, updateQty, removeItem, fetchCart, loading, syncing } =
     useCartStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const navigate = useNavigate();
 
   // IDs của cart_item được chọn (dùng item.id)
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   useEffect(() => {
-    fetchCart();
-  }, []);
+    if (isAuthenticated) fetchCart();
+  }, [isAuthenticated]);
 
   const isOutOfStock = (item) =>
     item.stock === 0 || item.is_available === false || item.is_available === 0;
@@ -54,6 +56,34 @@ export default function CartPage() {
     );
     navigate("/checkout");
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-10 py-20">
+        <EmptyState
+          icon="🛒"
+          title="Giỏ hàng trống"
+          desc="Đăng nhập để xem giỏ hàng và tiếp tục mua sắm"
+          action={
+            <div className="flex gap-3 justify-center">
+              <Link
+                to="/login"
+                className="px-7 py-3 bg-vnpt text-white rounded-full font-bold text-sm"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                to="/products"
+                className="px-7 py-3 border-2 border-vnpt text-vnpt rounded-full font-bold text-sm"
+              >
+                Mua sắm ngay
+              </Link>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
