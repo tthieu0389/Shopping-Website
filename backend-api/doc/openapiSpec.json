@@ -1245,6 +1245,21 @@
             "description": "Tên sản phẩm được đánh giá"
           }
         }
+      },
+      "RateLimitResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Thông báo khi vượt quá số lần request cho phép trong khoảng thời gian quy định",
+            "example": "Thao tác quá nhanh, vui lòng chậm lại một chút."
+          }
+        },
+        "required": ["success", "error"]
       }
     },
     "parameters": {
@@ -1367,6 +1382,16 @@
             }
           }
         }
+      },
+      "TooManyRequests": {
+        "description": "Vượt quá giới hạn số lần gọi API cho phép (rate limit)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/RateLimitResponse"
+            }
+          }
+        }
       }
     }
   },
@@ -1419,6 +1444,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         },
         "operationId": "registerUser"
@@ -1484,6 +1512,20 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "429": {
+            "description": "Đăng nhập sai quá nhiều lần trong 5 phút (giới hạn riêng cho route login: tối đa 10 lần/5 phút/IP, chặt hơn giới hạn chung của /api/auth)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": "Bạn đã thử đăng nhập quá nhiều lần, vui lòng thử lại sau 5 phút."
+                }
+              }
+            }
           }
         },
         "operationId": "loginUser"
@@ -4443,9 +4485,7 @@
                     "enum": ["cod", "card", "wallet"]
                   },
                   "note": {
-                    "type": "string",
-                    "maxLength": 1000,
-                    "description": "Ghi chú đơn hàng, tối đa 1000 ký tự"
+                    "type": "string"
                   },
                   "items": {
                     "type": "array",

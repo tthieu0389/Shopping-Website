@@ -12,6 +12,10 @@ const PG_ERROR_MAP = {
     message: "Dữ liệu không thỏa điều kiện hợp lệ (check constraint).",
   },
   "22P02": { status: 400, message: "Dữ liệu gửi lên không đúng định dạng." },
+  22003: {
+    status: 400,
+    message: "Số tiền giao dịch vượt quá giới hạn cho phép.",
+  },
 };
 
 module.exports = (err, req, res, next) => {

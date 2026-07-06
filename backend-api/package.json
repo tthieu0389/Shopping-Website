@@ -37,6 +37,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.0.1",
     "pg": "^8.16.2",
+    "sanitize-html": "^2.17.5",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.25.67"
   }

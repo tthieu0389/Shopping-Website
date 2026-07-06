@@ -1,5 +1,44 @@
 const knex = require("../database/knex");
 const { normalizeKeyword } = require("../utils/searchKeyword");
+const sanitizeHtml = require("sanitize-html");
+
+// Whitelist thẻ/attribute cho phép trong nội dung blog (rich-text editor)
+// đủ dùng cho bài viết thông thường (in đậm, nghiêng, list, link, ảnh, heading)
+// nhưng chặn <script>, onload=, javascript: v.v. để tránh stored XSS.
+const BLOG_SANITIZE_OPTIONS = {
+  allowedTags: [
+    "p",
+    "b",
+    "i",
+    "em",
+    "strong",
+    "u",
+    "s",
+    "br",
+    "ul",
+    "ol",
+    "li",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "blockquote",
+    "a",
+    "img",
+    "span",
+  ],
+  allowedAttributes: {
+    a: ["href", "target", "rel"],
+    img: ["src", "alt", "width", "height"],
+    span: ["style"],
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+};
+
+const sanitizeBlogContent = (content) =>
+  typeof content === "string"
+    ? sanitizeHtml(content, BLOG_SANITIZE_OPTIONS)
+    : content;
 
 const generateSlug = (title) =>
   title
@@ -13,6 +52,9 @@ const generateSlug = (title) =>
 // CREATE
 exports.createBlog = async (data) => {
   const payload = { ...data };
+  if (payload.content !== undefined) {
+    payload.content = sanitizeBlogContent(payload.content);
+  }
   if (!payload.slug && payload.title) {
     payload.slug = generateSlug(payload.title);
   }
@@ -61,7 +103,14 @@ exports.getBlogById = async (id) => {
 
 // UPDATE
 exports.updateBlog = async (id, data) => {
-  const [blog] = await knex("blogs").where({ id }).update(data).returning("*");
+  const payload = { ...data };
+  if (payload.content !== undefined) {
+    payload.content = sanitizeBlogContent(payload.content);
+  }
+  const [blog] = await knex("blogs")
+    .where({ id })
+    .update(payload)
+    .returning("*");
 
   return blog;
 };
