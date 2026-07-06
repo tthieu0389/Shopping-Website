@@ -47,8 +47,16 @@ const applyCommonFilters = (query, countQuery, filters) => {
 
   if (kw) {
     const slugKw = kw.toLowerCase().replace(/\s+/g, "-");
+    // Search chung gõ 1 ô: khớp tên, slug, thương hiệu, model — không gồm
+    // description vì cột này quá dài (có thể vài nghìn từ), ilike trên đó
+    // vừa tốn chi phí vừa không có ý nghĩa tìm kiếm (không ai gõ trúng 1 đoạn
+    // trong mô tả dài để tìm sản phẩm).
     const searchBlock = (builder) => {
-      builder.whereILike("name", `%${kw}%`).orWhereILike("slug", `%${slugKw}%`);
+      builder
+        .whereILike("name", `%${kw}%`)
+        .orWhereILike("slug", `%${slugKw}%`)
+        .orWhereILike("brand", `%${kw}%`)
+        .orWhereILike("model", `%${kw}%`);
     };
     query = query.where(searchBlock);
     countQuery = countQuery.where(searchBlock);

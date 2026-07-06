@@ -75,7 +75,7 @@ exports.getContactsByOrder = async (orderId) => {
     .orderBy("c.created_at", "desc");
 };
 
-// STAFF/ADMIN PHẢN HỒI LIÊN HỆ
+// STAFF/ADMIN PHẢN HỒI LIÊN HỆ (tự động chuyển status -> resolved)
 exports.replyContact = async (id, replierId, reply) => {
   const contact = await knex("contacts").where({ id }).first();
   if (!contact) {
@@ -95,6 +95,31 @@ exports.replyContact = async (id, replierId, reply) => {
     .returning("*");
 
   return updated;
+};
+
+// ADMIN ĐÁNH DẤU LIÊN HỆ ĐÃ XỬ LÝ (pending -> resolved)
+exports.resolveContact = async (id) => {
+  return await knex.transaction(async (trx) => {
+    const contact = await trx("contacts").where({ id }).forUpdate().first();
+    if (!contact) {
+      const err = new Error("Contact not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (contact.status === "resolved") {
+      const err = new Error("Liên hệ này đã được xử lý (resolved) trước đó");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const [updated] = await trx("contacts")
+      .where({ id })
+      .update({ status: "resolved" })
+      .returning("*");
+
+    return updated;
+  });
 };
 
 // DELETE

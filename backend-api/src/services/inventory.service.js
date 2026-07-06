@@ -73,7 +73,16 @@ exports.createInventory = async (
 };
 
 // GET ALL INVENTORY
-exports.getAllInventory = async ({ limit, offset, search, status }) => {
+// stock_status: "in_stock" (còn hàng, quantity > min_quantity)
+//             | "low_stock" (sắp hết hàng, 0 < quantity <= min_quantity)
+//             | "out_of_stock" (hết hàng, quantity = 0)
+exports.getAllInventory = async ({
+  limit,
+  offset,
+  search,
+  status,
+  stock_status,
+}) => {
   const baseQuery = () => {
     const q = knex("inventory as i").leftJoin(
       "products as p",
@@ -92,6 +101,17 @@ exports.getAllInventory = async ({ limit, offset, search, status }) => {
     if (kw) {
       q.andWhere("p.name", "ilike", `%${kw}%`);
     }
+
+    if (stock_status === "out_of_stock") {
+      q.andWhere("i.quantity", 0);
+    } else if (stock_status === "low_stock") {
+      q.andWhere("i.quantity", ">", 0).andWhereRaw(
+        "i.quantity <= i.min_quantity",
+      );
+    } else if (stock_status === "in_stock") {
+      q.andWhereRaw("i.quantity > i.min_quantity");
+    }
+
     return q;
   };
 
