@@ -33,3 +33,5 @@ Thumbs.db
 *.env
 
 backend-api/.env
+/backend-api/public/uploads
+frontend-spa/.env.production

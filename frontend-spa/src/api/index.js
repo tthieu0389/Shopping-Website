@@ -134,6 +134,8 @@ export const favoritesApi = {
 export const reviewsApi = {
   getFeatured: (limit) => api.get("/reviews/featured", { params: { limit } }),
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
+  // Admin: GET /reviews/admin?q=&rating=&category_id=&limit=&offset=
+  getAllForAdmin: (params) => api.get("/reviews/admin", { params }),
   create: (data) => api.post("/reviews", data),
   delete: (id) => api.delete(`/reviews/${id}`),
 };

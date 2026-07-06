@@ -19,6 +19,7 @@ const ADMIN_MENU = [
   { section: 'Nội dung' },
   { to: '/admin/blogs',      icon: '📰', label: 'Tin tức' },
   { to: '/admin/contacts',   icon: '💬', label: 'Liên hệ' },
+  { to: '/admin/reviews',    icon: '⭐', label: 'Đánh giá' },
 ]
 
 const PAGE_TITLES = {
@@ -31,6 +32,7 @@ const PAGE_TITLES = {
   '/admin/users': 'Khách hàng',
   '/admin/blogs': 'Tin tức',
   '/admin/contacts': 'Liên hệ',
+  '/admin/reviews': 'Đánh giá khách hàng',
 }
 
 function AdminSidebar() {
