@@ -6519,6 +6519,12 @@
         "summary": "Lấy đánh giá theo sản phẩm (query param)",
         "parameters": [
           {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
             "name": "product_id",
             "in": "query",
             "required": false,
@@ -6544,6 +6550,18 @@
                           "items": {
                             "$ref": "#/components/schemas/Review"
                           }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -6628,7 +6646,14 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Chưa mua và nhận hàng thành công sản phẩm này nên không thể đánh giá",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "409": {
             "description": "Bạn đã đánh giá sản phẩm này rồi",
@@ -6644,7 +6669,8 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "createReview"
+        "operationId": "createReview",
+        "description": "Yêu cầu người dùng đã mua và nhận hàng thành công (order status = completed) sản phẩm này mới được đánh giá. Nếu người dùng đã từng đánh giá sản phẩm này trước đó rồi xoá (soft-delete), gửi lại request này sẽ khôi phục (revive) review cũ với rating/comment mới và cập nhật lại created_at, thay vì tạo bản ghi mới (do ràng buộc UNIQUE(user_id, product_id))."
       }
     },
     "/api/reviews/featured": {
@@ -6709,6 +6735,12 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
           }
         ],
         "responses": {
@@ -6728,6 +6760,18 @@
                           "items": {
                             "$ref": "#/components/schemas/Review"
                           }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }
@@ -8740,15 +8784,10 @@
         ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/LimitParam"
+            "$ref": "#/components/parameters/PageParam"
           },
           {
-            "name": "offset",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 0
-            }
+            "$ref": "#/components/parameters/LimitParam"
           },
           {
             "name": "search",
@@ -8818,6 +8857,14 @@
                         "total": {
                           "type": "integer",
                           "example": 100
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
                         }
                       }
                     }

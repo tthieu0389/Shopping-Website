@@ -6,7 +6,7 @@ const secret = process.env.JWT_SECRET || "fallback_secret_if_env_not_found";
 const ACCOUNTS = [
   { id: 11, email: "admin@gmail.com", role: "admin" },
   { id: 12, email: "staff@gmail.com", role: "staff" },
-  { id: 13, email: "user@example.com", role: "user" },
+  { id: 13, email: "user@gmail.com", role: "user" },
 ];
 
 const EXPIRES_IN = "4h";
