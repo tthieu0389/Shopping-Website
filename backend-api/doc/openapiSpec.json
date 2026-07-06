@@ -670,6 +670,11 @@
           },
           "product_name": {
             "type": "string"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ảnh thumbnail hiện tại của sản phẩm (product_images.is_thumbnail = true), null nếu sản phẩm chưa có ảnh."
           }
         }
       },
@@ -3715,6 +3720,16 @@
               }
             }
           },
+          "409": {
+            "description": "Không thể xoá sản phẩm vì đã có đơn hàng tham chiếu tới hoặc còn tồn kho",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -3729,7 +3744,7 @@
           }
         },
         "operationId": "deleteProduct",
-        "description": "**Yêu cầu quyền: admin.**"
+        "description": "**Yêu cầu quyền: admin.**\n\nXoá mềm (is_deleted = true), không xoá vĩnh viễn khỏi DB. Bị chặn (409) nếu sản phẩm đang được tham chiếu trong order_items (đã từng có trong đơn hàng bất kỳ) hoặc còn tồn kho (quantity > 0) — cần đưa tồn kho về 0 hoặc dùng is_available để ẩn thay vì xoá."
       }
     },
     "/api/product-details/product/{productId}": {
