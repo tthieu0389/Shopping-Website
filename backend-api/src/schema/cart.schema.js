@@ -19,7 +19,10 @@ exports.checkoutSchema = z.object({
   address_id: z.number().int().optional(),
   pickup_store_id: z.number().int().optional(),
   payment_method: z.enum(["cod", "card", "wallet"]),
-  note: z.string().optional(),
+  note: z
+    .string()
+    .max(1000, "Ghi chú không được vượt quá 1000 ký tự")
+    .optional(),
 
   items: z
     .array(

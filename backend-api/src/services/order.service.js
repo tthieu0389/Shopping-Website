@@ -81,6 +81,27 @@ const calculateOrderAmount = async (
     }
 
     const inventory = inventoryMap.get(item.product_id);
+
+    if (!product.is_available) {
+      if (throwOnUnavailable) {
+        const err = new Error(`Sản phẩm "${product.name}" hiện không khả dụng`);
+        err.statusCode = 400;
+        throw err;
+      }
+      processedItems.push({
+        product_id: product.id,
+        product_name: product.name,
+        image_url: imageMap.get(item.product_id) || null,
+        quantity: item.quantity,
+        unit_price: Number(product.price),
+        base_price: Number(product.price) * item.quantity,
+        is_available: false,
+        stock: inventory ? inventory.quantity : 0,
+        unavailable_reason: "Sản phẩm hiện không khả dụng",
+      });
+      continue;
+    }
+
     if (!inventory) {
       if (throwOnUnavailable) {
         const err = new Error(
@@ -94,8 +115,6 @@ const calculateOrderAmount = async (
         product_name: product.name,
         image_url: imageMap.get(item.product_id) || null,
         quantity: item.quantity,
-        // Vẫn giữ giá gốc để FE hiển thị đúng giá cũ (gạch ngang) thay vì
-        // hiện "0đ" — sản phẩm chưa mất, chỉ là chưa có dòng tồn kho.
         unit_price: Number(product.price),
         base_price: Number(product.price) * item.quantity,
         is_available: false,
