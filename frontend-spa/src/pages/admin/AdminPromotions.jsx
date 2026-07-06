@@ -204,6 +204,7 @@ export default function AdminPromotions() {
             "",
           ]}
           colWidths={['220px', '100px', '220px', '110px', '80px', '90px', '160px']}
+          alignRight={[4]}
           loading={loading}
           empty={
             !loading &&
@@ -233,7 +234,7 @@ export default function AdminPromotions() {
                 <TD noTruncate>
                   <Badge label={status.label} tone={status.tone} />
                 </TD>
-                <TD muted>{p.priority ?? 0}</TD>
+                <TD muted align="right">{p.priority ?? 0}</TD>
                 <TD muted>{p.stackable ? "Có" : "Không"}</TD>
                 <TD noTruncate>
                   <div className="flex gap-3">

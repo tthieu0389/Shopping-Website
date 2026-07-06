@@ -15,7 +15,7 @@ import {
   AdminPagination,
   SearchInput,
 } from "./ui.jsx";
-import { toast, formatDate, debounce } from "../../utils/index.js";
+import { toast, formatDate, debounce, resolveImageUrl } from "../../utils/index.js";
 
 const LIMIT = 10;
 const MAX_INT4 = 2147483647;
@@ -226,6 +226,7 @@ export default function AdminInventory() {
       <Card>
         <Table
           headers={[
+            "",
             "Sản phẩm",
             "Tồn kho",
             "Ngưỡng tối thiểu",
@@ -235,6 +236,7 @@ export default function AdminInventory() {
             "",
           ]}
           colWidths={[
+            "50px",
             "260px",
             "90px",
             "120px",
@@ -243,6 +245,7 @@ export default function AdminInventory() {
             "110px",
             "130px",
           ]}
+          alignRight={[2, 3]}
           loading={loading}
           empty={
             !loading &&
@@ -255,15 +258,33 @@ export default function AdminInventory() {
                   : "Chưa có dữ liệu kho")
           }
         >
-          {items.map((item, i) => (
+          {items.map((item, i) => {
+            const img = resolveImageUrl(item.thumbnail_url || null);
+            return (
             <TR key={item.id} striped={i % 2 !== 0}>
+              <TD noTruncate>
+                <div className="w-9 h-9 rounded-lg bg-cream border border-shade flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {img ? (
+                    <img
+                      src={img}
+                      alt={item.product_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <span className="text-base">📦</span>
+                  )}
+                </div>
+              </TD>
               <TD bold>
                 {item.product_name || `Sản phẩm #${item.product_id}`}
               </TD>
-              <TD bold className={item.quantity === 0 ? "text-accent" : ""}>
+              <TD bold align="right" className={item.quantity === 0 ? "text-accent" : ""}>
                 {item.quantity}
               </TD>
-              <TD muted>{item.min_quantity}</TD>
+              <TD muted align="right">{item.min_quantity}</TD>
               <TD noTruncate>
                 <Badge {...statusOf(item.quantity, item.min_quantity)} />
               </TD>
@@ -291,7 +312,8 @@ export default function AdminInventory() {
                 </div>
               </TD>
             </TR>
-          ))}
+            );
+          })}
         </Table>
       </Card>
 
