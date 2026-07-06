@@ -169,7 +169,7 @@ Trân trọng,
           <div className="px-4 py-3 border-b border-shade text-[13px] font-bold text-body">
             Tin nhắn ({filtered.length})
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {filtered.length === 0 && (
               <div className="p-6 text-center text-muted text-sm">Chưa có tin nhắn nào</div>
             )}
@@ -225,54 +225,61 @@ Trân trọng,
                 </div>
               </div>
 
-              {/* Nội dung gốc */}
-              <div className="px-6 py-4 border-b border-shade flex-shrink-0">
-                <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Nội dung tin nhắn</div>
-                <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words h-56 resize-y overflow-y-auto">
-                  {selected.message || <span className="italic text-muted">(Không có nội dung)</span>}
+              {/* Nội dung + Đã phản hồi + Soạn phản hồi — gộp chung một vùng
+                  cuộn để khi kéo giãn khung "Đã phản hồi" không bị khung
+                  Card (overflow-hidden, maxHeight cố định) cắt mất, mà sẽ
+                  cuộn được trong vùng này. */}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {/* Nội dung gốc */}
+                <div className="px-6 py-4 border-b border-shade">
+                  <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Nội dung tin nhắn</div>
+                  <div className="bg-cream rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words h-56 resize-y overflow-y-auto">
+                    {selected.message || <span className="italic text-muted">(Không có nội dung)</span>}
+                  </div>
                 </div>
+
+                {/* Đã phản hồi bởi ai — chỉ hiện khi liên hệ này đã được xử lý */}
+                {selected.status === 'resolved' && selected.reply && (
+                  <div className="px-6 py-4 border-b border-shade bg-success/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[11px] font-bold text-green-700 uppercase tracking-wider">
+                        ✓ Đã phản hồi
+                      </div>
+                      <div className="text-xs text-muted">
+                        bởi <strong className="text-body">{selected.replied_by_name || 'Không rõ'}</strong>
+                        {selected.replied_at && <> · {formatDate(selected.replied_at)}</>}
+                      </div>
+                    </div>
+                    <div className="bg-white border border-success/20 rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words min-h-[80px] max-h-[60vh] resize-y overflow-y-auto">
+                      {selected.reply}
+                    </div>
+                  </div>
+                )}
+
+                {/* Soạn phản hồi — mỗi liên hệ chỉ được phản hồi 1 lần, ẩn hẳn
+                    phần soạn sau khi đã resolved để tránh gửi đè/gửi thêm */}
+                {selected.status !== 'resolved' && (
+                  <div className="px-6 py-4">
+                    <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Soạn phản hồi</div>
+                    <textarea
+                      value={replyBody}
+                      onChange={e => setReplyBody(e.target.value)}
+                      rows={7}
+                      maxLength={REPLY_MAX_LEN}
+                      className="w-full px-4 py-3 rounded-xl border border-shade text-sm text-body outline-none focus:border-vnpt transition-colors bg-canvas font-body resize-vertical"
+                      placeholder="Nhập nội dung phản hồi..."
+                    />
+                    <div className={`text-xs mt-1 text-right ${replyBody.length >= REPLY_MAX_LEN ? 'text-accent font-semibold' : 'text-muted'}`}>
+                      {replyBody.length}/{REPLY_MAX_LEN}
+                    </div>
+                    <div className="text-xs text-muted mt-1">
+                      {selected.user_id
+                        ? 'Nhấn "Gửi phản hồi" để lưu phản hồi vào hệ thống — khách hàng sẽ thấy trong mục "Phản hồi của tôi" kèm thông báo.'
+                        : 'Liên hệ này gửi khi chưa đăng nhập, không gắn với tài khoản nào — khách sẽ không thấy phản hồi trong hệ thống. Vui lòng dùng "Mở Gmail thay thế" để phản hồi qua email.'}
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {/* Đã phản hồi bởi ai — chỉ hiện khi liên hệ này đã được xử lý */}
-              {selected.status === 'resolved' && selected.reply && (
-                <div className="px-6 py-4 border-b border-shade flex-shrink-0 bg-success/5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-[11px] font-bold text-green-700 uppercase tracking-wider">
-                      ✓ Đã phản hồi
-                    </div>
-                    <div className="text-xs text-muted">
-                      bởi <strong className="text-body">{selected.replied_by_name || 'Không rõ'}</strong>
-                      {selected.replied_at && <> · {formatDate(selected.replied_at)}</>}
-                    </div>
-                  </div>
-                  <div className="bg-white border border-success/20 rounded-xl p-4 text-sm text-body leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
-                    {selected.reply}
-                  </div>
-                </div>
-              )}
-
-              {/* Soạn phản hồi — mỗi liên hệ chỉ được phản hồi 1 lần, ẩn hẳn
-                  phần soạn sau khi đã resolved để tránh gửi đè/gửi thêm */}
-              {selected.status !== 'resolved' && (
-                <div className="flex-1 overflow-y-auto px-6 py-4">
-                  <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Soạn phản hồi</div>
-                  <textarea
-                    value={replyBody}
-                    onChange={e => setReplyBody(e.target.value)}
-                    rows={7}
-                    maxLength={REPLY_MAX_LEN}
-                    className="w-full px-4 py-3 rounded-xl border border-shade text-sm text-body outline-none focus:border-vnpt transition-colors bg-canvas font-body resize-vertical"
-                    placeholder="Nhập nội dung phản hồi..."
-                  />
-                  <div className={`text-xs mt-1 text-right ${replyBody.length >= REPLY_MAX_LEN ? 'text-accent font-semibold' : 'text-muted'}`}>
-                    {replyBody.length}/{REPLY_MAX_LEN}
-                  </div>
-                  <div className="text-xs text-muted mt-1">
-                    Nhấn "Gửi phản hồi" để lưu phản hồi vào hệ thống — khách hàng sẽ thấy trong mục "Phản hồi của tôi" kèm thông báo.
-                  </div>
-                </div>
-              )}
-              {selected.status === 'resolved' && <div className="flex-1" />}
 
               {/* Footer */}
               <div className="px-6 py-3.5 border-t border-shade flex items-center justify-between gap-3">
@@ -290,8 +297,14 @@ Trân trọng,
                 </a>
                 <button
                   onClick={handleSendReply}
-                  disabled={selected.status === 'resolved' || !replyBody.trim() || sendingReply}
-                  title={selected.status === 'resolved' ? 'Liên hệ này đã được phản hồi' : undefined}
+                  disabled={selected.status === 'resolved' || !replyBody.trim() || sendingReply || !selected.user_id}
+                  title={
+                    selected.status === 'resolved'
+                      ? 'Liên hệ này đã được phản hồi'
+                      : !selected.user_id
+                        ? 'Liên hệ gửi khi chưa đăng nhập — không thể gửi phản hồi trong hệ thống, hãy dùng "Mở Gmail thay thế"'
+                        : undefined
+                  }
                   className="px-6 py-2.5 bg-vnpt text-white rounded-full text-sm font-bold hover:bg-vnpt-dark transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {sendingReply ? '⏳ Đang gửi...' : '📤 Gửi phản hồi'}

@@ -72,7 +72,7 @@ function MyRepliesTab() {
         <div className="px-4 py-3 border-b border-shade text-[13px] font-bold text-body flex-shrink-0">
           Yêu cầu của tôi ({contacts.length})
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {contacts.map(c => {
             const { type, body } = parseMessage(c.message)
             return (
@@ -136,7 +136,7 @@ function MyRepliesTab() {
             </div>
 
             {/* Phản hồi */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
               {selected.reply ? (
                 <>
                   <div className="text-[11px] font-bold text-vnpt uppercase tracking-wider mb-2">
@@ -161,7 +161,10 @@ function MyRepliesTab() {
 }
 
 export default function ContactPage() {
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+  })
   const [sending, setSending] = useState(false)
   const message = watch('message', '')
   const MESSAGE_MAX_LEN = 2000
@@ -286,10 +289,12 @@ export default function ContactPage() {
                   errors.message ? 'border-accent' : 'border-shade'
                 }`}
               />
-              <div className={`text-xs mt-1 text-right ${(message?.length || 0) >= MESSAGE_MAX_LEN ? 'text-accent font-semibold' : 'text-muted'}`}>
-                {message?.length || 0}/{MESSAGE_MAX_LEN}
+              <div className="flex items-center justify-between mt-1 gap-2">
+                <p className="text-xs text-accent">{errors.message?.message || '\u00A0'}</p>
+                <div className={`text-xs flex-shrink-0 ${(message?.length || 0) >= MESSAGE_MAX_LEN ? 'text-accent font-semibold' : 'text-muted'}`}>
+                  {message?.length || 0}/{MESSAGE_MAX_LEN}
+                </div>
               </div>
-              {errors.message && <p className="text-xs text-accent mt-1">{errors.message.message}</p>}
             </div>
 
             <button
