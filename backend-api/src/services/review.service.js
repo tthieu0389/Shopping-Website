@@ -136,6 +136,8 @@ exports.getAllReviewsForAdmin = async ({
   limit = 10,
   offset = 0,
   search,
+  rating,
+  category_id,
 } = {}) => {
   const baseQuery = () => {
     const q = knex("reviews as r")
@@ -146,11 +148,24 @@ exports.getAllReviewsForAdmin = async ({
     const kw = normalizeKeyword(search);
     if (kw) {
       q.andWhere((qb) => {
-        qb.where("u.name", "ilike", `%${kw}%`)
-          .orWhere("p.name", "ilike", `%${kw}%`)
-          .orWhere("r.comment", "ilike", `%${kw}%`);
+        qb.where("u.name", "ilike", `%${kw}%`).orWhere(
+          "p.name",
+          "ilike",
+          `%${kw}%`,
+        );
       });
     }
+
+    // Lọc chính xác theo số sao (1-5), bỏ qua nếu giá trị không hợp lệ
+    if (rating !== undefined && !isNaN(rating) && rating >= 1 && rating <= 5) {
+      q.andWhere("r.rating", rating);
+    }
+
+    // Lọc theo danh mục - dùng category_id giống trang Sản phẩm
+    if (category_id !== undefined && !isNaN(category_id)) {
+      q.andWhere("p.category_id", category_id);
+    }
+
     return q;
   };
 

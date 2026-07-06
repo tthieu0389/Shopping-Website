@@ -8733,7 +8733,7 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Tìm kiếm theo tên khách hàng, tên sản phẩm hoặc nội dung đánh giá",
+            "description": "Tìm kiếm theo tên khách hàng hoặc tên sản phẩm (không tìm trong nội dung đánh giá)",
             "schema": {
               "type": "string"
             }
@@ -8744,6 +8744,24 @@
             "description": "Alias của tham số search",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "rating",
+            "in": "query",
+            "description": "Lọc chính xác theo số sao (1-5)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Lọc theo danh mục sản phẩm (dropdown chọn danh mục, gửi id - đồng bộ với /api/products)",
+            "schema": {
+              "type": "integer"
             }
           }
         ],

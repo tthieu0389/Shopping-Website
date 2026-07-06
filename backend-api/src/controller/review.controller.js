@@ -36,11 +36,16 @@ exports.getFeatured = async (req, res, next) => {
 // GET ALL REVIEWS (ADMIN)
 exports.getAllForAdmin = async (req, res, next) => {
   try {
-    const { limit, offset } = req.query;
+    const { limit, offset, rating, category_id } = req.query;
     const result = await service.getAllReviewsForAdmin({
       limit: limit !== undefined ? Number(limit) : undefined,
       offset: offset !== undefined ? Number(offset) : undefined,
       search: req.query.q || req.query.search,
+      rating: rating !== undefined ? Number(rating) : undefined,
+      category_id:
+        category_id !== undefined && category_id !== ""
+          ? Number(category_id)
+          : undefined,
     });
     res.json(result);
   } catch (err) {

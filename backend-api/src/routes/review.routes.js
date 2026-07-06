@@ -12,7 +12,7 @@ const { createReviewSchema } = require("../schema/review.schema");
 // Get featured reviews (trang chủ) - đặt trước "/" và "/product/:productId" cho rõ ràng
 router.get("/featured", reviewController.getFeatured);
 
-// Get all reviews (ADMIN) - phân trang + tìm theo tên khách hàng/sản phẩm/nội dung
+// Get all reviews (ADMIN) - phân trang + tìm theo tên khách hàng/sản phẩm/danh mục
 router.get(
   "/admin",
   verifyToken(),
