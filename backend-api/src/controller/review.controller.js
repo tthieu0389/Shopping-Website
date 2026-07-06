@@ -50,7 +50,7 @@ exports.getAllForAdmin = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    await service.deleteReview(req.params.id, req.user.id, req.user.role);
+    await service.deleteReview(req.params.id);
     res.json({ message: "Deleted" });
   } catch (err) {
     next(err);

@@ -6768,7 +6768,8 @@
             "$ref": "#/components/responses/Forbidden"
           }
         },
-        "operationId": "deleteReview"
+        "operationId": "deleteReview",
+        "description": "Chỉ chính chủ review hoặc admin mới xoá được (staff không có quyền này). Được đảm bảo bởi middleware checkOwnership (allowedRoles=['admin']) — 1 nguồn kiểm tra quyền duy nhất, service không check lại."
       }
     },
     "/api/favorites": {
@@ -7022,7 +7023,7 @@
                   },
                   "content": {
                     "type": "string",
-                    "maxLength": 20000
+                    "maxLength": 10000
                   },
                   "thumbnail_url": {
                     "type": "string",
@@ -7151,7 +7152,7 @@
                   },
                   "content": {
                     "type": "string",
-                    "maxLength": 20000
+                    "maxLength": 10000
                   },
                   "thumbnail_url": {
                     "type": "string",

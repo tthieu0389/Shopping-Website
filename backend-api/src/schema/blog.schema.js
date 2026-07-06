@@ -21,7 +21,7 @@ exports.createBlogSchema = z.object({
   content: z
     .string()
     .min(1)
-    .max(20000, "Nội dung bài viết không được vượt quá 20000 ký tự"),
+    .max(10000, "Nội dung bài viết không được vượt quá 10000 ký tự"),
   thumbnail_url: thumbnailUrlSchema,
 });
 
@@ -35,7 +35,7 @@ exports.updateBlogSchema = z.object({
   content: z
     .string()
     .min(1)
-    .max(20000, "Nội dung bài viết không được vượt quá 20000 ký tự")
+    .max(10000, "Nội dung bài viết không được vượt quá 10000 ký tự")
     .optional(),
   thumbnail_url: thumbnailUrlSchema,
 });

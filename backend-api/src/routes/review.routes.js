@@ -5,6 +5,7 @@ const reviewController = require("../controller/review.controller");
 const verifyToken = require("../middlewares/verifyToken");
 const validate = require("../middlewares/validate");
 const checkRole = require("../middlewares/checkRole");
+const checkOwnership = require("../middlewares/checkOwnership");
 
 const { createReviewSchema } = require("../schema/review.schema");
 
@@ -39,7 +40,12 @@ router.post(
   reviewController.create,
 );
 
-// Delete review
-router.delete("/:id", verifyToken(), reviewController.remove);
+// Delete review (chỉ admin + chính chủ)
+router.delete(
+  "/:id",
+  verifyToken(),
+  checkOwnership("reviews", ["admin"]),
+  reviewController.remove,
+);
 
 module.exports = router;

@@ -1,13 +1,14 @@
 const knex = require("../database/knex");
 
-const checkOwnership = (tableName) => {
+const checkOwnership = (tableName, allowedRoles = ["admin", "staff"]) => {
   return async (req, res, next) => {
     try {
       const resourceId = req.params.id;
       const userId = req.user.id;
 
-      // Cho phép Admin và Staff can thiệp mọi thứ
-      if (req.user.role === "admin" || req.user.role === "staff") {
+      // Cho phép các role được chỉ định can thiệp mọi thứ
+      // (mặc định: admin + staff, truyền allowedRoles riêng nếu resource cần rule khác, vd chỉ admin)
+      if (allowedRoles.includes(req.user.role)) {
         return next();
       }
 
