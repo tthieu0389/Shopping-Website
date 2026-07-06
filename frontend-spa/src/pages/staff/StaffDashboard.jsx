@@ -65,7 +65,8 @@ export default function StaffDashboard() {
           />
           <Table
             headers={['Mã đơn', 'Người nhận', 'Tổng tiền', 'Trạng thái', 'Ngày tạo']}
-            colWidths={['220px', '150px', '110px', '120px', '100px']}
+            colWidths={['31%', '22%', '16%', '17%', '14%']}
+            alignRight={[2]}
             loading={loading}
             empty={!loading && 'Chưa có đơn hàng nào'}
           >
@@ -73,7 +74,7 @@ export default function StaffDashboard() {
               <TR key={o.id} striped={i % 2 !== 0}>
                 <TD bold className="text-vnpt">{o.order_code}</TD>
                 <TD bold>{o.receiver_name || '—'}</TD>
-                <TD bold>{formatPrice(o.total_amount)}</TD>
+                <TD bold align="right">{formatPrice(o.total_amount)}</TD>
                 <TD noTruncate><Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} /></TD>
                 <TD muted>{formatDate(o.created_at)}</TD>
               </TR>

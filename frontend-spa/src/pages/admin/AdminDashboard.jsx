@@ -59,12 +59,12 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
         <Card>
           <CardHeader title="Đơn hàng gần đây" action={<Link to="/admin/orders" className="text-xs font-bold text-vnpt hover:underline">Xem tất cả →</Link>} />
-          <Table headers={['Mã đơn', 'Người nhận', 'Tổng tiền', 'Trạng thái', 'Ngày tạo']} loading={loading} empty={!loading && 'Chưa có đơn hàng nào'}>
+          <Table headers={['Mã đơn', 'Người nhận', 'Tổng tiền', 'Trạng thái', 'Ngày tạo']} alignRight={[2]} loading={loading} empty={!loading && 'Chưa có đơn hàng nào'}>
             {orders.map((o, i) => (
               <TR key={o.id} striped={i % 2 !== 0}>
                 <TD bold className="text-vnpt">{o.order_code}</TD>
                 <TD bold>{o.receiver_name || '—'}</TD>
-                <TD bold>{formatPrice(o.total_amount)}</TD>
+                <TD bold align="right">{formatPrice(o.total_amount)}</TD>
                 <TD><Badge {...(ORDER_STATUS[o.status] || ORDER_STATUS.pending)} /></TD>
                 <TD muted>{formatDate(o.created_at)}</TD>
               </TR>

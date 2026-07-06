@@ -91,7 +91,8 @@ export default function StaffProducts() {
             "Tồn kho",
             "Trạng thái",
           ]}
-          colWidths={["260px", "110px", "100px", "110px", "100px", "110px", "110px"]}
+          colWidths={["29%", "12%", "11%", "12%", "11%", "12%", "13%"]}
+          alignRight={[4]}
           loading={loading}
           empty={!loading && (search ? "Không tìm thấy sản phẩm nào" : "Chưa có sản phẩm")}
         >
@@ -125,7 +126,7 @@ export default function StaffProducts() {
                   <Badge label={typeInfo.label} tone={typeInfo.tone} />
                 </TD>
                 <TD muted>{p.brand || "—"}</TD>
-                <TD bold>{formatPrice(p.price)}</TD>
+                <TD bold align="right">{formatPrice(p.price)}</TD>
                 <TD noTruncate>
                   <Badge
                     label={
