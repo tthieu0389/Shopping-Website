@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminUsersApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, FilterTabs, AdminPagination, SearchInput } from './ui.jsx'
-import { toast, formatDate, getInitials, debounce } from '../../utils/index.js'
+import { toast, formatDate, getInitials, debounce, translateApiError } from '../../utils/index.js'
 
 const LIMIT = 10
 const ROLE_LABELS = { user: 'Khách hàng', staff: 'Nhân viên', admin: 'Quản trị viên' }
@@ -22,7 +22,7 @@ export default function StaffUsers() {
     setLoading(true)
     adminUsersApi.getAll({ page, limit: LIMIT, ...(search ? { q: search } : {}) })
       .then(res => { setUsers(res.data || []); setTotal(res.total || 0) })
-      .catch(err => toast.error(err.message))
+      .catch(err => toast.error(translateApiError(err, 'Tải dữ liệu thất bại')))
       .finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [page, search])

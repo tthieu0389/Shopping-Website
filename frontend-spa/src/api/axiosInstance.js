@@ -39,7 +39,9 @@ api.interceptors.response.use(
     }
 
     if (status === 403) {
-      console.warn('Không có quyền truy cập')
+      import('../utils/index.js').then(({ toast }) => {
+        toast.error('Bạn không có quyền thực hiện hành động này')
+      })
     }
 
     return Promise.reject({ status, message, raw: error.response?.data })

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Breadcrumb, LoadingSpinner } from '../components/common/index.jsx'
-import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
+import { formatPrice, formatDate, toast, resolveImageUrl, translateApiError } from '../utils/index.js'
 import { ordersApi, contactApi, productsApi } from '../api/index.js'
 import useAuthStore from '../store/authStore.js'
 
@@ -47,8 +47,7 @@ function useOrder(id) {
       })
       .catch(err => {
         if (cancelled) return
-        const msg = err?.message || err?.raw?.message || 'Không tìm thấy đơn hàng'
-        setError(msg)
+        setError(translateApiError(err, 'Không tìm thấy đơn hàng'))
         setLoading(false)
       })
     return () => { cancelled = true }
@@ -340,7 +339,7 @@ function ContactOrderModal({ order, user, onClose }) {
       toast.success('Đã gửi tin nhắn! Chúng tôi sẽ phản hồi sớm nhất có thể.')
       onClose()
     } catch (err) {
-      toast.error(err?.message || 'Gửi thất bại, vui lòng thử lại')
+      toast.error(translateApiError(err, 'Gửi thất bại, vui lòng thử lại'))
     } finally {
       setSending(false)
     }
@@ -479,7 +478,7 @@ export default function OrderDetailPage() {
       toast.success('Đã huỷ đơn hàng thành công')
       reload()
     } catch (err) {
-      toast.error(err?.message || 'Không thể huỷ đơn hàng')
+      toast.error(translateApiError(err, 'Không thể huỷ đơn hàng'))
     } finally {
       setCancelling(false)
     }

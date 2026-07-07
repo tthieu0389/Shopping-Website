@@ -11,7 +11,7 @@ import {
   SearchInput,
   SelectPill,
 } from "./ui.jsx";
-import { toast, formatDate, resolveImageUrl } from "../../utils/index.js";
+import { toast, formatDate, resolveImageUrl, translateApiError } from "../../utils/index.js";
 
 const LIMIT = 10;
 
@@ -65,7 +65,7 @@ export default function StaffInventory() {
         setAllItems(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải dữ liệu thất bại')))
       .finally(() => setLoading(false));
   }, [page, search, filterStatus, stockStatus]);
 

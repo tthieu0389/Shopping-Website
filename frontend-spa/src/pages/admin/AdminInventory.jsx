@@ -15,7 +15,7 @@ import {
   AdminPagination,
   SearchInput,
 } from "./ui.jsx";
-import { toast, formatDate, resolveImageUrl } from "../../utils/index.js";
+import { toast, formatDate, resolveImageUrl, translateApiError } from "../../utils/index.js";
 
 const LIMIT = 10;
 const MAX_INT4 = 2147483647;
@@ -78,7 +78,7 @@ export default function AdminInventory() {
         setAllItems(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải dữ liệu tồn kho thất bại')))
       .finally(() => setLoading(false));
   }, [page, search, filterStatus, stockStatus]);
 
@@ -143,7 +143,7 @@ export default function AdminInventory() {
         load();
         loadStats();
       })
-      .catch((err) => toast.error(err.message || "Không thể cập nhật"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể cập nhật")))
       .finally(() => setSaving(false));
   };
 
@@ -168,7 +168,7 @@ export default function AdminInventory() {
         load();
         loadStats();
       })
-      .catch((err) => toast.error(err.message || "Không thể xoá"));
+      .catch((err) => toast.error(translateApiError(err, "Không thể xoá")));
   };
 
   const okCount = statsItems.filter((i) => i.quantity > i.min_quantity).length;

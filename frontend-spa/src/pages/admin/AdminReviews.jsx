@@ -4,7 +4,7 @@ import {
   Card, Table, TR, TD, Badge, Btn,
   AdminPagination, SearchInput, SelectPill,
 } from './ui.jsx'
-import { toast, resolveImageUrl, formatDate } from '../../utils/index.js'
+import { toast, resolveImageUrl, formatDate, translateApiError } from '../../utils/index.js'
 
 const LIMIT = 10
 
@@ -146,7 +146,7 @@ export default function AdminReviews() {
         setReviews(res.data || [])
         setTotal(res.total || 0)
       })
-      .catch((err) => toast.error(err.message || 'Không thể tải đánh giá'))
+      .catch((err) => toast.error(translateApiError(err, 'Không thể tải đánh giá')))
       .finally(() => setLoading(false))
   }
 
@@ -185,7 +185,7 @@ export default function AdminReviews() {
           load()
         }
       })
-      .catch((err) => toast.error(err.message || 'Không thể xoá'))
+      .catch((err) => toast.error(translateApiError(err, 'Không thể xoá')))
       .finally(() => setDeleting(false))
   }
 

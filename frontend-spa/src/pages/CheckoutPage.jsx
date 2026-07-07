@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useUserAddresses } from "../hooks/index.js";
-import { formatPrice, resolveImageUrl, toast } from "../utils/index.js";
+import { formatPrice, resolveImageUrl, toast, translateApiError } from "../utils/index.js";
 import { cartApi, ordersApi, storesApi } from "../api/index.js";
 import useCartStore from "../store/cartStore.js";
 import useAuthStore from "../store/authStore.js";
@@ -199,7 +199,7 @@ export default function CheckoutPage() {
     } catch (err) {
       const friendlyMsg = err.status === 500
         ? "Giá trị đơn hàng vượt quá giới hạn cho phép của hệ thống.\nNếu bạn có nhu cầu giao dịch với số tiền lớn, vui lòng liên hệ bộ phận hỗ trợ để được tư vấn."
-        : err.message || "Đặt hàng thất bại, vui lòng thử lại";
+        : translateApiError(err, "Đặt hàng thất bại, vui lòng thử lại");
       toast.error(friendlyMsg);
     } finally {
       setSubmitting(false);

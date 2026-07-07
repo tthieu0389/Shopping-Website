@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { blogsApi, blogImagesApi } from '../../api/index.js'
 import { Card, Table, TR, TD, Badge, Btn, Modal, Input, Textarea } from './ui.jsx'
-import { toast, formatDate, resolveImageUrl } from '../../utils/index.js'
+import { toast, formatDate, resolveImageUrl, translateApiError } from '../../utils/index.js'
 
 const LIMIT = 10
 const MAX_TITLE = 200
@@ -35,7 +35,7 @@ export default function AdminBlogs() {
     setLoading(true)
     blogsApi.getAll({ page, limit: LIMIT })
       .then(res => { setBlogs(res.data || []); setTotal(res.total || 0) })
-      .catch(err => toast.error(err.message || 'Không thể tải danh sách tin tức'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể tải danh sách tin tức')))
       .finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [page])
@@ -62,7 +62,7 @@ export default function AdminBlogs() {
     setUploading(true)
     blogImagesApi.upload(file, modal !== 'add' ? modal.id : undefined)
       .then(res => setForm(p => ({ ...p, thumbnail_url: res.data?.image_url || p.thumbnail_url })))
-      .catch(err => toast.error(err.message || 'Không thể tải ảnh lên'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể tải ảnh lên')))
       .finally(() => { setUploading(false); e.target.value = '' })
   }
 
@@ -80,7 +80,7 @@ export default function AdminBlogs() {
     const req = modal === 'add' ? blogsApi.create(payload) : blogsApi.update(modal.id, payload)
     req
       .then(() => { toast.success(modal === 'add' ? 'Đã đăng bài viết' : 'Đã cập nhật bài viết'); setModal(null); load() })
-      .catch(err => toast.error(err.message || 'Không thể lưu bài viết'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể lưu bài viết')))
       .finally(() => setSaving(false))
   }
 
@@ -88,7 +88,7 @@ export default function AdminBlogs() {
     if (!confirm(`Xoá bài viết "${b.title}"?`)) return
     blogsApi.remove(b.id)
       .then(() => { toast.success('Đã xoá bài viết'); load() })
-      .catch(err => toast.error(err.message || 'Không thể xoá bài viết'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể xoá bài viết')))
   }
 
   return (

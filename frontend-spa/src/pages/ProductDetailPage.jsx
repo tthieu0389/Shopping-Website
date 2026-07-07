@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useLocation } from 'react-router-dom'
 import { useProduct, useRelatedProducts, useReviews } from '../hooks/index.js'
 import { Breadcrumb, LoadingSpinner, EmptyState, ProductCard, StarRating, Pagination } from '../components/common/index.jsx'
-import { formatPrice, formatDate, toast, resolveImageUrl } from '../utils/index.js'
+import { formatPrice, formatDate, toast, resolveImageUrl, translateApiError } from '../utils/index.js'
 import { reviewsApi } from '../api/index.js'
 import useCartStore from '../store/cartStore.js'
 import useAuthStore from '../store/authStore.js'
@@ -138,7 +138,7 @@ export default function ProductDetailPage() {
       await addItem(product, qty)
       toast.success('Đã thêm vào giỏ hàng! 🛒')
     } catch (err) {
-      toast.error(err.message || 'Không thể thêm vào giỏ hàng')
+      toast.error(translateApiError(err, 'Không thể thêm vào giỏ hàng'))
     }
   }
 
@@ -153,7 +153,7 @@ export default function ProductDetailPage() {
       setComment('')
       reloadReviews()
     } catch (err) {
-      toast.error(err.message || 'Gửi đánh giá thất bại')
+      toast.error(translateApiError(err, 'Gửi đánh giá thất bại'))
     } finally {
       setSubmitting(false)
     }
@@ -169,7 +169,7 @@ export default function ProductDetailPage() {
       toast.success('Đã xóa đánh giá')
       reloadReviews()
     } catch (err) {
-      toast.error(err.message || 'Xóa đánh giá thất bại')
+      toast.error(translateApiError(err, 'Xóa đánh giá thất bại'))
     }
   }
 

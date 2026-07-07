@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Breadcrumb } from '../components/common/index.jsx'
-import { toast, formatDate } from '../utils/index.js'
+import { toast, formatDate, translateApiError } from '../utils/index.js'
 import { contactApi } from '../api/index.js'
 import useAuthStore from '../store/authStore.js'
 import useContactStore from '../store/contactStore.js'
@@ -41,7 +41,7 @@ function MyRepliesTab() {
         // user click vào từng tin nhắn — vì họ đã chủ động vào xem rồi.
         markAllRead(data)
       })
-      .catch(err => toast.error(err.message || 'Không thể tải phản hồi'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể tải phản hồi')))
       .finally(() => setLoading(false))
   }, [markAllRead])
 
@@ -182,7 +182,7 @@ export default function ContactPage() {
       toast.success('Đã gửi yêu cầu! Chúng tôi sẽ liên hệ sớm.')
       reset()
     } catch (err) {
-      toast.error(err.message || 'Gửi thất bại, vui lòng thử lại')
+      toast.error(translateApiError(err, 'Gửi thất bại, vui lòng thử lại'))
     } finally {
       setSending(false)
     }

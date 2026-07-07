@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { blogsApi } from '../../api/index.js'
 import { Card, Table, TR, TD, AdminPagination } from './ui.jsx'
-import { toast, formatDate, debounce, resolveImageUrl } from '../../utils/index.js'
+import { toast, formatDate, debounce, resolveImageUrl, translateApiError } from '../../utils/index.js'
 
 const LIMIT = 10
 
@@ -18,7 +18,7 @@ export default function StaffBlogs() {
     setLoading(true)
     blogsApi.getAll({ page, limit: LIMIT, ...(search.trim() ? { q: search.trim() } : {}) })
       .then(res => { setBlogs(res.data || []); setTotal(res.total || 0) })
-      .catch(err => toast.error(err.message || 'Không thể tải danh sách tin tức'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể tải danh sách tin tức')))
       .finally(() => setLoading(false))
   }, [page, search])
 

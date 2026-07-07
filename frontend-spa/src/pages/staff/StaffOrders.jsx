@@ -14,7 +14,7 @@ import {
   SelectPill,
 } from "./ui.jsx";
 import { CreateOrderDrawer } from "../admin/CreateOrderDrawer.jsx";
-import { formatPrice, formatDate, toast } from "../../utils/index.js";
+import { formatPrice, formatDate, toast, translateApiError } from "../../utils/index.js";
 
 const ORDER_STATUS = {
   pending: { label: "Chờ xác nhận", tone: "warning" },
@@ -101,7 +101,7 @@ export default function StaffOrders() {
         setOrders(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải dữ liệu thất bại')))
       .finally(() => setLoading(false));
   }, [page, status, paymentMethod, date, search]);
 

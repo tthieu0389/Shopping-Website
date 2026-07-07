@@ -15,6 +15,7 @@ import {
   toast,
   debounce,
   resolveImageUrl,
+  translateApiError,
 } from "../../utils/index.js";
 
 const LIMIT = 10;
@@ -45,7 +46,7 @@ export default function StaffProducts() {
         setProducts(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải dữ liệu thất bại')))
       .finally(() => setLoading(false));
   };
 

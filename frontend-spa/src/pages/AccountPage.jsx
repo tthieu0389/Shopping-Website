@@ -13,6 +13,7 @@ import {
   formatDate,
   toast,
   resolveImageUrl,
+  translateApiError,
 } from "../utils/index.js";
 import { ordersApi, userApi } from "../api/index.js";
 import useAuthStore from "../store/authStore.js";
@@ -152,7 +153,7 @@ function OrdersTab() {
       toast.success("Đã huỷ đơn hàng");
       reload();
     } catch (err) {
-      toast.error(err.message || "Không thể huỷ đơn hàng");
+      toast.error(translateApiError(err, "Không thể huỷ đơn hàng"));
     } finally {
       setCancelling(null);
     }
@@ -648,7 +649,7 @@ function AddressesTab() {
       setShowAdd(false);
       reload();
     } catch (err) {
-      toast.error(err?.message || "Thêm địa chỉ thất bại");
+      toast.error(translateApiError(err, "Thêm địa chỉ thất bại"));
     } finally {
       setSaving(false);
     }
@@ -665,7 +666,7 @@ function AddressesTab() {
       setEditingId(null);
       reload();
     } catch (err) {
-      toast.error(err?.message || "Cập nhật thất bại");
+      toast.error(translateApiError(err, "Cập nhật thất bại"));
     } finally {
       setSaving(false);
     }
@@ -679,7 +680,7 @@ function AddressesTab() {
       toast.success("Đã đặt địa chỉ mặc định");
       reload();
     } catch (err) {
-      toast.error(err?.message || "Thất bại");
+      toast.error(translateApiError(err, "Thao tác thất bại"));
     } finally {
       setSettingDefaultId(null);
     }
@@ -694,7 +695,7 @@ function AddressesTab() {
       toast.success("Đã xoá địa chỉ");
       reload();
     } catch (err) {
-      toast.error(err?.message || "Xoá thất bại");
+      toast.error(translateApiError(err, "Xoá thất bại"));
     } finally {
       setDeletingId(null);
     }
@@ -829,7 +830,7 @@ function SettingsTab() {
       toast.success("Cập nhật thông tin thành công!");
       reload();
     } catch (err) {
-      toast.error(err.message || "Cập nhật thất bại");
+      toast.error(translateApiError(err, "Cập nhật thất bại"));
     } finally {
       setSaving(false);
     }

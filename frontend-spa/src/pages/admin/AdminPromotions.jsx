@@ -27,6 +27,7 @@ import {
   debounce,
   resolveImageUrl,
   getInitials,
+  translateApiError,
 } from "../../utils/index.js";
 
 const PAGE_SIZE = 8;
@@ -84,7 +85,7 @@ export default function AdminPromotions() {
     promotionsApi
       .getAll()
       .then((res) => setPromotions(res.data || []))
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải danh sách khuyến mãi thất bại')))
       .finally(() => setLoading(false));
   };
 
@@ -145,7 +146,7 @@ export default function AdminPromotions() {
         setModal(null);
         load();
       })
-      .catch((err) => toast.error(err.message || "Không thể lưu"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể lưu")))
       .finally(() => setSaving(false));
   };
 
@@ -162,7 +163,7 @@ export default function AdminPromotions() {
         toast.success("Đã xoá");
         load();
       })
-      .catch((err) => toast.error(err.message || "Không thể xoá"));
+      .catch((err) => toast.error(translateApiError(err, "Không thể xoá")));
   };
 
   const filteredPromotions = search.trim()
@@ -512,9 +513,7 @@ function AssignProductsModal({ promotion, onClose }) {
         setRawAssignedMap(map);
       })
       .catch((err) =>
-        toast.error(
-          err.message || "Không thể tải danh sách sản phẩm đã áp dụng",
-        ),
+        toast.error(translateApiError(err, "Không thể tải danh sách sản phẩm đã áp dụng")),
       );
   };
 
@@ -544,7 +543,7 @@ function AssignProductsModal({ promotion, onClose }) {
       })
       .catch((err) => {
         if (myRequestId !== requestIdRef.current) return;
-        toast.error(err.message);
+        toast.error(translateApiError(err, 'Tải dữ liệu thất bại'));
       })
       .finally(() => {
         if (myRequestId !== requestIdRef.current) return;
@@ -613,7 +612,7 @@ function AssignProductsModal({ promotion, onClose }) {
         );
         return loadAssigned();
       })
-      .catch((err) => toast.error(err.message || "Thao tác thất bại"))
+      .catch((err) => toast.error(translateApiError(err, "Thao tác thất bại")))
       .finally(() => setBusyProductId(null));
   };
 

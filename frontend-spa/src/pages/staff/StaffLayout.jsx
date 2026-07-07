@@ -2,6 +2,7 @@ import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
 import { getInitials } from '../../utils/index.js'
 import { useAvatarUrl } from '../../hooks/index.js'
+import { Toast } from '../../components/layout/Layout.jsx'
 
 const STAFF_MENU = [
   { section: 'Tổng quan' },
@@ -128,6 +129,7 @@ export default function StaffLayout() {
           <Outlet />
         </main>
       </div>
+      <Toast />
     </div>
   )
 }

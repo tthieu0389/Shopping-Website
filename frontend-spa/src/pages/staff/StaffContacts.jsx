@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { contactApi } from '../../api/index.js'
 import { Card, SearchInput, SelectPill } from './ui.jsx'
-import { toast, formatDate } from '../../utils/index.js'
+import { toast, formatDate, translateApiError } from '../../utils/index.js'
 
 export default function StaffContacts() {
   const [contacts, setContacts] = useState([])
@@ -17,7 +17,7 @@ export default function StaffContacts() {
     setLoading(true)
     contactApi.getAll()
       .then(res => setContacts(res.data || []))
-      .catch(err => toast.error(err.message))
+      .catch(err => toast.error(translateApiError(err, 'Tải dữ liệu thất bại')))
       .finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [])
@@ -90,7 +90,7 @@ Trân trọng,
         setSelected(prev => ({ ...prev, ...updated }))
         toast.success('Đã gửi phản hồi cho khách hàng')
       })
-      .catch(err => toast.error(err.message || 'Không thể gửi phản hồi'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể gửi phản hồi')))
       .finally(() => setSendingReply(false))
   }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { categoriesApi } from '../../api/index.js'
 import { Card, Btn, Modal, Input, Textarea, Badge, SearchInput } from './ui.jsx'
-import { toast } from '../../utils/index.js'
+import { toast, translateApiError } from '../../utils/index.js'
 
 const emptyForm = { name: '', slug: '', description: '' }
 
@@ -17,7 +17,7 @@ export default function AdminCategories() {
     setLoading(true)
     categoriesApi.getAll()
       .then(res => setCategories(res.data || []))
-      .catch(err => toast.error(err.message))
+      .catch(err => toast.error(translateApiError(err, 'Tải danh mục thất bại')))
       .finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [])
@@ -31,7 +31,7 @@ export default function AdminCategories() {
     const action = modal === 'add' ? categoriesApi.create(form) : categoriesApi.update(modal.id, form)
     action
       .then(() => { toast.success(modal === 'add' ? 'Đã thêm danh mục' : 'Đã cập nhật danh mục'); setModal(null); load() })
-      .catch(err => toast.error(err.message || 'Không thể lưu danh mục'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể lưu danh mục')))
       .finally(() => setSaving(false))
   }
 
@@ -39,7 +39,7 @@ export default function AdminCategories() {
     if (!confirm(`Xoá danh mục "${c.name}"? Sản phẩm thuộc danh mục này sẽ không bị xoá.`)) return
     categoriesApi.remove(c.id)
       .then(() => { toast.success('Đã xoá danh mục'); load() })
-      .catch(err => toast.error(err.message || 'Không thể xoá danh mục'))
+      .catch(err => toast.error(translateApiError(err, 'Không thể xoá danh mục')))
   }
 
   const filtered = search.trim()

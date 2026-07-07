@@ -13,7 +13,7 @@ import {
   SelectPill,
 } from "./ui.jsx";
 import { CreateOrderDrawer } from "./CreateOrderDrawer.jsx";
-import { formatPrice, formatDate, toast } from "../../utils/index.js";
+import { formatPrice, formatDate, toast, translateApiError } from "../../utils/index.js";
 
 const ORDER_STATUS = {
   pending: { label: "Chờ xác nhận", tone: "warning" },
@@ -102,7 +102,7 @@ export default function AdminOrders() {
         setOrders(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải danh sách đơn hàng thất bại')))
       .finally(() => setLoading(false));
   }, [page, status, paymentMethod, date, search]);
 
@@ -149,7 +149,7 @@ export default function AdminOrders() {
         });
         load();
       })
-      .catch((err) => toast.error(err.message || "Không thể cập nhật"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể cập nhật")))
       .finally(() => setUpdating(false));
   };
 
@@ -174,7 +174,7 @@ export default function AdminOrders() {
         load();
       })
       .catch((err) =>
-        toast.error(err.message || "Không thể cập nhật thanh toán"),
+        toast.error(translateApiError(err, "Không thể cập nhật thanh toán")),
       )
       .finally(() => setUpdatingPayment(false));
   };
@@ -293,7 +293,7 @@ export default function AdminOrders() {
               setLoadingDetail(true);
               ordersApi.getById(o.id)
                 .then((res) => setOrderDetail(res.data))
-                .catch((err) => toast.error(err.message))
+                .catch((err) => toast.error(translateApiError(err, 'Không thể tải chi tiết đơn hàng')))
                 .finally(() => setLoadingDetail(false));
             }}>
               <TD bold className="text-vnpt">

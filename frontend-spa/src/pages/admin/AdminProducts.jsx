@@ -26,6 +26,7 @@ import {
   toast,
   debounce,
   resolveImageUrl,
+  translateApiError,
 } from "../../utils/index.js";
 
 const LIMIT = 10;
@@ -81,7 +82,7 @@ export default function AdminProducts() {
         setProducts(res.data || []);
         setTotal(res.total || 0);
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(translateApiError(err, 'Tải danh sách sản phẩm thất bại')))
       .finally(() => setLoading(false));
   };
 
@@ -198,7 +199,7 @@ export default function AdminProducts() {
               // chỉ cảnh báo để admin biết cần vào Inventory bổ sung thủ công.
               toast.error(
                 "Đã tạo sản phẩm nhưng không thể tạo dòng tồn kho: " +
-                  (err.message || "Lỗi không xác định"),
+                  translateApiError(err, "Lỗi không xác định"),
               );
             });
         })
@@ -207,7 +208,7 @@ export default function AdminProducts() {
           setModal(null);
           load();
         })
-        .catch((err) => toast.error(err.message || "Không thể lưu sản phẩm"))
+        .catch((err) => toast.error(translateApiError(err, "Không thể lưu sản phẩm")))
         .finally(() => setSaving(false));
     } else {
       // Thứ tự: 1) sync quantity kho  2) ép status kho theo ý admin  3) update product
@@ -231,7 +232,7 @@ export default function AdminProducts() {
           setModal(null);
           load();
         } catch (err) {
-          toast.error(err.message || "Không thể lưu sản phẩm");
+          toast.error(translateApiError(err, "Không thể lưu sản phẩm"));
         } finally {
           setSaving(false);
         }
@@ -247,7 +248,7 @@ export default function AdminProducts() {
         toast.success("Đã xoá sản phẩm");
         load();
       })
-      .catch((err) => toast.error(err.message || "Không thể xoá"));
+      .catch((err) => toast.error(translateApiError(err, "Không thể xoá")));
   };
 
   // Cập nhật status kho theo product_id, trả về Promise để dùng trong save flow
@@ -266,7 +267,7 @@ export default function AdminProducts() {
       toast.success(`Đã chuyển kho → ${newStatus}`);
       load();
     } catch (err) {
-      toast.error(err.message || "Không thể cập nhật trạng thái kho");
+      toast.error(translateApiError(err, "Không thể cập nhật trạng thái kho"));
     }
   };
 
@@ -674,7 +675,7 @@ function SpecsTabContent({ product }) {
     productDetailsApi
       .getByProduct(product.id)
       .then((res) => setSpecs(res.data || []))
-      .catch((err) => toast.error(err.message || "Không thể tải thông số"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể tải thông số")))
       .finally(() => setLoading(false));
   };
 
@@ -690,7 +691,7 @@ function SpecsTabContent({ product }) {
       setAddMode(false);
       load();
     } catch (err) {
-      toast.error(err.message || "Không thể thêm thông số");
+      toast.error(translateApiError(err, "Không thể thêm thông số"));
     } finally {
       setSaving(false);
     }
@@ -710,7 +711,7 @@ function SpecsTabContent({ product }) {
       setEditingId(null);
       load();
     } catch (err) {
-      toast.error(err.message || "Không thể cập nhật");
+      toast.error(translateApiError(err, "Không thể cập nhật"));
     } finally {
       setSaving(false);
     }
@@ -723,7 +724,7 @@ function SpecsTabContent({ product }) {
       toast.success("Đã xoá");
       load();
     } catch (err) {
-      toast.error(err.message || "Không thể xoá");
+      toast.error(translateApiError(err, "Không thể xoá"));
     }
   };
 
@@ -870,7 +871,7 @@ function ImagesTabContent({ product, onChange }) {
     productImagesApi
       .getByProduct(product.id)
       .then((res) => setImages(res.data || []))
-      .catch((err) => toast.error(err.message || "Không thể tải ảnh"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể tải ảnh")))
       .finally(() => setLoading(false));
   };
 
@@ -889,7 +890,7 @@ function ImagesTabContent({ product, onChange }) {
         load();
         onChange?.();
       })
-      .catch((err) => toast.error(err.message || "Không thể tải ảnh lên"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể tải ảnh lên")))
       .finally(() => {
         setUploading(false);
         e.target.value = "";
@@ -906,7 +907,7 @@ function ImagesTabContent({ product, onChange }) {
         load();
         onChange?.();
       })
-      .catch((err) => toast.error(err.message || "Không thể xoá ảnh"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể xoá ảnh")))
       .finally(() => setBusyId(null));
   };
 
@@ -919,7 +920,7 @@ function ImagesTabContent({ product, onChange }) {
         load();
         onChange?.();
       })
-      .catch((err) => toast.error(err.message || "Không thể đặt ảnh đại diện"))
+      .catch((err) => toast.error(translateApiError(err, "Không thể đặt ảnh đại diện")))
       .finally(() => setBusyId(null));
   };
 
