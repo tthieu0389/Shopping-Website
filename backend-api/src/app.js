@@ -7,6 +7,8 @@ const morgan = require("morgan");
 require("dotenv").config();
 
 const errorHandler = require("./middlewares/errorHandler");
+const verifyToken = require("./middlewares/verifyToken");
+const checkRole = require("./middlewares/checkRole");
 const {
   loginLimiter,
   orderLimiter,
@@ -38,7 +40,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// MIDDLEWARE BAO MAT
+// Middleware bao mat
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }, // Cho phep frontend tai anh tu public folder
@@ -47,28 +49,50 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL, // Chỉ cho phép domain của frontend kết nối
-    credentials: true, // Cho phép truyền cookie / token qua các domain khác nhau
+    origin: process.env.CLIENT_URL, // Chi cho phep domain cua frontend ket noi
+    credentials: true, // Cho phep truyen cookie / token qua cac domain khac nhau
   }),
 );
 
 app.set("trust proxy", 1);
 
-// MIDDLEWARE TOI UU HIEU NANG
-app.use(compression()); // Nén dữ liệu JSON trả về để tiết kiệm băng thông và tăng tốc API
-app.use(express.json({ limit: "1mb" })); // Giới hạn dung lượng request body chống DOS
+// Middleware toi uu hieu nang
+app.use(compression()); // Nen du lieu JSON tra ve de tiet kiem bang thong va tang toc API
+app.use(express.json({ limit: "1mb" })); // Gioi han dung luong request body chong DOS
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-// GHI LOG MOI TRUONG PHAT TRIEN
+// Ghi log moi truong phat trien
 if (process.env.NODE_ENV !== "production") {
-  app.use(morgan("dev")); // In các request API ra terminal để debug
+  app.use(morgan("dev")); // In cac request API ra terminal de debug
 }
 
-// CAU HINH THU MUC TINH (ANH SAN PHAM)
+// Cau hinh thu muc tinh (anh san pham)
 app.use("/public", express.static(path.join(process.cwd(), "public")));
 
-// ROUTE
-app.use("/api-docs", docsLimiter, require("./routes/swagger"));
+// Chan swagger ở môi trườnng production
+// Mặc định trả 404, không để lộ endpoint, schema, model data ra ngoài
+// Nếu cần bật tạm để debug production, set ENABLE_SWAGGER_IN_PROD=true trong .env
+const swaggerAccessGuard = (req, res, next) => {
+  const isProd = process.env.NODE_ENV === "production";
+  if (!isProd) return next();
+
+  if (process.env.ENABLE_SWAGGER_IN_PROD !== "true") {
+    return res.status(404).json({
+      success: false,
+      error: "API Route not found",
+    });
+  }
+
+  return verifyToken()(req, res, () => checkRole("admin")(req, res, next));
+};
+
+// Route
+app.use(
+  "/api-docs",
+  docsLimiter,
+  swaggerAccessGuard,
+  require("./routes/swagger"),
+);
 app.use("/api/auth", loginLimiter, require("./routes/auth.routes"));
 app.use("/api/blogs", blogLimiter, require("./routes/blog.routes"));
 app.use("/api/cart", cartLimiter, require("./routes/cart.routes"));
@@ -141,7 +165,7 @@ app.use(
   require("./routes/userprofile.routes"),
 );
 
-// KIEM TRA TRANG THAI SERVER
+// Kiem tra trang thai server
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -150,15 +174,15 @@ app.get("/health", (req, res) => {
   });
 });
 
-// XU LY ROUTE KHONG TON TAI (404)
+// Xu ly route khong ton tai (404)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    error: "API Route not found", // Đồng bộ cấu trúc lỗi toàn hệ thống
+    error: "API Route not found", // Dong bo cau truc loi toan he thong
   });
 });
 
-// GLOBAL ERROR HANDLER
+// Global error handler
 app.use(errorHandler);
 
 module.exports = app;

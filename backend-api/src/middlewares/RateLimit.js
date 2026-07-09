@@ -21,6 +21,12 @@ const authLoginLimiter = createLimiter({
   max: 10, // tối đa 10 lần thử /5 phút / IP
   message: "Bạn đã thử đăng nhập quá nhiều lần, vui lòng thử lại sau 5 phút.",
 });
+// Chan spam tao tai khoan rac / enumerate email qua /register
+const registerLimiter = createLimiter({
+  windowMs: 10 * 60 * 1000, // 10 phút
+  max: 5, // tối đa 5 lần đăng ký / 10 phút / IP
+  message: "Bạn đã đăng ký quá nhiều lần, vui lòng thử lại sau.",
+});
 const userLimiter = createLimiter({ windowMs: 60 * 1000, max: 60 }); // 1 phút 60 lần
 const contactLimiter = createLimiter({ windowMs: 60 * 1000, max: 30 }); // 1 phút 30 lần
 const reviewLimiter = createLimiter({ windowMs: 60 * 1000, max: 30 }); // 1 phút 30 lần
@@ -50,6 +56,7 @@ const docsLimiter = createLimiter({ windowMs: 10 * 1000, max: 500 }); // 10 giâ
 module.exports = {
   loginLimiter,
   authLoginLimiter,
+  registerLimiter,
   orderLimiter,
   orderItemLimiter,
   inventoryLimiter,

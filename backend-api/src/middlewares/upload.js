@@ -1,13 +1,16 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { fromFile } = require("file-type");
 
 const baseUploadDir = path.join(process.cwd(), "public/uploads");
 
-// File filter (dùng chung cho mọi subfolder)
-const fileFilter = (req, file, cb) => {
-  const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
+// File filter (dùng chung cho mọi subfolder)
+// Chi check nhanh dua vao header MIME client gui len (khong tin cay hoan toan,
+// spoof duoc de dang bang cach doi Content-Type khi upload)
+const fileFilter = (req, file, cb) => {
   if (!allowedImageTypes.includes(file.mimetype)) {
     const err = new Error("Only JPG, PNG, WEBP files are allowed");
     err.code = "INVALID_FILE_TYPE";
@@ -15,6 +18,43 @@ const fileFilter = (req, file, cb) => {
   }
 
   cb(null, true);
+};
+
+// Kiem tra that: doc magic bytes cua file da luu tren disk sau khi multer ghi xong,
+// xoa file va tra loi neu noi dung thuc te khong phai anh hop le
+// (chan truong hop doi ten .php/.html thanh .jpg de bypass MIME check o tren)
+const verifyMagicBytes = async (req, res, next) => {
+  const files = req.files
+    ? Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files).flat()
+    : req.file
+      ? [req.file]
+      : [];
+
+  if (files.length === 0) return next();
+
+  try {
+    for (const file of files) {
+      const type = await fromFile(file.path);
+
+      if (!type || !allowedImageTypes.includes(type.mime)) {
+        // Xoa toan bo file da upload trong request nay (tranh rac tren disk)
+        for (const f of files) {
+          fs.unlink(f.path, () => {});
+        }
+        return res.status(400).json({
+          success: false,
+          message: "Upload error",
+          error:
+            "Nội dung file không hợp lệ (không phải ảnh JPG/PNG/WEBP thực sự).",
+        });
+      }
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
 };
 
 // Hàm helper dùng để bọc và bắt lỗi tự động cho các method của Multer
@@ -41,8 +81,9 @@ const wrapMulterMethod = (multerMethod) => {
         });
       }
 
-      // Nếu không có lỗi gì, đi tiếp sang middleware/controller sau
-      next();
+      // Khong co loi tu Multer, chuyen sang buoc verify magic bytes
+      // truoc khi cho di tiep sang middleware/controller sau
+      verifyMagicBytes(req, res, next);
     });
   };
 };

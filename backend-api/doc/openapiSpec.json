@@ -1480,7 +1480,8 @@
             }
           }
         },
-        "operationId": "registerUser"
+        "operationId": "registerUser",
+        "description": "Giới hạn **5 lần đăng ký / 10 phút / IP** để chống spam tạo tài khoản rác và email enumeration."
       }
     },
     "/api/auth/login": {
@@ -4120,7 +4121,7 @@
           }
         },
         "operationId": "uploadProductImages",
-        "description": "**Yêu cầu quyền: admin, staff.**\n\n**Quy tắc tự động chọn ảnh thumbnail (áp dụng như nhau dù upload 1 ảnh hay nhiều ảnh cùng lúc):**\n- Request không có field `is_thumbnail` theo từng ảnh — tất cả ảnh gửi lên đều được ghi nhận mặc định là `false`.\n- Hệ thống sau đó tự kiểm tra: nếu sản phẩm **đã có** thumbnail từ trước → giữ nguyên thumbnail cũ, toàn bộ ảnh mới upload là `is_thumbnail = false`.\n- Nếu sản phẩm **chưa có** thumbnail nào → ảnh **đầu tiên** trong danh sách gửi lên (`images[0]`) sẽ tự động được đặt làm thumbnail; nếu chỉ upload đúng 1 ảnh thì ảnh đó nghiễm nhiên thành thumbnail.\n- Muốn đổi thumbnail theo ý muốn (không theo mặc định trên), gọi tiếp `PATCH /api/product-images/{id}/thumbnail` sau khi upload.\n- Mỗi sản phẩm chỉ có tối đa 1 ảnh thumbnail tại một thời điểm (ràng buộc unique index ở database)."
+        "description": "**Yêu cầu quyền: admin, staff.**\n\n**Quy tắc tự động chọn ảnh thumbnail (áp dụng như nhau dù upload 1 ảnh hay nhiều ảnh cùng lúc):**\n- Request không có field `is_thumbnail` theo từng ảnh — tất cả ảnh gửi lên đều được ghi nhận mặc định là `false`.\n- Hệ thống sau đó tự kiểm tra: nếu sản phẩm **đã có** thumbnail từ trước → giữ nguyên thumbnail cũ, toàn bộ ảnh mới upload là `is_thumbnail = false`.\n- Nếu sản phẩm **chưa có** thumbnail nào → ảnh **đầu tiên** trong danh sách gửi lên (`images[0]`) sẽ tự động được đặt làm thumbnail; nếu chỉ upload đúng 1 ảnh thì ảnh đó nghiễm nhiên thành thumbnail.\n- Muốn đổi thumbnail theo ý muốn (không theo mặc định trên), gọi tiếp `PATCH /api/product-images/{id}/thumbnail` sau khi upload.\n- Mỗi sản phẩm chỉ có tối đa 1 ảnh thumbnail tại một thời điểm (ràng buộc unique index ở database).\n\n**Bảo mật upload:** file được kiểm tra 2 lớp — MIME type ở client header (chặn nhanh) và magic bytes thực tế của nội dung file sau khi lưu (chặn giả mạo đổi đuôi file, vd .php/.html đổi thành .jpg). Chỉ chấp nhận JPG, PNG, WEBP thật."
       }
     },
     "/api/product-images/product/{productId}": {
@@ -7376,7 +7377,7 @@
       "post": {
         "tags": ["Blog Images"],
         "summary": "Upload ảnh blog (Admin/Staff)",
-        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach. **Yêu cầu quyền: admin, staff.**",
+        "description": "Upload 1 ảnh để dùng trong nội dung hoặc thumbnail blog. blog_id có thể để trống khi blog chưa được tạo, sau đó gắn lại bằng PATCH /:id/attach. **Yêu cầu quyền: admin, staff.**\n\n**Bảo mật upload:** file được kiểm tra 2 lớp — MIME type ở client header (chặn nhanh) và magic bytes thực tế của nội dung file sau khi lưu (chặn giả mạo đổi đuôi file, vd .php/.html đổi thành .jpg). Chỉ chấp nhận JPG, PNG, WEBP thật.",
         "security": [
           {
             "bearerAuth": []
@@ -8226,7 +8227,7 @@
           }
         },
         "operationId": "uploadBlogThumbnail",
-        "description": "**Yêu cầu quyền: admin, staff.**"
+        "description": "**Yêu cầu quyền: admin, staff.**\n\n**Bảo mật upload:** file được kiểm tra 2 lớp — MIME type ở client header (chặn nhanh) và magic bytes thực tế của nội dung file sau khi lưu (chặn giả mạo đổi đuôi file, vd .php/.html đổi thành .jpg). Chỉ chấp nhận JPG, PNG, WEBP thật."
       }
     },
     "/api/contacts/mine": {
