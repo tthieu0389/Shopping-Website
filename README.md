@@ -43,26 +43,27 @@ Hệ thống thương mại điện tử xây dựng phục vụ mục đích **
 
 ## Thành viên nhóm
 
-| Họ và tên | MSSV | Vai trò |
-|---|---|---|
-| Hồ Ngọc Hiển | B2205981 | UI/UX Design, Frontend |
-| Trần Trung Hiếu | B2205980 | Database, Backend |
+| Họ và tên         | MSSV     | Vai trò                 |
+| ----------------- | -------- | ----------------------- |
+| Hồ Ngọc Hiển      | B2205981 | UI/UX Design, Frontend  |
+| Trần Trung Hiếu   | B2205980 | Database, Backend       |
 | Nguyễn Thanh Bình | B2105696 | Tester (Manual Testing) |
 
 ---
 
 ## Tổng quan dự án
 
-| Thành phần | Công nghệ | Thư mục |
-|---|---|---|
-| Backend API | Node.js, Express 5, PostgreSQL, Knex.js | `backend-api/` |
-| Frontend SPA | React 19, Vite, Tailwind CSS, Zustand | `frontend-spa/` |
+| Thành phần   | Công nghệ                               | Thư mục         |
+| ------------ | --------------------------------------- | --------------- |
+| Backend API  | Node.js, Express 5, PostgreSQL, Knex.js | `backend-api/`  |
+| Frontend SPA | React 19, Vite, Tailwind CSS, Zustand   | `frontend-spa/` |
 
 ---
 
 ## Tech Stack
 
 **Backend**
+
 - Node.js 18+, Express 5
 - PostgreSQL 13+, Knex.js (query builder + migrations)
 - JWT (xác thực), bcrypt (mã hoá mật khẩu)
@@ -70,6 +71,7 @@ Hệ thống thương mại điện tử xây dựng phục vụ mục đích **
 - Swagger / OpenAPI 3.0 (tài liệu API)
 
 **Frontend**
+
 - React 19, React Router v7
 - Tailwind CSS v4
 - Zustand (state management), React Hook Form + Zod (form/validate)
@@ -111,16 +113,25 @@ Tạo file `.env` (xem mẫu bên dưới):
 
 ```env
 PORT=3000
+
+# KẾT NỐI DATABASE CHÍNH (SQL)
+DB_HOST=your_database_host
+DB_PORT=5432
+DB_USER=your_database_user
+DB_PASS=your_database_password
+DB_NAME=your_database_name
+
+# BẢO MẬT JWT
+JWT_SECRET=your_jwt_secret
+
+# MÔI TRƯỜNG CHẠY: Sửa thành production khi deploy thực tế
 NODE_ENV=development
+
+# ĐỊA CHỈ FRONTEND: Dán link ngrok hoặc domain thực tế của Frontend vào đây khi deploy
 CLIENT_URL=http://localhost:5173
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASS=your_password
-DB_NAME=shopping_db
-
-JWT_SECRET=your_jwt_secret_random_string
+# BẬT SWAGGER Ở PRODUCTION (chỉ debug tạm, vẫn yêu cầu đăng nhập admin): true/false
+ENABLE_SWAGGER_IN_PROD=false
 ```
 
 Khởi tạo database và chạy migration:
