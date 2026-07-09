@@ -140,6 +140,12 @@ Khởi tạo database và chạy migration:
 npm run migrate:latest
 ```
 
+Nạp dữ liệu mẫu (seed):
+
+```bash
+npm run seed:run
+```
+
 Chạy server:
 
 ```bash
