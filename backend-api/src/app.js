@@ -67,7 +67,10 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // Cau hinh thu muc tinh (anh san pham)
-app.use("/public", express.static(path.join(process.cwd(), "public")));
+const staticUploadsHandler = express.static(path.join(process.cwd(), "public"));
+app.use("/public", staticUploadsHandler);
+// Du phong
+app.use("/api/public", staticUploadsHandler);
 
 // Chan swagger ở môi trườnng production
 // Mặc định trả 404, không để lộ endpoint, schema, model data ra ngoài
